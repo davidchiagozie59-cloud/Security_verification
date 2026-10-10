@@ -1,0 +1,1 @@
+- [Staff role boundaries](staff-role-policy.md) — Admin manages accounts/settings; sub-admin reviews all applications; moderator is limited to support.

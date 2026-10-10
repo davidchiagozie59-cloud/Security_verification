@@ -940,7 +940,7 @@ function AdminSettings() {
     if (!draft) return;
     setMessage('');
     setError('');
-    saveSettings.mutate(draft, {
+    saveSettings.mutate({ data: draft }, {
       onSuccess: (saved) => {
         queryClient.invalidateQueries({ queryKey: getGetPortalSettingsQueryKey() });
         setDraft(saved);
