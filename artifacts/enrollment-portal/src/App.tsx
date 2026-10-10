@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent, ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import { ClerkProvider, SignIn, SignUp, useAuth, useClerk } from '@clerk/react';
+import { ClerkProvider, SignIn, SignUp, useAuth, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import {
@@ -171,21 +171,39 @@ function PageHeading({ eyebrow, title, detail, action }: { eyebrow: string; titl
 
 function PublicLanding() {
   const { isLoaded, isSignedIn } = useAuth();
-  const categories = useListEnrollmentCategories();
+  const applications = useListMyApplications({
+    query: {
+      enabled: isLoaded && Boolean(isSignedIn),
+      queryKey: getListMyApplicationsQueryKey(),
+    },
+  });
+  const latestApplication = applications.data?.[0];
+  const primaryDestination = !isLoaded || !isSignedIn
+    ? '/sign-in'
+    : applications.isLoading
+      ? '/dashboard'
+      : latestApplication
+        ? latestApplication.status === 'draft'
+          ? `/apply/${latestApplication.id}`
+          : `/applications/${latestApplication.id}`
+        : '/dashboard';
+  const primaryLabel = latestApplication
+    ? latestApplication.status === 'draft' ? 'Continue application' : 'View application status'
+    : 'Get Started';
   return (
     <main className="landing portal-frame">
       <section className="landing-copy">
         <Brand />
         <div className="landing-content rise">
-          <div className="eyebrow"><span className="eyebrow-rule" />A clearer way forward</div>
-          <h1>One application.<br /><em>A confident next step.</em></h1>
-          <p className="landing-lede">Choose the enrollment path that fits you, complete your application at your own pace, and follow every decision in one secure place.</p>
+          <div className="eyebrow"><span className="eyebrow-rule" />SECURE ENROLLMENT</div>
+          <h1>Welcome to Our<br /><em>Enrollment Portal</em></h1>
+          <p className="landing-lede">Select your enrollment category and complete your application through our secure enrollment process.</p>
           <div className="landing-actions">
-            <Link href={isLoaded && isSignedIn ? '/dashboard' : '/sign-up'} className="button button-primary" data-testid="link-get-started">
-              Begin enrollment <ArrowRight size={17} />
+            <Link href={primaryDestination} className="button button-primary" data-testid="link-get-started">
+              {primaryLabel} <ArrowRight size={17} />
             </Link>
-            <Link href={isLoaded && isSignedIn ? '/dashboard' : '/sign-in'} className="text-action" data-testid="link-sign-in">
-              {isLoaded && isSignedIn ? 'Open your dashboard' : 'Already have an account? Sign in'}
+            <Link href="/sign-in" className="text-action" data-testid="link-sign-in">
+              Log In
             </Link>
           </div>
           <div className="landing-assurances">
@@ -193,7 +211,6 @@ function PublicLanding() {
             <div><span className="assurance-icon"><Activity size={16} /></span><span><b>Know where you stand</b><small>Track review status clearly</small></span></div>
           </div>
         </div>
-        <div className="landing-bottom"><span>ENROLLMENT SERVICES</span><span>Secure access · Clear updates</span></div>
       </section>
       <section className="landing-art" aria-label="Enrollment process overview">
         <div className="art-orbit orbit-one" /><div className="art-orbit orbit-two" />
@@ -216,6 +233,12 @@ function PublicLanding() {
 }
 
 function AuthPage({ mode }: { mode: 'in' | 'up' }) {
+  const { isLoaded, isSignedIn } = useAuth();
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    if (isLoaded && isSignedIn) setLocation('/auth/complete', { replace: true });
+  }, [isLoaded, isSignedIn, setLocation]);
+  if (isLoaded && isSignedIn) return <main className="portal-frame auth-loading"><LoadingPanel label="Opening your secure workspace" /></main>;
   return <main className="auth-page portal-frame">
     <div className="auth-brand"><Brand /><span>SECURE ENROLLMENT PORTAL</span></div>
     <div className="auth-canvas">
@@ -223,11 +246,26 @@ function AuthPage({ mode }: { mode: 'in' | 'up' }) {
         <p>{mode === 'in' ? 'Your application and its latest updates are waiting in your secure workspace.' : 'Create a secure account to begin and return to your application whenever you need.'}</p>
         <div className="auth-security"><LockKeyhole size={17} /><span>Protected access for your enrollment journey</span></div></div>
       <div className="auth-widget">
-        {mode === 'in' ? <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /> :
-          <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />}
+        {mode === 'in' ? <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={`${basePath}/auth/complete`} /> :
+          <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl={`${basePath}/auth/complete`} />}
       </div>
     </div>
   </main>;
+}
+
+function AuthComplete() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded: userLoaded, user } = useUser();
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    if (!isLoaded || !userLoaded) return;
+    if (!isSignedIn) {
+      setLocation('/sign-in', { replace: true });
+      return;
+    }
+    setLocation(user?.publicMetadata?.role === 'admin' ? '/admin' : '/dashboard', { replace: true });
+  }, [isLoaded, isSignedIn, userLoaded, user?.id, user?.publicMetadata?.role, setLocation]);
+  return <main className="portal-frame auth-loading"><LoadingPanel label="Opening your secure workspace" /></main>;
 }
 
 function SignedOutNotice() {
@@ -252,8 +290,11 @@ function Dashboard() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [createError, setCreateError] = useState('');
-  const palette = ['#2dad5d', '#244fc7', '#1198d2', '#ffffff'];
+  const palette = ['#1fc75b', '#254edb', '#159fdf', '#ffffff'];
   const iconColors = ['#168341', '#244fc7', '#087eaf', '#174d80'];
+  const activeApplication = (applications.data ?? []).find((application) =>
+    ['draft', 'submitted', 'under_review', 'needs_information'].includes(application.status),
+  );
 
   const begin = (category: EnrollmentCategory) => {
     setCreateError('');
@@ -277,17 +318,25 @@ function Dashboard() {
             <section className="selection-section rise-delay">
               <div className="section-line"><div><h2>Select an enrollment path</h2><p>Choose the option that best matches your application.</p></div><span className="step-indicator">STEP 01 <i>/ 03</i></span></div>
               <div className="category-grid">
-                {(categories.data ?? []).slice(0, 4).map((category, index) => (
-                  <button type="button" key={category.id} disabled={create.isPending} onClick={() => begin(category)}
+                {(categories.data ?? []).slice(0, 4).map((category, index) => {
+                  const selected = activeApplication?.categoryId === category.id;
+                  const locked = Boolean(activeApplication && !selected);
+                  return <button type="button" key={category.id} disabled={create.isPending || locked} onClick={() => {
+                    if (selected && activeApplication) {
+                      setLocation(activeApplication.status === 'draft' ? `/apply/${activeApplication.id}` : `/applications/${activeApplication.id}`);
+                      return;
+                    }
+                    begin(category);
+                  }}
                     className={`category-card category-${index + 1}`} style={{ '--category-tone': palette[index] } as CSSProperties & { '--category-tone': string }}
                     data-testid={`card-category-${category.id}`}>
                     <span className="category-number">0{index + 1}</span>
                     <span className="category-symbol" style={{ color: iconColors[index] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>
                     <span className="category-title">{category.name}</span>
                     <span className="category-description">{category.description}</span>
-                    <span className="category-select">{create.isPending ? 'Starting…' : 'Select path'} <ArrowUpRight size={15} /></span>
-                  </button>
-                ))}
+                    <span className="category-select">{create.isPending ? 'Starting…' : selected ? activeApplication.status === 'draft' ? 'Continue application' : 'View current status' : locked ? 'Unavailable for this application' : 'Select category'} <ArrowUpRight size={15} /></span>
+                  </button>;
+                })}
               </div>
               {categories.data?.length === 0 && <EmptyPanel title="Enrollment paths are unavailable" message="Please return later or contact support for help." />}
               {createError && <p className="inline-error" role="alert" data-testid="text-create-error">{createError}</p>}
@@ -343,28 +392,90 @@ function DraftApplication() {
   const params = useParams<{ applicationId?: string }>();
   const id = params.applicationId ?? '';
   const app = useGetApplication(id, { query: { enabled: !!id, queryKey: getGetApplicationQueryKey(id) } });
+  const categories = useListEnrollmentCategories();
   const update = useUpdateApplication();
   const submit = useSubmitApplication();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [context, setContext] = useState<string | null>(null);
+  const [pin, setPin] = useState('');
+  const [pinConfirmation, setPinConfirmation] = useState('');
+  const [replacementCategory, setReplacementCategory] = useState<EnrollmentCategory['id'] | ''>('');
   const [step, setStep] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
   const application = app.data;
   if (app.isLoading) return <AppFrame><LoadingPanel /></AppFrame>;
   if (app.isError || !application) return <AppFrame><ErrorPanel message="This application could not be found or opened." retry={() => void app.refetch()} /></AppFrame>;
-  if (application.status !== 'draft') return <AppFrame><section className="state-card"><span className="state-icon"><FileCheck2 size={20} /></span><h2>This application has already been submitted</h2><p>Its current status and any updates are available in the application detail view.</p><Link href={`/applications/${id}`} className="button button-primary" data-testid="link-open-submitted">View application <ArrowRight size={15} /></Link></section></AppFrame>;
-  const activeStep = step ?? (application.currentStep > 1 ? 1 : 0);
+  if (application.status !== 'draft') return <AppFrame>
+    <section className="state-card"><span className="state-icon"><FileCheck2 size={20} /></span><h2>This application has already been submitted</h2><p>Its current status and any updates are available in the application detail view.</p><Link href={`/applications/${id}`} className="button button-primary" data-testid="link-open-submitted">View application <ArrowRight size={15} /></Link></section>
+    {showSuccess && <div className="success-overlay">
+      <section className="success-dialog" role="dialog" aria-modal="true" aria-labelledby="submission-success-title" data-testid="modal-submission-success">
+        <button className="modal-close" onClick={() => setShowSuccess(false)} aria-label="Close submission confirmation" data-testid="button-close-success"><span aria-hidden="true">×</span></button>
+        <span className="success-seal"><CheckCircle2 size={25} /></span>
+        <div className="eyebrow">APPLICATION RECEIVED</div>
+        <h2 id="submission-success-title">Your application was submitted</h2>
+        <p>Your enrollment application is now in the review process. You can follow its current status at any time.</p>
+        <div className="success-reference"><span>REFERENCE</span><b className="mono">{application.reference}</b></div>
+        <button className="button button-primary" onClick={() => setLocation(`/applications/${id}`)} data-testid="button-view-submitted-status">View application status <ArrowRight size={15} /></button>
+      </section>
+    </div>}
+  </AppFrame>;
+  const activeStep = step ?? Math.min(application.currentStep, 2);
   const answerValue = context ?? String(application.answers?.additionalContext ?? '');
-  const save = () => {
+  const saveProgress = (nextStep: number, nextPin?: string, message = 'Progress saved') => {
     setFeedback('');
-    update.mutate({ applicationId: id, data: { currentStep: activeStep + 1, answers: { ...application.answers, additionalContext: answerValue } } }, {
+    update.mutate({
+      applicationId: id,
+      data: {
+        currentStep: nextStep,
+        answers: { ...application.answers, additionalContext: answerValue },
+        ...(nextPin ? { pin: nextPin } : {}),
+      },
+    }, {
       onSuccess: (saved) => {
         queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
         queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
-        setFeedback('Progress saved');
+        queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
+        setStep(nextStep);
+        setPin('');
+        setPinConfirmation('');
+        setFeedback(message);
       },
       onError: () => setFeedback('We could not save your changes. Please try again.'),
+    });
+  };
+  const savePinAndContinue = () => {
+    setFeedback('');
+    if (pin || pinConfirmation) {
+      if (!/^\d{6}$/.test(pin)) { setFeedback('Create a six-digit numeric PIN.'); return; }
+      if (pin !== pinConfirmation) { setFeedback('The PINs do not match.'); return; }
+      saveProgress(2, pin, 'PIN saved securely');
+      return;
+    }
+    if (!application.hasPin) { setFeedback('Create and confirm a six-digit PIN to continue.'); return; }
+    saveProgress(2, undefined, 'Your saved PIN is ready');
+  };
+  const changeCategory = () => {
+    if (!replacementCategory || replacementCategory === application.categoryId) return;
+    const next = categories.data?.find((category) => category.id === replacementCategory);
+    if (!next) return;
+    const confirmed = window.confirm(`Change to ${next.name}? This resets the saved application details and PIN. This change will be recorded.`);
+    if (!confirmed) return;
+    setFeedback('');
+    update.mutate({ applicationId: id, data: { categoryId: replacementCategory } }, {
+      onSuccess: (saved) => {
+        queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
+        queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
+        setContext('');
+        setPin('');
+        setPinConfirmation('');
+        setReplacementCategory('');
+        setStep(0);
+        setFeedback('Category changed. Your previous details and PIN were cleared.');
+      },
+      onError: () => setFeedback('The category could not be changed. Please try again.'),
     });
   };
   const submitDraft = () => {
@@ -373,39 +484,61 @@ function DraftApplication() {
         queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
         queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
-        setLocation(`/applications/${id}`);
+        setShowSuccess(true);
       },
       onError: () => setFeedback('Your application was not submitted. Please try again.'),
     });
   };
   return <AppFrame>
-    <div className="form-page">
+    <div className={`form-page category-form-${application.categoryId}`}>
       <div className="form-top"><Link href="/dashboard" className="back-link" data-testid="link-back-dashboard"><ArrowLeft size={16} /> Dashboard</Link>
         <span className="draft-reference">{application.reference}</span></div>
+      <details className="category-change">
+        <summary>Change enrollment category</summary>
+        <div className="category-change-panel">
+          <p>Changing category clears the saved details and PIN. The change is recorded in your application history.</p>
+          <select className="text-input select-input" value={replacementCategory || application.categoryId} onChange={(event) => setReplacementCategory(event.target.value as EnrollmentCategory['id'] | '')} aria-label="Choose a replacement enrollment category" data-testid="select-change-category">
+            {(categories.data ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+          </select>
+          <button className="button button-quiet" onClick={changeCategory} disabled={update.isPending || !replacementCategory || replacementCategory === application.categoryId} data-testid="button-change-category">Change category</button>
+        </div>
+      </details>
       <div className="form-heading"><div className="eyebrow">APPLICATION · {application.categoryName}</div><h1>Let’s complete your application.</h1><p>Your progress is saved to your secure account. You can return any time before submitting.</p></div>
-      <div className="progress-track" aria-label={`Step ${activeStep + 1} of 2`} data-testid="progress-application">
-        {[0, 1].map((n) => <div className={`progress-step ${n <= activeStep ? 'progress-current' : ''}`} key={n}><span>{n < activeStep ? <Check size={13} /> : `0${n + 1}`}</span><b>{n === 0 ? 'Application details' : 'Review & submit'}</b></div>)}
+      <div className="progress-track" aria-label={`Step ${activeStep + 1} of 3`} data-testid="progress-application">
+        {['Application details', 'Create PIN', 'Review & submit'].map((label, n) => <div className={`progress-step ${n <= activeStep ? 'progress-current' : ''}`} key={label}><span>{n < activeStep ? <Check size={13} /> : `0${n + 1}`}</span><b>{label}</b></div>)}
       </div>
       <div className="form-workspace portal-scroll">
         {activeStep === 0 ? <section className="form-card">
-          <div className="form-card-heading"><span className="form-card-icon"><FileText size={18} /></span><div><h2>Application details</h2><p>There are no category-specific questions configured yet.</p></div></div>
+          <div className="form-card-heading"><span className="form-card-icon"><FileText size={18} /></span><div><h2>{application.categoryName}</h2><p>Category-specific entry fields will be added with the four category briefs.</p></div></div>
           <label className="field-label" htmlFor="application-context">Additional context <span>Optional</span></label>
           <textarea id="application-context" rows={5} value={answerValue} onChange={(event) => setContext(event.target.value)}
             placeholder="Add any context you would like included with your application." className="text-input form-textarea" data-testid="input-application-context" />
           <div className="field-help">You can edit this note before submitting. No documents or live video are collected here.</div>
           <div className="disabled-storage" aria-disabled="true" data-testid="disabled-storage-placeholder"><LockKeyhole size={16} /><span><b>Document and live-video storage</b><small>Not currently available in this portal</small></span><span className="disabled-tag">Unavailable</span></div>
           <div className="form-actions"><span className="save-status" role="status" data-testid="text-save-status">{feedback}</span>
-            <PrimaryButton onClick={save} disabled={update.isPending} testId="button-save-progress">{update.isPending ? 'Saving…' : 'Save progress'}</PrimaryButton>
-            <PrimaryButton onClick={() => { setStep(1); setFeedback(''); }} testId="button-next-step">Continue <ArrowRight size={16} /></PrimaryButton>
+            <PrimaryButton onClick={() => saveProgress(0)} disabled={update.isPending} testId="button-save-progress">{update.isPending ? 'Saving…' : 'Save progress'}</PrimaryButton>
+            <PrimaryButton onClick={() => saveProgress(1)} disabled={update.isPending} testId="button-next-step">Continue <ArrowRight size={16} /></PrimaryButton>
+          </div>
+        </section> : activeStep === 1 ? <section className="form-card pin-card">
+          <div className="form-card-heading"><span className="form-card-icon"><LockKeyhole size={18} /></span><div><h2>Create your enrollment PIN</h2><p>This PIN is stored as a salted server-side hash and is never shown to staff.</p></div></div>
+          {application.hasPin && <div className="field-help">A PIN is already set. Leave both fields blank to keep it, or enter a new PIN to replace it.</div>}
+          <label className="field-label" htmlFor="application-pin">Six-digit PIN</label>
+          <input id="application-pin" className="text-input" type="password" inputMode="numeric" autoComplete="new-password" pattern="[0-9]{6}" maxLength={6} value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="••••••" data-testid="input-application-pin" />
+          <label className="field-label" htmlFor="application-pin-confirm">Confirm PIN</label>
+          <input id="application-pin-confirm" className="text-input" type="password" inputMode="numeric" autoComplete="new-password" pattern="[0-9]{6}" maxLength={6} value={pinConfirmation} onChange={(event) => setPinConfirmation(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="••••••" data-testid="input-application-pin-confirm" />
+          {feedback && <p className="inline-error" role="status" data-testid="text-pin-feedback">{feedback}</p>}
+          <div className="form-actions"><button className="text-action" onClick={() => { setStep(0); setFeedback(''); }} data-testid="button-back-details"><ArrowLeft size={15} /> Back to details</button>
+            <PrimaryButton onClick={savePinAndContinue} disabled={update.isPending} testId="button-save-pin">{update.isPending ? 'Saving…' : 'Save PIN & continue'} <ArrowRight size={16} /></PrimaryButton>
           </div>
         </section> : <section className="form-card review-card">
-          <div className="form-card-heading"><span className="form-card-icon"><BadgeCheck size={18} /></span><div><h2>Review your application</h2><p>Check your enrollment path and optional context before submitting.</p></div></div>
+          <div className="form-card-heading"><span className="form-card-icon"><BadgeCheck size={18} /></span><div><h2>Review your application</h2><p>Check the selected category, PIN, and optional context before submitting.</p></div></div>
           <div className="review-field"><span>Enrollment path</span><b>{application.categoryName}</b></div>
           <div className="review-field"><span>Application reference</span><b className="mono">{application.reference}</b></div>
+          <div className="review-field"><span>Enrollment PIN</span><b>{application.hasPin ? 'Created securely' : 'Not created'}</b></div>
           <div className="review-field review-context"><span>Additional context</span><b>{answerValue.trim() || 'No additional context provided'}</b></div>
           <div className="review-callout"><ShieldCheck size={18} /><p>Once submitted, your application enters review. You’ll be able to follow its status from your dashboard.</p></div>
           {feedback && <p className="inline-error" role="alert" data-testid="text-submit-feedback">{feedback}</p>}
-          <div className="form-actions"><button className="text-action" onClick={() => setStep(0)} data-testid="button-edit-application"><ArrowLeft size={15} /> Back to details</button>
+          <div className="form-actions"><button className="text-action" onClick={() => setStep(1)} data-testid="button-edit-application"><ArrowLeft size={15} /> Back to PIN</button>
             <PrimaryButton onClick={submitDraft} disabled={submit.isPending} testId="button-submit-application">{submit.isPending ? 'Submitting…' : 'Submit application'} <ArrowRight size={15} /></PrimaryButton>
           </div>
         </section>}
@@ -579,7 +712,7 @@ function AdminApplicationReview() {
     setError('');
     decide.mutate({ applicationId: id, data: { decision, ...(note.trim() ? { note: note.trim() } : {}) } }, {
       onSuccess: (saved) => {
-        queryClient.setQueryData(getListApplicationsForReviewQueryKey({}), (old) => old?.map((item) => item.id === saved.id ? saved : item));
+        queryClient.setQueryData<EnrollmentApplication[]>(getListApplicationsForReviewQueryKey({}), (old) => old?.map((item) => item.id === saved.id ? saved : item));
         queryClient.invalidateQueries({ queryKey: getListApplicationsForReviewQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetApplicationQueryKey(id) });
         setNote('');
@@ -634,7 +767,7 @@ function AdminSupport() {
     setFeedback('');
     reply.mutate({ ticketId: ticket.id, data: { response, status } }, {
       onSuccess: (saved) => {
-        queryClient.setQueryData(getListSupportTicketsForAdminQueryKey(), (old) => old?.map((item) => item.id === saved.id ? saved : item));
+        queryClient.setQueryData<SupportTicket[]>(getListSupportTicketsForAdminQueryKey(), (old) => old?.map((item) => item.id === saved.id ? saved : item));
         queryClient.invalidateQueries({ queryKey: getListSupportTicketsForAdminQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListMySupportTicketsQueryKey() });
         setFeedback('Support ticket updated.');
@@ -679,6 +812,7 @@ function RoutedPages() {
     <Route path="/" component={PublicLanding} />
     <Route path="/sign-in/*?" component={() => <AuthPage mode="in" />} />
     <Route path="/sign-up/*?" component={() => <AuthPage mode="up" />} />
+    <Route path="/auth/complete" component={AuthComplete} />
     <Route path="/dashboard" component={() => <AuthGate><Dashboard /></AuthGate>} />
     <Route path="/apply/:applicationId" component={() => <AuthGate><DraftApplication /></AuthGate>} />
     <Route path="/applications/:applicationId" component={() => <AuthGate><ApplicationDetail /></AuthGate>} />

@@ -39,6 +39,7 @@ export const ListMyApplicationsResponseItem = zod.object({
   "categoryName": zod.string(),
   "status": zod.enum(['draft', 'submitted', 'under_review', 'needs_information', 'approved', 'rejected']),
   "currentStep": zod.number().int(),
+  "hasPin": zod.boolean(),
   "answers": zod.record(zod.string(), zod.unknown()),
   "applicantName": zod.string().nullish(),
   "applicantEmail": zod.string().nullish(),
@@ -64,6 +65,7 @@ export const CreateApplicationResponse = zod.object({
   "categoryName": zod.string(),
   "status": zod.enum(['draft', 'submitted', 'under_review', 'needs_information', 'approved', 'rejected']),
   "currentStep": zod.number().int(),
+  "hasPin": zod.boolean(),
   "answers": zod.record(zod.string(), zod.unknown()),
   "applicantName": zod.string().nullish(),
   "applicantEmail": zod.string().nullish(),
@@ -88,6 +90,7 @@ export const GetApplicationResponse = zod.object({
   "categoryName": zod.string(),
   "status": zod.enum(['draft', 'submitted', 'under_review', 'needs_information', 'approved', 'rejected']),
   "currentStep": zod.number().int(),
+  "hasPin": zod.boolean(),
   "answers": zod.record(zod.string(), zod.unknown()),
   "applicantName": zod.string().nullish(),
   "applicantEmail": zod.string().nullish(),
@@ -106,12 +109,16 @@ export const UpdateApplicationParams = zod.object({
 })
 
 export const updateApplicationBodyCurrentStepMin = 0;
+export const updateApplicationBodyCurrentStepMax = 2;
 
+export const updateApplicationBodyPinRegExp = new RegExp('^[0-9]{6}$');
 
 
 export const UpdateApplicationBody = zod.object({
-  "currentStep": zod.number().int().min(updateApplicationBodyCurrentStepMin).optional(),
-  "answers": zod.record(zod.string(), zod.unknown()).optional()
+  "categoryId": zod.enum(['category-1', 'category-2', 'category-3', 'category-4']).optional(),
+  "currentStep": zod.number().int().min(updateApplicationBodyCurrentStepMin).max(updateApplicationBodyCurrentStepMax).optional(),
+  "answers": zod.record(zod.string(), zod.unknown()).optional(),
+  "pin": zod.string().regex(updateApplicationBodyPinRegExp).optional()
 })
 
 export const UpdateApplicationResponse = zod.object({
@@ -121,6 +128,7 @@ export const UpdateApplicationResponse = zod.object({
   "categoryName": zod.string(),
   "status": zod.enum(['draft', 'submitted', 'under_review', 'needs_information', 'approved', 'rejected']),
   "currentStep": zod.number().int(),
+  "hasPin": zod.boolean(),
   "answers": zod.record(zod.string(), zod.unknown()),
   "applicantName": zod.string().nullish(),
   "applicantEmail": zod.string().nullish(),
@@ -145,6 +153,7 @@ export const SubmitApplicationResponse = zod.object({
   "categoryName": zod.string(),
   "status": zod.enum(['draft', 'submitted', 'under_review', 'needs_information', 'approved', 'rejected']),
   "currentStep": zod.number().int(),
+  "hasPin": zod.boolean(),
   "answers": zod.record(zod.string(), zod.unknown()),
   "applicantName": zod.string().nullish(),
   "applicantEmail": zod.string().nullish(),
@@ -182,6 +191,7 @@ export const ListApplicationsForReviewResponseItem = zod.object({
   "categoryName": zod.string(),
   "status": zod.enum(['draft', 'submitted', 'under_review', 'needs_information', 'approved', 'rejected']),
   "currentStep": zod.number().int(),
+  "hasPin": zod.boolean(),
   "answers": zod.record(zod.string(), zod.unknown()),
   "applicantName": zod.string().nullish(),
   "applicantEmail": zod.string().nullish(),
@@ -216,6 +226,7 @@ export const DecideApplicationResponse = zod.object({
   "categoryName": zod.string(),
   "status": zod.enum(['draft', 'submitted', 'under_review', 'needs_information', 'approved', 'rejected']),
   "currentStep": zod.number().int(),
+  "hasPin": zod.boolean(),
   "answers": zod.record(zod.string(), zod.unknown()),
   "applicantName": zod.string().nullish(),
   "applicantEmail": zod.string().nullish(),

@@ -16,6 +16,7 @@ export interface EnrollmentApplication {
   categoryName: string;
   status: ApplicationStatus;
   currentStep: number;
+  hasPin: boolean;
   answers: EnrollmentApplicationAnswers;
   /** @nullable */
   applicantName?: string | null;

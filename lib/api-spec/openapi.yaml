@@ -328,6 +328,9 @@ components:
     ApplicationUpdate:
       type: object
       properties:
+        categoryId:
+          type: string
+          enum: [category-1, category-2, category-3, category-4]
         currentStep:
           type: integer
           minimum: 0

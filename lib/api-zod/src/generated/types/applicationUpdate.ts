@@ -6,9 +6,16 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ApplicationUpdateAnswers } from './applicationUpdateAnswers';
+import type { ApplicationUpdateCategoryId } from './applicationUpdateCategoryId';
 
 export interface ApplicationUpdate {
-  /** @minimum 0 */
+  categoryId?: ApplicationUpdateCategoryId;
+  /**
+     * @minimum 0
+     * @maximum 2
+     */
   currentStep?: number;
   answers?: ApplicationUpdateAnswers;
+  /** @pattern ^[0-9]{6}$ */
+  pin?: string;
 }

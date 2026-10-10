@@ -14,6 +14,7 @@ export * from './applicationInputCategoryId';
 export * from './applicationStatus';
 export * from './applicationUpdate';
 export * from './applicationUpdateAnswers';
+export * from './applicationUpdateCategoryId';
 export * from './enrollmentApplication';
 export * from './enrollmentApplicationAnswers';
 export * from './enrollmentApplicationCategoryId';

@@ -57,6 +57,7 @@ export interface EnrollmentApplication {
   categoryName: string;
   status: ApplicationStatus;
   currentStep: number;
+  hasPin: boolean;
   answers: EnrollmentApplicationAnswers;
   /** @nullable */
   applicantName?: string | null;
@@ -84,12 +85,28 @@ export interface ApplicationInput {
   categoryId: ApplicationInputCategoryId;
 }
 
+export type ApplicationUpdateCategoryId = typeof ApplicationUpdateCategoryId[keyof typeof ApplicationUpdateCategoryId];
+
+
+export const ApplicationUpdateCategoryId = {
+  'category-1': 'category-1',
+  'category-2': 'category-2',
+  'category-3': 'category-3',
+  'category-4': 'category-4',
+} as const;
+
 export type ApplicationUpdateAnswers = { [key: string]: unknown };
 
 export interface ApplicationUpdate {
-  /** @minimum 0 */
+  categoryId?: ApplicationUpdateCategoryId;
+  /**
+     * @minimum 0
+     * @maximum 2
+     */
   currentStep?: number;
   answers?: ApplicationUpdateAnswers;
+  /** @pattern ^[0-9]{6}$ */
+  pin?: string;
 }
 
 export type ApplicationDecisionDecision = typeof ApplicationDecisionDecision[keyof typeof ApplicationDecisionDecision];
