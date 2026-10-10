@@ -22,6 +22,7 @@ export type EnrollmentWizardProps = {
   isSubmitting: boolean;
   error: string;
   reopenedSections: number[];
+  screenCopy?: Record<string, Record<string, string>>;
   saveStep: (answers: Record<string, unknown>, currentStep: number) => Promise<boolean>;
   submit: (answers: Record<string, unknown>) => Promise<boolean>;
   onChangeCategory: (categoryId: string) => void;
@@ -199,9 +200,9 @@ function SelectField({ label, name, register, error, options, placeholder = 'Cho
   </label>;
 }
 
-function StageHeading({ index, title, detail }: { index: number; title: string; detail: string }) {
+function StageHeading({ index, title, detail, sectionIdLabel }: { index: number; title: string; detail: string; sectionIdLabel?: string }) {
   return <div className="ew-stage-heading">
-    <span className="ew-stage-number">0{index + 1} <i>/ 08</i></span>
+    <span className="ew-stage-number">{sectionIdLabel || `0${index + 1}`} <i>/ 08</i></span>
     <h2>{title}</h2><p>{detail}</p>
   </div>;
 }
@@ -210,8 +211,10 @@ type LocalImage = { file: File; url: string };
 
 export function EnrollmentWizard({
   application, categories, status, storageAvailable, maxUploadBytes, isSaving, isSubmitting, error,
-  reopenedSections, saveStep, submit, onChangeCategory,
+  reopenedSections, screenCopy = {}, saveStep, submit, onChangeCategory,
 }: EnrollmentWizardProps) {
+  const copyForStep = (index: number) => screenCopy[`workflow-step-${index + 1}`] ?? {};
+  const titleForStep = (index: number) => copyForStep(index).title || stageTitles[index];
   const saved = application.answers ?? {};
   const [answers, setAnswers] = useState<WizardAnswers>(() => {
     const initial = { ...saved };
@@ -584,7 +587,8 @@ export function EnrollmentWizard({
         <div className="ew-rail-intro"><span className="ew-mini-label">YOUR APPLICATION</span><h1>One step<br /><em>at a time.</em></h1>
           <p>Your progress is saved as you move through each section.</p></div>
         <nav className="ew-steps" aria-label="Application sections">
-          {stageTitles.map((title, index) => {
+          {stageTitles.map((_title, index) => {
+            const title = titleForStep(index);
             const active = step === index;
             const done = index < 7 && sectionComplete(index);
             const available = index === 7 || canEditSection(index);
@@ -606,7 +610,7 @@ export function EnrollmentWizard({
         {step < 7 ? <form className="ew-form" onSubmit={(event) => { event.preventDefault(); void saveAndContinue(); }} noValidate>
           <div className="ew-content-scroll">
             <div className="ew-progress-line"><span style={{ width: `${((step + 1) / 8) * 100}%` }} /></div>
-            {step === 0 && <><StageHeading index={step} title={stageTitles[step]} detail="Enter the personal details that identify your application." />
+            {step === 0 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Enter the personal details that identify your application."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <div className="ew-fields-grid">
                 <Field label="First name" name="personalInformation.firstName" register={register} error={errorFor('personalInformation.firstName')} autoComplete="given-name" />
                 <Field label="Middle name" name="personalInformation.middleName" register={register} optional autoComplete="additional-name" />
@@ -621,7 +625,7 @@ export function EnrollmentWizard({
                 <Field label="Postal code" name="personalInformation.postalCode" register={register} optional autoComplete="postal-code" />
               </div>
             </>}
-            {step === 1 && <><StageHeading index={step} title={stageTitles[step]} detail="Name someone we may contact if we need to reach you." />
+            {step === 1 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Name someone we may contact if we need to reach you."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <div className="ew-fields-grid">
                 <Field label="Full name" name="nextOfKin.fullName" register={register} error={errorFor('nextOfKin.fullName')} autoComplete="off" />
                 <Field label="Relationship" name="nextOfKin.relationship" register={register} error={errorFor('nextOfKin.relationship')} />
@@ -633,7 +637,7 @@ export function EnrollmentWizard({
               </div>
               <div className="ew-callout" data-testid="notice-next-of-kin"><ShieldCheck size={17} /><p><b>Authorization reminder</b><br />Your next of kin is a contact only. This does not authorize them to act for you or access your application.</p></div>
             </>}
-            {step === 2 && <><StageHeading index={step} title={stageTitles[step]} detail="Tell us about your education and any relevant qualifications." />
+            {step === 2 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Tell us about your education and any relevant qualifications."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <div className="ew-fields-grid">
                 <SelectField label="Highest qualification" name="education.highestQualification" register={register} error={errorFor('education.highestQualification')}
                   options={['Primary education', 'Secondary education', 'Certificate', 'Diploma', 'Bachelor’s degree', 'Postgraduate degree', 'Other']} />
@@ -646,7 +650,7 @@ export function EnrollmentWizard({
               </div>
               {renderFileUploader('educationCertificate', 'Certificate image', 2)}
             </>}
-            {step === 3 && <><StageHeading index={step} title={stageTitles[step]} detail="Share your current work situation. We do not ask for income." />
+            {step === 3 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Share your current work situation. We do not ask for income."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <div className="ew-fields-grid">
                 <SelectField label="Employment status" name="workInformation.employmentStatus" register={register} error={errorFor('workInformation.employmentStatus')}
                   options={['Employed', 'Self-employed', 'Not currently employed']} />
@@ -662,7 +666,7 @@ export function EnrollmentWizard({
                 </>}
               </div>
             </>}
-            {step === 4 && <><StageHeading index={step} title={stageTitles[step]} detail="Choose an identity document and add its images when storage is available." />
+            {step === 4 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Choose an identity document and add its images when storage is available."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <div className="ew-fields-grid ew-fields-single">
                 <SelectField label="Document type" name="proofOfIdentity.documentType" register={register} error={errorFor('proofOfIdentity.documentType')}
                   options={['National ID', 'Passport', 'Driver license', 'Passport card', 'Other']} />
@@ -673,7 +677,7 @@ export function EnrollmentWizard({
               <div className="ew-storage-banner" data-testid="state-identity-incomplete"><CircleAlert size={17} /><div><b>Identity images are not yet attached</b>
                 <p>Your previews stay on this device. Secure upload is currently unavailable, so they cannot be included with your application.</p></div></div>
             </>}
-            {step === 5 && <><StageHeading index={step} title={stageTitles[step]} detail="A short recording can be made here, but it is not an identity or liveness check." />
+            {step === 5 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "A short recording can be made here, but it is not an identity or liveness check."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <div className="ew-video-consent">
                 <label className="ew-consent-check"><input type="checkbox" {...register('liveVideoRecording.consentAccepted')} data-testid="check-video-consent" />
                   <span className="ew-checkmark" /><span>I consent to use my camera and microphone to make a 12-second video recording for this application.</span></label>
@@ -702,7 +706,7 @@ export function EnrollmentWizard({
               <div className="ew-storage-banner" data-testid="state-video-incomplete"><CircleAlert size={17} /><div><b>Recording is not saved to your application</b>
                 <p>This recording remains in memory and will be cleared when you leave this page. Video storage is unavailable, so a saved video reference is still required.</p></div></div>
             </>}
-            {step === 6 && <><StageHeading index={step} title={stageTitles[step]} detail="Only provide bank details if they are genuinely needed for your enrollment." />
+            {step === 6 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Only provide bank details if they are genuinely needed for your enrollment."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <p className="ew-inline-notice">This section is optional. If payment details are not required for your enrollment, leave it blank and continue.</p>
               <div className="ew-fields-grid ew-fields-single">
                 <Field label="Bank" name="bankDetails.bankName" register={register} error={errorFor('bankDetails.bankName')} autoComplete="off" />
@@ -728,49 +732,49 @@ export function EnrollmentWizard({
             {submitError && <p className="ew-form-alert" role="alert" data-testid="text-local-input-error">{submitError}</p>}
           </div>
           <footer className="ew-form-footer">
-            <button type="button" className="ew-button ew-button-quiet" onClick={goBack} disabled={step === 0 && !editingFromPreview} data-testid="button-wizard-back"><ArrowLeft size={15} /> Back</button>
+            <button type="button" className="ew-button ew-button-quiet" onClick={goBack} disabled={step === 0 && !editingFromPreview} data-testid="button-wizard-back"><ArrowLeft size={15} /> {copyForStep(step).backButtonLabel || 'Back'}</button>
             {editingFromPreview && <button type="button" className="ew-button ew-button-quiet ew-return-preview" onClick={() => { setStep(7); setEditingFromPreview(false); }} data-testid="button-return-preview">Return to preview</button>}
             <span className="ew-save-note" data-testid="state-save-progress">{isSaving ? 'Saving your progress…' : 'Your work saves when you continue.'}</span>
             <button type="submit" className="ew-button ew-button-primary" disabled={isSaving || readOnly} data-testid="button-save-next">
-              {isSaving ? 'Saving…' : editingFromPreview ? 'Save and return' : step === 6 ? 'Save & preview' : 'Save & continue'} <ArrowRight size={15} /></button>
+              {isSaving ? 'Saving…' : editingFromPreview ? copyForStep(step).buttonLabel || 'Save and return' : copyForStep(step).buttonLabel || (step === 6 ? 'Save & preview' : 'Save & continue')} <ArrowRight size={15} /></button>
           </footer>
         </form> :
           <div className="ew-preview" data-testid="enrollment-preview">
             <div className="ew-content-scroll">
               <div className="ew-progress-line"><span style={{ width: '100%' }} /></div>
-              <StageHeading index={7} title={stageTitles[7]} detail="Check your details carefully. Incomplete secure uploads must be attached before you can submit." />
+              <StageHeading index={7} title={titleForStep(7)} detail={copyForStep(7).description || "Check your details carefully. Incomplete secure uploads must be attached before you can submit."} sectionIdLabel={copyForStep(7).sectionIdLabel} />
               {categoryReview}
               <div className="ew-review-stack">
-                {reviewStage(0, stageTitles[0], [
+                {reviewStage(0, titleForStep(0), [
                   ['First name', answer(answers, 'personalInformation', 'firstName'), 'firstName'], ['Middle name', answer(answers, 'personalInformation', 'middleName'), 'middleName'], ['Surname', answer(answers, 'personalInformation', 'surname'), 'surname'],
                   ['Date of birth', answer(answers, 'personalInformation', 'dateOfBirth'), 'dateOfBirth'], ['Nationality', answer(answers, 'personalInformation', 'nationality'), 'nationality'], ['Phone', answer(answers, 'personalInformation', 'phone'), 'phone'],
                   ['Email', answer(answers, 'personalInformation', 'email'), 'email'], ['Residential address', answer(answers, 'personalInformation', 'residentialAddress'), 'residentialAddress'], ['State / region', answer(answers, 'personalInformation', 'stateRegion'), 'stateRegion'],
                   ['City / local government area', answer(answers, 'personalInformation', 'city'), 'city'], ['Postal code', answer(answers, 'personalInformation', 'postalCode'), 'postalCode'],
                 ])}
-                {reviewStage(1, stageTitles[1], [
+                {reviewStage(1, titleForStep(1), [
                   ['Full name', answer(answers, 'nextOfKin', 'fullName'), 'kinFullName'], ['Relationship', answer(answers, 'nextOfKin', 'relationship'), 'kinRelationship'], ['Phone', answer(answers, 'nextOfKin', 'phone'), 'kinPhone'],
                   ['Email', answer(answers, 'nextOfKin', 'email'), 'kinEmail'], ['Residential address', answer(answers, 'nextOfKin', 'residentialAddress'), 'kinAddress'], ['City', answer(answers, 'nextOfKin', 'city'), 'kinCity'], ['State / region', answer(answers, 'nextOfKin', 'stateRegion'), 'kinStateRegion'],
                 ])}
-                {reviewStage(2, stageTitles[2], [
+                {reviewStage(2, titleForStep(2), [
                   ['Highest qualification', answer(answers, 'education', 'highestQualification'), 'highestQualification'], ['Institution', answer(answers, 'education', 'institution'), 'institution'], ['Course / field', answer(answers, 'education', 'courseField'), 'courseField'],
                   ['Start year', answer(answers, 'education', 'startYear'), 'startYear'], ['Completion year', answer(answers, 'education', 'completionYear'), 'completionYear'], ['Certification status', answer(answers, 'education', 'certificationStatus'), 'certificationStatus'],
                   ['Additional qualifications', answer(answers, 'education', 'additionalQualifications'), 'additionalQualifications'], ['Certificate image', answer(answers, 'education', 'certificateObjectPath') ? 'Uploaded reference attached' : 'Not uploaded', 'educationCertificate'],
                 ])}
-                {reviewStage(3, stageTitles[3], [
+                {reviewStage(3, titleForStep(3), [
                   ['Employment status', answer(answers, 'workInformation', 'employmentStatus'), 'employmentStatus'], ['Occupation', answer(answers, 'workInformation', 'occupation'), 'occupation'], ['Employer', answer(answers, 'workInformation', 'employer'), 'employer'],
                   ['Business name', answer(answers, 'workInformation', 'businessName'), 'businessName'], ['Business / work address', answer(answers, 'workInformation', 'workAddress'), 'workAddress'], ['Work phone', answer(answers, 'workInformation', 'workPhone'), 'workPhone'], ['Years of experience', answer(answers, 'workInformation', 'yearsExperience'), 'yearsExperience'],
                 ])}
-                {reviewStage(4, stageTitles[4], [
+                {reviewStage(4, titleForStep(4), [
                   ['Document type', answer(answers, 'proofOfIdentity', 'documentType'), 'identityDocumentType'], ['Document number', answer(answers, 'proofOfIdentity', 'documentNumber'), 'identityDocumentNumber'],
                   ['Document front', answer(answers, 'proofOfIdentity', 'frontObjectPath') ? 'Uploaded reference attached' : 'Not uploaded', 'identityFront'],
                   ['Document back', isBackRequired ? answer(answers, 'proofOfIdentity', 'backObjectPath') ? 'Uploaded reference attached' : 'Not uploaded' : 'Not applicable', 'identityBack'],
                 ])}
-                {reviewStage(5, stageTitles[5], [
+                {reviewStage(5, titleForStep(5), [
                   ['Consent', answer(answers, 'liveVideoRecording', 'consentAccepted') ? 'Consent given' : 'Not confirmed', 'liveVideoConsent'],
                   ['Recording length', answer(answers, 'liveVideoRecording', 'durationSeconds') ? `${answer(answers, 'liveVideoRecording', 'durationSeconds')} seconds recorded locally` : 'Not recorded', 'liveVideoDuration'],
                   ['Saved video reference', answer(answers, 'liveVideoRecording', 'objectPath') ? 'Reference attached' : 'Not uploaded', 'liveVideoReference'],
                 ])}
-                {reviewStage(6, stageTitles[6], [
+                {reviewStage(6, titleForStep(6), [
                   ['Bank', answer(answers, 'bankDetails', 'bankName'), 'bankName'], ['Account holder', answer(answers, 'bankDetails', 'accountHolder'), 'accountHolder'],
                   ['Account number', answer(answers, 'bankDetails', 'accountNumberMasked') || accountNumberProvided ? 'Account details on file (masked)' : 'Not entered', 'accountNumber'],
                   ['Account type', answer(answers, 'bankDetails', 'accountType'), 'accountType'],
@@ -795,7 +799,7 @@ export function EnrollmentWizard({
               <span className="ew-save-note">You can edit any section before submitting.</span>
               <button type="button" className="ew-button ew-button-primary" onClick={() => void beginSubmit()}
                 disabled={!readyToSubmit || isSaving || isSubmitting || readOnly} data-testid="button-submit-enrollment">
-                {isSubmitting ? 'Submitting…' : 'Submit Enrollment'} <ArrowRight size={15} /></button>
+                {isSubmitting ? 'Submitting…' : copyForStep(7).buttonLabel || 'Submit Enrollment'} <ArrowRight size={15} /></button>
             </footer>
           </div>}
       </section>

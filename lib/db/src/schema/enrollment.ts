@@ -121,6 +121,15 @@ export const supportTicketsTable = pgTable(
   ],
 );
 
+export const portalSettingsTable = pgTable("portal_settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").$type<Record<string, unknown>>().notNull(),
+  updatedByUserId: text("updated_by_user_id"),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const insertEnrollmentApplicationSchema = createInsertSchema(
   enrollmentApplicationsTable,
 ).omit({

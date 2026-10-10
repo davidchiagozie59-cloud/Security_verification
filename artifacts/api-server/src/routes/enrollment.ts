@@ -47,6 +47,7 @@ import {
   GetApplicationParams,
   GetApplicationResponse,
   GetApplicantSummaryResponse,
+  GetPortalSettingsResponse,
   ListAdminUsersQueryParams,
   ListAdminUsersResponse,
   ListApplicationsForReviewQueryParams,
@@ -66,11 +67,17 @@ import {
   UpdateAdminUserStatusBody,
   UpdateAdminUserStatusParams,
   UpdateAdminUserStatusResponse,
+  UpdateAdminUserRoleBody,
+  UpdateAdminUserRoleParams,
+  UpdateAdminUserRoleResponse,
+  UpdatePortalSettingsBody,
+  UpdatePortalSettingsResponse,
 } from "@workspace/api-zod";
 import {
   applicationEventsTable,
   db,
   enrollmentApplicationsTable,
+  portalSettingsTable,
   supportTicketsTable,
 } from "@workspace/db";
 
@@ -111,6 +118,57 @@ const categories = [
     accent: "white",
   },
 ] as const;
+
+const defaultPortalSettings = {
+  hero: {
+    title: "Welcome to Our Enrollment Portal",
+    description:
+      "Select your enrollment category and complete your application through our secure enrollment process.",
+    getStartedLabel: "Get Started",
+    loginLabel: "Log In",
+  },
+  cards: [
+    {
+      id: "category-1",
+      title: "Enrollment Category One",
+      description: "Complete the registration process for Category One.",
+      buttonLabel: "Select Category",
+      backgroundColor: "#0EAD46",
+      logoDataUrl: null,
+    },
+    {
+      id: "category-2",
+      title: "Enrollment Category Two",
+      description: "Complete the registration process for Category Two.",
+      buttonLabel: "Select Category",
+      backgroundColor: "#0C4DA1",
+      logoDataUrl: null,
+    },
+    {
+      id: "category-3",
+      title: "Enrollment Category Three",
+      description: "Complete the registration process for Category Three.",
+      buttonLabel: "Select Category",
+      backgroundColor: "#0072AE",
+      logoDataUrl: null,
+    },
+    {
+      id: "category-4",
+      title: "Enrollment Category Four",
+      description: "Complete the registration process for Category Four.",
+      buttonLabel: "Select Category",
+      backgroundColor: "#FFFFFF",
+      logoDataUrl: null,
+    },
+  ],
+  theme: {
+    pinScreenBackground: "#064E3B",
+    buttonSize: "standard",
+    buttonPlacement: "right",
+    categoryInputTransparent: true,
+  },
+  screenCopy: {},
+};
 
 type CategoryId = (typeof categories)[number]["id"];
 
@@ -153,15 +211,55 @@ async function requireAdmin(
   try {
     const user =
       res.locals.clerkUser ?? (await clerkClient.users.getUser(userId));
-    if (user.publicMetadata?.role !== "admin") {
-      res.status(403).json({ error: "Administrator access is required." });
+    const role = user.publicMetadata?.role;
+    if (!["admin", "sub_admin", "moderator"].includes(String(role))) {
+      res.status(403).json({ error: "Authorized staff access is required." });
       return;
     }
+    res.locals.staffRole = role;
     next();
   } catch (error) {
     req.log.error({ err: error, userId }, "Failed to verify administrator role");
     res.status(503).json({ error: "Administrator access could not be verified." });
   }
+}
+
+function requireReviewer(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  if (["admin", "sub_admin"].includes(String(res.locals.staffRole))) {
+    next();
+    return;
+  }
+  res.status(403).json({ error: "Enrollment reviewer access is required." });
+}
+
+function requirePrimaryAdmin(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  if (res.locals.staffRole === "admin") {
+    next();
+    return;
+  }
+  res.status(403).json({ error: "Administrator access is required." });
+}
+
+function validatePublicImageDataUrl(value: string | null): boolean {
+  if (value === null) return true;
+  const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+=*)$/.exec(value);
+  if (!match) return false;
+  const bytes = Buffer.from(match[2]!, "base64");
+  if (!bytes.length || bytes.length > 2 * 1024 * 1024) return false;
+  const type = match[1];
+  if (type === "png") {
+    return bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  }
+  if (type === "jpeg") return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes.at(-2) === 0xff && bytes.at(-1) === 0xd9;
+  return bytes.length >= 12 && bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP";
 }
 
 function categoryName(categoryId: string): string {
@@ -425,9 +523,10 @@ function validateFinalApplication(
   if (employmentStatus === "employed") {
     if (
       !nestedString(answers, "workInformation", "occupation") ||
-      !nestedString(answers, "workInformation", "employer")
+      !nestedString(answers, "workInformation", "employer") ||
+      !nestedString(answers, "workInformation", "workAddress")
     ) {
-      return "Enter your occupation and employer.";
+      return "Enter your occupation, employer, and work address.";
     }
   } else if (employmentStatus === "self-employed") {
     if (
@@ -436,7 +535,7 @@ function validateFinalApplication(
     ) {
       return "Enter your business name and work address.";
     }
-  } else if (!["unemployed", "student", "retired", "other"].includes(employmentStatus)) {
+  } else if (!["unemployed", "not currently employed", "student", "retired", "other"].includes(employmentStatus)) {
     return "Select a valid employment status.";
   }
 
@@ -560,6 +659,24 @@ function serializeTicket(
   };
 }
 
+async function loadPortalSettings() {
+  const [record] = await db
+    .select({ value: portalSettingsTable.value })
+    .from(portalSettingsTable)
+    .where(eq(portalSettingsTable.key, "portal"))
+    .limit(1);
+  return GetPortalSettingsResponse.parse(record?.value ?? defaultPortalSettings);
+}
+
+router.get("/portal/settings", async (req, res): Promise<void> => {
+  try {
+    res.json(await loadPortalSettings());
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to load portal settings");
+    res.status(503).json({ error: "Portal settings are temporarily unavailable." });
+  }
+});
+
 router.get("/enrollment/categories", (_req, res): void => {
   res.json(ListEnrollmentCategoriesResponse.parse(categories));
 });
@@ -572,7 +689,7 @@ router.get("/me/applications", async (req, res): Promise<void> => {
     .from(enrollmentApplicationsTable)
     .where(eq(enrollmentApplicationsTable.clerkUserId, res.locals.userId))
     .orderBy(desc(enrollmentApplicationsTable.updatedAt));
-  res.json(ListMyApplicationsResponse.parse(applications.map(serializeApplication)));
+  res.json(ListMyApplicationsResponse.parse(applications.map((application) => serializeApplication(application))));
 });
 
 router.post("/applications", async (req, res): Promise<void> => {
@@ -1061,7 +1178,7 @@ router.post(
     const parsed = AddApplicantSupportMessageBody.safeParse(req.body);
     if (!params.success || !parsed.success) {
       res.status(400).json({
-        error: !params.success ? params.error.message : parsed.error.message,
+        error: !params.success ? params.error.message : (parsed.error?.message ?? "Invalid request body"),
       });
       return;
     }
@@ -1126,7 +1243,47 @@ router.post(
 );
 router.use("/admin", requireAdmin);
 
-router.get("/admin/overview", async (req, res): Promise<void> => {
+router.put("/admin/settings", requirePrimaryAdmin, async (req, res): Promise<void> => {
+  const parsed = UpdatePortalSettingsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const ids = parsed.data.cards.map((card) => card.id);
+  if (new Set(ids).size !== 4 || categories.some((category) => !ids.includes(category.id))) {
+    res.status(400).json({ error: "Settings must contain each of the four enrollment cards exactly once." });
+    return;
+  }
+  if (parsed.data.cards.some((card) => !validatePublicImageDataUrl(card.logoDataUrl))) {
+    res.status(400).json({ error: "Card logos must be valid PNG, JPEG, or WebP images no larger than 2 MB." });
+    return;
+  }
+  try {
+    const [record] = await db
+      .insert(portalSettingsTable)
+      .values({
+        key: "portal",
+        value: parsed.data,
+        updatedByUserId: res.locals.userId,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: portalSettingsTable.key,
+        set: {
+          value: parsed.data,
+          updatedByUserId: res.locals.userId,
+          updatedAt: new Date(),
+        },
+      })
+      .returning({ value: portalSettingsTable.value });
+    res.json(UpdatePortalSettingsResponse.parse(record?.value ?? parsed.data));
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to save portal settings");
+    res.status(503).json({ error: "Portal settings could not be saved." });
+  }
+});
+
+router.get("/admin/overview", requireReviewer, async (req, res): Promise<void> => {
   try {
     const [users, total, submitted, underReview, approved, rejected, needsInformation, unresolved] =
       await Promise.all([
@@ -1176,7 +1333,7 @@ router.get("/admin/overview", async (req, res): Promise<void> => {
   }
 });
 
-router.get("/admin/users", async (req, res): Promise<void> => {
+router.get("/admin/users", requirePrimaryAdmin, async (req, res): Promise<void> => {
   const parsed = ListAdminUsersQueryParams.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -1200,6 +1357,7 @@ router.get("/admin/users", async (req, res): Promise<void> => {
     const users = usersPage.data
       .map((user) => {
         const application = latestByUser.get(user.id);
+        const staffRole = user.publicMetadata?.role;
         const accountStatus =
           user.publicMetadata?.accountStatus === "suspended"
             ? "suspended"
@@ -1221,7 +1379,11 @@ router.get("/admin/users", async (req, res): Promise<void> => {
           name,
           username: user.username ?? null,
           email,
+          role: ["admin", "sub_admin", "moderator"].includes(String(staffRole))
+            ? staffRole
+            : "applicant",
           accountStatus,
+          applicationId: application?.id ?? null,
           categoryId: application?.categoryId ?? null,
           categoryName: application ? categoryName(application.categoryId) : null,
           applicationReference: application?.reference ?? null,
@@ -1265,12 +1427,12 @@ router.get("/admin/users", async (req, res): Promise<void> => {
   }
 });
 
-router.patch("/admin/users/:userId/status", async (req, res): Promise<void> => {
+router.patch("/admin/users/:userId/status", requirePrimaryAdmin, async (req, res): Promise<void> => {
   const params = UpdateAdminUserStatusParams.safeParse(req.params);
   const parsed = UpdateAdminUserStatusBody.safeParse(req.body);
   if (!params.success || !parsed.success) {
     res.status(400).json({
-      error: !params.success ? params.error.message : parsed.error.message,
+      error: !params.success ? params.error.message : (parsed.error?.message ?? "Invalid request body"),
     });
     return;
   }
@@ -1280,7 +1442,7 @@ router.patch("/admin/users/:userId/status", async (req, res): Promise<void> => {
   }
   try {
     const target = await clerkClient.users.getUser(params.data.userId);
-    if (target.publicMetadata?.role === "admin") {
+      if (["admin", "sub_admin", "moderator"].includes(String(target.publicMetadata?.role))) {
       res.status(403).json({ error: "Staff accounts cannot be suspended here." });
       return;
     }
@@ -1304,7 +1466,9 @@ router.patch("/admin/users/:userId/status", async (req, res): Promise<void> => {
           null,
         username: updated.username ?? null,
         email,
+        role: "applicant",
         accountStatus: parsed.data.accountStatus,
+        applicationId: null,
         categoryId: null,
         categoryName: null,
         applicationReference: null,
@@ -1318,7 +1482,47 @@ router.patch("/admin/users/:userId/status", async (req, res): Promise<void> => {
   }
 });
 
-router.get("/admin/applications/:applicationId", async (req, res): Promise<void> => {
+router.patch("/admin/users/:userId/role", requirePrimaryAdmin, async (req, res): Promise<void> => {
+  const params = UpdateAdminUserRoleParams.safeParse(req.params);
+  const parsed = UpdateAdminUserRoleBody.safeParse(req.body);
+  if (!params.success || !parsed.success) {
+    res.status(400).json({ error: !params.success ? params.error.message : (parsed.error?.message ?? "Invalid request body") });
+    return;
+  }
+  if (params.data.userId === res.locals.userId) {
+    res.status(400).json({ error: "You cannot change your own staff role." });
+    return;
+  }
+  try {
+    const target = await clerkClient.users.getUser(params.data.userId);
+    const updated = await clerkClient.users.updateUser(params.data.userId, {
+      publicMetadata: { ...target.publicMetadata, role: parsed.data.role },
+    });
+    const email =
+      updated.emailAddresses.find((address) => address.id === updated.primaryEmailAddressId)?.emailAddress ??
+      updated.emailAddresses[0]?.emailAddress ??
+      null;
+    res.json(UpdateAdminUserRoleResponse.parse({
+      userId: updated.id,
+      name: [updated.firstName, updated.lastName].filter(Boolean).join(" ").trim() || null,
+      username: updated.username ?? null,
+      email,
+      role: parsed.data.role,
+      accountStatus: updated.publicMetadata?.accountStatus === "suspended" ? "suspended" : "active",
+      applicationId: null,
+      categoryId: null,
+      categoryName: null,
+      applicationReference: null,
+      registrationDate: new Date(updated.createdAt).toISOString(),
+      enrollmentStatus: null,
+    }));
+  } catch (error) {
+    req.log.error({ err: error, targetUserId: params.data.userId }, "Failed to assign staff role");
+    res.status(503).json({ error: "The user role could not be changed." });
+  }
+});
+
+router.get("/admin/applications/:applicationId", requireReviewer, async (req, res): Promise<void> => {
   const params = GetAdminApplicationParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -1342,6 +1546,7 @@ router.get("/admin/applications/:applicationId", async (req, res): Promise<void>
 
 router.get(
   "/admin/applications/:applicationId/history",
+  requireReviewer,
   async (req, res): Promise<void> => {
     const params = GetAdminApplicationHistoryParams.safeParse(req.params);
     if (!params.success) {
@@ -1370,12 +1575,13 @@ router.get(
 
 router.post(
   "/admin/applications/:applicationId/notes",
+  requireReviewer,
   async (req, res): Promise<void> => {
     const params = AddAdminApplicationNoteParams.safeParse(req.params);
     const parsed = AddAdminApplicationNoteBody.safeParse(req.body);
     if (!params.success || !parsed.success) {
       res.status(400).json({
-        error: !params.success ? params.error.message : parsed.error.message,
+        error: !params.success ? params.error.message : (parsed.error?.message ?? "Invalid request body"),
       });
       return;
     }
@@ -1413,7 +1619,7 @@ router.post(
   },
 );
 
-router.get("/admin/applications", async (req, res): Promise<void> => {
+router.get("/admin/applications", requireReviewer, async (req, res): Promise<void> => {
   const parsed = ListApplicationsForReviewQueryParams.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -1433,7 +1639,7 @@ router.get("/admin/applications", async (req, res): Promise<void> => {
     .where(and(...filters))
     .orderBy(desc(enrollmentApplicationsTable.updatedAt))
     .limit(300);
-  const serialized = applications.map(serializeApplication);
+  const serialized = applications.map((application) => serializeApplication(application));
   const search = parsed.data.search?.trim().toLowerCase();
   const results = search
     ? serialized.filter((application) =>
@@ -1454,6 +1660,7 @@ router.get("/admin/applications", async (req, res): Promise<void> => {
 
 router.post(
   "/admin/applications/:applicationId/decision",
+  requireReviewer,
   async (req, res): Promise<void> => {
     const params = DecideApplicationParams.safeParse(req.params);
     const parsed = DecideApplicationBody.safeParse(req.body);
@@ -1672,7 +1879,7 @@ router.patch(
     const parsed = AssignSupportTicketBody.safeParse(req.body);
     if (!params.success || !parsed.success) {
       res.status(400).json({
-        error: !params.success ? params.error.message : parsed.error.message,
+        error: !params.success ? params.error.message : (parsed.error?.message ?? "Invalid request body"),
       });
       return;
     }
@@ -1681,7 +1888,7 @@ router.patch(
         const assignee = await clerkClient.users.getUser(
           parsed.data.assigneeUserId,
         );
-        if (assignee.publicMetadata?.role !== "admin") {
+        if (!["admin", "sub_admin", "moderator"].includes(String(assignee.publicMetadata?.role))) {
           res.status(403).json({
             error: "Support requests can only be assigned to authorized staff.",
           });

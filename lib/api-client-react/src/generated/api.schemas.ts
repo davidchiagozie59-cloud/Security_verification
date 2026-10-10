@@ -162,6 +162,16 @@ export interface AdminOverview {
   unresolvedSupportRequests: number;
 }
 
+export type AdminUserRole = typeof AdminUserRole[keyof typeof AdminUserRole];
+
+
+export const AdminUserRole = {
+  applicant: 'applicant',
+  admin: 'admin',
+  sub_admin: 'sub_admin',
+  moderator: 'moderator',
+} as const;
+
 export type AdminUserAccountStatus = typeof AdminUserAccountStatus[keyof typeof AdminUserAccountStatus];
 
 
@@ -178,7 +188,10 @@ export interface AdminUser {
   username: string | null;
   /** @nullable */
   email: string | null;
+  role: AdminUserRole;
   accountStatus: AdminUserAccountStatus;
+  /** @nullable */
+  applicationId: string | null;
   /** @nullable */
   categoryId: string | null;
   /** @nullable */
@@ -205,6 +218,97 @@ export const AdminUserStatusUpdateAccountStatus = {
 
 export interface AdminUserStatusUpdate {
   accountStatus: AdminUserStatusUpdateAccountStatus;
+}
+
+export type AdminUserRoleUpdateRole = typeof AdminUserRoleUpdateRole[keyof typeof AdminUserRoleUpdateRole];
+
+
+export const AdminUserRoleUpdateRole = {
+  applicant: 'applicant',
+  admin: 'admin',
+  sub_admin: 'sub_admin',
+  moderator: 'moderator',
+} as const;
+
+export interface AdminUserRoleUpdate {
+  role: AdminUserRoleUpdateRole;
+}
+
+export type PortalSettingsHero = {
+  /** @maxLength 160 */
+  title: string;
+  /** @maxLength 500 */
+  description: string;
+  /** @maxLength 60 */
+  getStartedLabel: string;
+  /** @maxLength 60 */
+  loginLabel: string;
+};
+
+export type PortalSettingsCardsItemId = typeof PortalSettingsCardsItemId[keyof typeof PortalSettingsCardsItemId];
+
+
+export const PortalSettingsCardsItemId = {
+  'category-1': 'category-1',
+  'category-2': 'category-2',
+  'category-3': 'category-3',
+  'category-4': 'category-4',
+} as const;
+
+export type PortalSettingsCardsItem = {
+  id: PortalSettingsCardsItemId;
+  /** @maxLength 100 */
+  title: string;
+  /** @maxLength 240 */
+  description: string;
+  /** @maxLength 60 */
+  buttonLabel: string;
+  /** @pattern ^#[0-9A-Fa-f]{6}$ */
+  backgroundColor: string;
+  /**
+     * @maxLength 6000000
+     * @nullable
+     */
+  logoDataUrl: string | null;
+};
+
+export type PortalSettingsThemeButtonSize = typeof PortalSettingsThemeButtonSize[keyof typeof PortalSettingsThemeButtonSize];
+
+
+export const PortalSettingsThemeButtonSize = {
+  compact: 'compact',
+  standard: 'standard',
+  large: 'large',
+} as const;
+
+export type PortalSettingsThemeButtonPlacement = typeof PortalSettingsThemeButtonPlacement[keyof typeof PortalSettingsThemeButtonPlacement];
+
+
+export const PortalSettingsThemeButtonPlacement = {
+  left: 'left',
+  center: 'center',
+  right: 'right',
+} as const;
+
+export type PortalSettingsTheme = {
+  /** @pattern ^#[0-9A-Fa-f]{6}$ */
+  pinScreenBackground: string;
+  buttonSize: PortalSettingsThemeButtonSize;
+  buttonPlacement: PortalSettingsThemeButtonPlacement;
+  categoryInputTransparent: boolean;
+};
+
+export type PortalSettingsScreenCopy = {[key: string]: {[key: string]: string}};
+
+export interface PortalSettings {
+  hero: PortalSettingsHero;
+  /**
+     * @minItems 4
+     * @maxItems 4
+     */
+  cards: PortalSettingsCardsItem[];
+  theme: PortalSettingsTheme;
+  screenCopy: PortalSettingsScreenCopy;
 }
 
 export interface ApplicantSummary {

@@ -256,7 +256,9 @@ export const ListAdminUsersResponse = zod.object({
   "name": zod.string().nullable(),
   "username": zod.string().nullable(),
   "email": zod.string().nullable(),
+  "role": zod.enum(['applicant', 'admin', 'sub_admin', 'moderator']),
   "accountStatus": zod.enum(['active', 'suspended']),
+  "applicationId": zod.string().nullable(),
   "categoryId": zod.string().nullable(),
   "categoryName": zod.string().nullable(),
   "applicationReference": zod.string().nullable(),
@@ -280,12 +282,190 @@ export const UpdateAdminUserStatusResponse = zod.object({
   "name": zod.string().nullable(),
   "username": zod.string().nullable(),
   "email": zod.string().nullable(),
+  "role": zod.enum(['applicant', 'admin', 'sub_admin', 'moderator']),
   "accountStatus": zod.enum(['active', 'suspended']),
+  "applicationId": zod.string().nullable(),
   "categoryId": zod.string().nullable(),
   "categoryName": zod.string().nullable(),
   "applicationReference": zod.string().nullable(),
   "registrationDate": zod.coerce.date(),
   "enrollmentStatus": zod.string().nullable()
+})
+
+
+export const UpdateAdminUserRoleParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const UpdateAdminUserRoleBody = zod.object({
+  "role": zod.enum(['applicant', 'admin', 'sub_admin', 'moderator'])
+})
+
+export const UpdateAdminUserRoleResponse = zod.object({
+  "userId": zod.string(),
+  "name": zod.string().nullable(),
+  "username": zod.string().nullable(),
+  "email": zod.string().nullable(),
+  "role": zod.enum(['applicant', 'admin', 'sub_admin', 'moderator']),
+  "accountStatus": zod.enum(['active', 'suspended']),
+  "applicationId": zod.string().nullable(),
+  "categoryId": zod.string().nullable(),
+  "categoryName": zod.string().nullable(),
+  "applicationReference": zod.string().nullable(),
+  "registrationDate": zod.coerce.date(),
+  "enrollmentStatus": zod.string().nullable()
+})
+
+
+/**
+ * @summary Get public portal content and theme settings
+ */
+export const getPortalSettingsResponseHeroTitleMax = 160;
+
+export const getPortalSettingsResponseHeroDescriptionMax = 500;
+
+export const getPortalSettingsResponseHeroGetStartedLabelMax = 60;
+
+export const getPortalSettingsResponseHeroLoginLabelMax = 60;
+
+export const getPortalSettingsResponseCardsItemTitleMax = 100;
+
+export const getPortalSettingsResponseCardsItemDescriptionMax = 240;
+
+export const getPortalSettingsResponseCardsItemButtonLabelMax = 60;
+
+export const getPortalSettingsResponseCardsItemBackgroundColorRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const getPortalSettingsResponseCardsItemLogoDataUrlMax = 6000000;
+
+export const getPortalSettingsResponseCardsMin = 4;
+export const getPortalSettingsResponseCardsMax = 4;
+
+export const getPortalSettingsResponseThemePinScreenBackgroundRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const getPortalSettingsResponseScreenCopyMaxTwo = 500;
+
+
+
+export const GetPortalSettingsResponse = zod.object({
+  "hero": zod.object({
+  "title": zod.string().max(getPortalSettingsResponseHeroTitleMax),
+  "description": zod.string().max(getPortalSettingsResponseHeroDescriptionMax),
+  "getStartedLabel": zod.string().max(getPortalSettingsResponseHeroGetStartedLabelMax),
+  "loginLabel": zod.string().max(getPortalSettingsResponseHeroLoginLabelMax)
+}),
+  "cards": zod.array(zod.object({
+  "id": zod.enum(['category-1', 'category-2', 'category-3', 'category-4']),
+  "title": zod.string().max(getPortalSettingsResponseCardsItemTitleMax),
+  "description": zod.string().max(getPortalSettingsResponseCardsItemDescriptionMax),
+  "buttonLabel": zod.string().max(getPortalSettingsResponseCardsItemButtonLabelMax),
+  "backgroundColor": zod.string().regex(getPortalSettingsResponseCardsItemBackgroundColorRegExp),
+  "logoDataUrl": zod.string().max(getPortalSettingsResponseCardsItemLogoDataUrlMax).nullable()
+})).min(getPortalSettingsResponseCardsMin).max(getPortalSettingsResponseCardsMax),
+  "theme": zod.object({
+  "pinScreenBackground": zod.string().regex(getPortalSettingsResponseThemePinScreenBackgroundRegExp),
+  "buttonSize": zod.enum(['compact', 'standard', 'large']),
+  "buttonPlacement": zod.enum(['left', 'center', 'right']),
+  "categoryInputTransparent": zod.boolean()
+}),
+  "screenCopy": zod.record(zod.string(), zod.record(zod.string(), zod.string().max(getPortalSettingsResponseScreenCopyMaxTwo)))
+})
+
+
+export const updatePortalSettingsBodyHeroTitleMax = 160;
+
+export const updatePortalSettingsBodyHeroDescriptionMax = 500;
+
+export const updatePortalSettingsBodyHeroGetStartedLabelMax = 60;
+
+export const updatePortalSettingsBodyHeroLoginLabelMax = 60;
+
+export const updatePortalSettingsBodyCardsItemTitleMax = 100;
+
+export const updatePortalSettingsBodyCardsItemDescriptionMax = 240;
+
+export const updatePortalSettingsBodyCardsItemButtonLabelMax = 60;
+
+export const updatePortalSettingsBodyCardsItemBackgroundColorRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const updatePortalSettingsBodyCardsItemLogoDataUrlMax = 6000000;
+
+export const updatePortalSettingsBodyCardsMin = 4;
+export const updatePortalSettingsBodyCardsMax = 4;
+
+export const updatePortalSettingsBodyThemePinScreenBackgroundRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const updatePortalSettingsBodyScreenCopyMaxTwo = 500;
+
+
+
+export const UpdatePortalSettingsBody = zod.object({
+  "hero": zod.object({
+  "title": zod.string().max(updatePortalSettingsBodyHeroTitleMax),
+  "description": zod.string().max(updatePortalSettingsBodyHeroDescriptionMax),
+  "getStartedLabel": zod.string().max(updatePortalSettingsBodyHeroGetStartedLabelMax),
+  "loginLabel": zod.string().max(updatePortalSettingsBodyHeroLoginLabelMax)
+}),
+  "cards": zod.array(zod.object({
+  "id": zod.enum(['category-1', 'category-2', 'category-3', 'category-4']),
+  "title": zod.string().max(updatePortalSettingsBodyCardsItemTitleMax),
+  "description": zod.string().max(updatePortalSettingsBodyCardsItemDescriptionMax),
+  "buttonLabel": zod.string().max(updatePortalSettingsBodyCardsItemButtonLabelMax),
+  "backgroundColor": zod.string().regex(updatePortalSettingsBodyCardsItemBackgroundColorRegExp),
+  "logoDataUrl": zod.string().max(updatePortalSettingsBodyCardsItemLogoDataUrlMax).nullable()
+})).min(updatePortalSettingsBodyCardsMin).max(updatePortalSettingsBodyCardsMax),
+  "theme": zod.object({
+  "pinScreenBackground": zod.string().regex(updatePortalSettingsBodyThemePinScreenBackgroundRegExp),
+  "buttonSize": zod.enum(['compact', 'standard', 'large']),
+  "buttonPlacement": zod.enum(['left', 'center', 'right']),
+  "categoryInputTransparent": zod.boolean()
+}),
+  "screenCopy": zod.record(zod.string(), zod.record(zod.string(), zod.string().max(updatePortalSettingsBodyScreenCopyMaxTwo)))
+})
+
+export const updatePortalSettingsResponseHeroTitleMax = 160;
+
+export const updatePortalSettingsResponseHeroDescriptionMax = 500;
+
+export const updatePortalSettingsResponseHeroGetStartedLabelMax = 60;
+
+export const updatePortalSettingsResponseHeroLoginLabelMax = 60;
+
+export const updatePortalSettingsResponseCardsItemTitleMax = 100;
+
+export const updatePortalSettingsResponseCardsItemDescriptionMax = 240;
+
+export const updatePortalSettingsResponseCardsItemButtonLabelMax = 60;
+
+export const updatePortalSettingsResponseCardsItemBackgroundColorRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const updatePortalSettingsResponseCardsItemLogoDataUrlMax = 6000000;
+
+export const updatePortalSettingsResponseCardsMin = 4;
+export const updatePortalSettingsResponseCardsMax = 4;
+
+export const updatePortalSettingsResponseThemePinScreenBackgroundRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const updatePortalSettingsResponseScreenCopyMaxTwo = 500;
+
+
+
+export const UpdatePortalSettingsResponse = zod.object({
+  "hero": zod.object({
+  "title": zod.string().max(updatePortalSettingsResponseHeroTitleMax),
+  "description": zod.string().max(updatePortalSettingsResponseHeroDescriptionMax),
+  "getStartedLabel": zod.string().max(updatePortalSettingsResponseHeroGetStartedLabelMax),
+  "loginLabel": zod.string().max(updatePortalSettingsResponseHeroLoginLabelMax)
+}),
+  "cards": zod.array(zod.object({
+  "id": zod.enum(['category-1', 'category-2', 'category-3', 'category-4']),
+  "title": zod.string().max(updatePortalSettingsResponseCardsItemTitleMax),
+  "description": zod.string().max(updatePortalSettingsResponseCardsItemDescriptionMax),
+  "buttonLabel": zod.string().max(updatePortalSettingsResponseCardsItemButtonLabelMax),
+  "backgroundColor": zod.string().regex(updatePortalSettingsResponseCardsItemBackgroundColorRegExp),
+  "logoDataUrl": zod.string().max(updatePortalSettingsResponseCardsItemLogoDataUrlMax).nullable()
+})).min(updatePortalSettingsResponseCardsMin).max(updatePortalSettingsResponseCardsMax),
+  "theme": zod.object({
+  "pinScreenBackground": zod.string().regex(updatePortalSettingsResponseThemePinScreenBackgroundRegExp),
+  "buttonSize": zod.enum(['compact', 'standard', 'large']),
+  "buttonPlacement": zod.enum(['left', 'center', 'right']),
+  "categoryInputTransparent": zod.boolean()
+}),
+  "screenCopy": zod.record(zod.string(), zod.record(zod.string(), zod.string().max(updatePortalSettingsResponseScreenCopyMaxTwo)))
 })
 
 

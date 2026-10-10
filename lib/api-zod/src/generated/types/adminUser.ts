@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdminUserAccountStatus } from './adminUserAccountStatus';
+import type { AdminUserRole } from './adminUserRole';
 
 export interface AdminUser {
   userId: string;
@@ -15,7 +16,10 @@ export interface AdminUser {
   username: string | null;
   /** @nullable */
   email: string | null;
+  role: AdminUserRole;
   accountStatus: AdminUserAccountStatus;
+  /** @nullable */
+  applicationId: string | null;
   /** @nullable */
   categoryId: string | null;
   /** @nullable */

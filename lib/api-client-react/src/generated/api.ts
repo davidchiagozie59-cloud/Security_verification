@@ -23,6 +23,7 @@ import type {
   AdminOverview,
   AdminUser,
   AdminUserList,
+  AdminUserRoleUpdate,
   AdminUserStatusUpdate,
   ApplicantSummary,
   ApplicationDecision,
@@ -36,6 +37,7 @@ import type {
   ListAdminUsersParams,
   ListApplicationsForReviewParams,
   ListSupportTicketsForAdminParams,
+  PortalSettings,
   SupportAssignmentInput,
   SupportMessageInput,
   SupportReplyInput,
@@ -1104,6 +1106,248 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUpdateAdminUserStatusMutationOptions(options));
+    }
+
+export const getUpdateAdminUserRoleUrl = (userId: string,) => {
+
+
+
+
+  return `/api/admin/users/${userId}/role`
+}
+
+export const updateAdminUserRole = async (userId: string,
+    adminUserRoleUpdate: AdminUserRoleUpdate, options?: Parameters<typeof customFetch>[1]): Promise<AdminUser> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminUser>(getUpdateAdminUserRoleUrl(userId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminUserRoleUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateAdminUserRoleMutationKey = () => ['updateAdminUserRole'] as const;
+
+export const getUpdateAdminUserRoleMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminUserRole>>, TError,UpdateAdminUserRoleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdminUserRole>>, TError,UpdateAdminUserRoleMutationVariables, TContext> => {
+
+const mutationKey = getUpdateAdminUserRoleMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdminUserRole>>, UpdateAdminUserRoleMutationVariables> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  updateAdminUserRole(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdminUserRoleMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdminUserRole>>>
+    export type UpdateAdminUserRoleMutationBody = BodyType<AdminUserRoleUpdate>
+    export type UpdateAdminUserRoleMutationError = ErrorType<unknown>
+    export type UpdateAdminUserRoleMutationVariables = {userId: string;data: BodyType<AdminUserRoleUpdate>}
+
+    export const useUpdateAdminUserRole = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminUserRole>>, TError,UpdateAdminUserRoleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdminUserRole>>,
+        TError,
+        UpdateAdminUserRoleMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateAdminUserRoleMutationOptions(options));
+    }
+
+export const getGetPortalSettingsUrl = () => {
+
+
+
+
+  return `/api/portal/settings`
+}
+
+/**
+ * @summary Get public portal content and theme settings
+ */
+export const getPortalSettings = async ( options?: Parameters<typeof customFetch>[1]): Promise<PortalSettings> => {
+
+  return customFetch<PortalSettings>(getGetPortalSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPortalSettingsQueryKey = () => {
+    return [
+    `/api/portal/settings`
+    ] as const;
+    }
+
+
+export const getGetPortalSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getPortalSettings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPortalSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPortalSettings>>> = ({ signal }) => getPortalSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPortalSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPortalSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getPortalSettings>>>
+export type GetPortalSettingsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get public portal content and theme settings
+ */
+
+export function useGetPortalSettings<TData = Awaited<ReturnType<typeof getPortalSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPortalSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdatePortalSettingsUrl = () => {
+
+
+
+
+  return `/api/admin/settings`
+}
+
+export const updatePortalSettings = async (portalSettings: PortalSettings, options?: Parameters<typeof customFetch>[1]): Promise<PortalSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PortalSettings>(getUpdatePortalSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(portalSettings)
+  }
+);}
+
+
+
+
+
+export const getUpdatePortalSettingsMutationKey = () => ['updatePortalSettings'] as const;
+
+export const getUpdatePortalSettingsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePortalSettings>>, TError,UpdatePortalSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePortalSettings>>, TError,UpdatePortalSettingsMutationVariables, TContext> => {
+
+const mutationKey = getUpdatePortalSettingsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePortalSettings>>, UpdatePortalSettingsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updatePortalSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePortalSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updatePortalSettings>>>
+    export type UpdatePortalSettingsMutationBody = BodyType<PortalSettings>
+    export type UpdatePortalSettingsMutationError = ErrorType<unknown>
+    export type UpdatePortalSettingsMutationVariables = {data: BodyType<PortalSettings>}
+
+    export const useUpdatePortalSettings = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePortalSettings>>, TError,UpdatePortalSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePortalSettings>>,
+        TError,
+        UpdatePortalSettingsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdatePortalSettingsMutationOptions(options));
     }
 
 export const getGetAdminApplicationHistoryUrl = (applicationId: string,) => {

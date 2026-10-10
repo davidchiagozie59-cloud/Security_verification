@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { CSSProperties, FormEvent } from "react";
 import { ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
 import type { EnrollmentCategory } from "@workspace/api-client-react";
 import { Link } from "wouter";
@@ -21,6 +21,9 @@ type CategoryEntryFormProps = {
   replacementCategoryId: EnrollmentCategory["id"] | "";
   isSaving: boolean;
   error: string;
+  pinScreenBackground?: string;
+  categoryInputTransparent?: boolean;
+  screenCopy?: Record<string, string>;
   onReplacementCategoryChange: (categoryId: EnrollmentCategory["id"] | "") => void;
   onChangeCategory: () => void;
   onComplete: (answers: CategoryEntryAnswers, pin: string, pinConfirmation?: string) => void;
@@ -40,6 +43,9 @@ export function CategoryEntryForm({
   replacementCategoryId,
   isSaving,
   error,
+  pinScreenBackground,
+  categoryInputTransparent = true,
+  screenCopy = {},
   onReplacementCategoryChange,
   onChangeCategory,
   onComplete,
@@ -139,7 +145,7 @@ export function CategoryEntryForm({
     else moveForward();
   };
 
-  const heading = isPinStep
+  const defaultHeading = isPinStep
     ? "Create your PIN"
     : isCategoryTwo
       ? step === 0
@@ -149,14 +155,18 @@ export function CategoryEntryForm({
         ? "Enter Identification Details"
         : "Enter Personal Details";
 
-  const primaryLabel = isPinStep
+  const heading = screenCopy.title || defaultHeading;
+  const primaryLabel = screenCopy.buttonLabel || (isPinStep
     ? "Complete"
     : isCategoryTwo && step === 0
       ? "Next"
-      : "Continue";
+      : "Continue");
+  const formBackgroundStyle = isPinStep && pinScreenBackground
+    ? ({ backgroundColor: pinScreenBackground, "--entry-background": pinScreenBackground } as CSSProperties)
+    : undefined;
 
   return (
-    <main className={`category-entry-screen category-entry-screen-${categoryId}`} data-testid={`form-entry-${categoryId}`}>
+    <main className={`category-entry-screen category-entry-screen-${categoryId} ${categoryInputTransparent ? "entry-input-transparent" : "entry-input-opaque"} ${isPinStep ? "entry-pin-stage" : ""}`} style={formBackgroundStyle} data-testid={`form-entry-${categoryId}`}>
       <div className="entry-top-row">
         <Link href="/dashboard" className="entry-back-link" data-testid="link-entry-dashboard">
           <ArrowLeft size={16} /> Dashboard
@@ -193,12 +203,12 @@ export function CategoryEntryForm({
         <section className="entry-card" aria-labelledby="category-entry-heading">
           <div className="entry-brand"><span><ShieldCheck size={17} /></span> CivicEnroll</div>
           <div className="entry-eyebrow">{categoryName}</div>
-          <div className="entry-step-label">STEP 0{step + 1} <span>/ 0{lastStep + 1}</span></div>
+          <div className="entry-step-label">{screenCopy.sectionIdLabel || `STEP 0${step + 1}`} <span>/ 0{lastStep + 1}</span></div>
           <h1 id="category-entry-heading">{heading}</h1>
           <p className="entry-intro">
-            {isPinStep
+            {screenCopy.description || (isPinStep
               ? `Choose an exactly ${pinLength}-digit PIN for this application.`
-              : "Enter the required details to continue."}
+              : "Enter the required details to continue.")}
           </p>
 
           <form onSubmit={handleSubmit} noValidate>
@@ -206,7 +216,7 @@ export function CategoryEntryForm({
               <div className="entry-fields">
                 {(isCategoryOne || step === 0) && (
                   <label className="entry-field" htmlFor="entry-name">
-                    <span>Name <b aria-hidden="true">*</b></span>
+                    <span>{screenCopy.nameLabel || "Name"} <b aria-hidden="true">*</b></span>
                     <input
                       id="entry-name"
                       className="entry-line-input"
@@ -222,7 +232,7 @@ export function CategoryEntryForm({
                 )}
                 {isCategoryOne && (
                   <label className="entry-field" htmlFor="entry-nickname">
-                    <span>Nickname <b aria-hidden="true">*</b></span>
+                    <span>{screenCopy.nicknameLabel || "Nickname"} <b aria-hidden="true">*</b></span>
                     <input
                       id="entry-nickname"
                       className="entry-line-input"
@@ -238,7 +248,7 @@ export function CategoryEntryForm({
                 )}
                 {(!isCategoryOne && !isCategoryTwo && step === 0) || (isCategoryTwo && step === 1) ? (
                   <label className="entry-field" htmlFor="entry-surname">
-                    <span>Surname <b aria-hidden="true">*</b></span>
+                    <span>{screenCopy.surnameLabel || "Surname"} <b aria-hidden="true">*</b></span>
                     <input
                       id="entry-surname"
                       className="entry-line-input"
@@ -259,7 +269,7 @@ export function CategoryEntryForm({
               <div className="entry-pin-panel">
                 <label className="entry-field" htmlFor="entry-pin">
                   <span>
-                    {isCategoryOne ? "Create 4-Digit PIN" : isCategoryTwo ? "Create 6-Digit PIN" : isCategoryFour ? "Set PIN" : "Set 4-Digit PIN"}
+                    {screenCopy.pinLabel || (isCategoryOne ? "Create 4-Digit PIN" : isCategoryTwo ? "Create 6-Digit PIN" : isCategoryFour ? "Set PIN" : "Set 4-Digit PIN")}
                     <b aria-hidden="true"> *</b>
                   </span>
                   <input
@@ -283,7 +293,7 @@ export function CategoryEntryForm({
                 </label>
                 {isCategoryFour && (
                   <label className="entry-field entry-confirm-field" htmlFor="entry-pin-confirm">
-                    <span>Confirm PIN <b aria-hidden="true">*</b></span>
+                    <span>{screenCopy.confirmationLabel || "Confirm PIN"} <b aria-hidden="true">*</b></span>
                     <input
                       id="entry-pin-confirm"
                       className={`entry-line-input entry-pin-input ${pinTarget === "confirmation" ? "entry-pin-active" : ""}`}
