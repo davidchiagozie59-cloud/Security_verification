@@ -109,7 +109,7 @@ export const UpdateApplicationParams = zod.object({
 })
 
 export const updateApplicationBodyCurrentStepMin = 0;
-export const updateApplicationBodyCurrentStepMax = 2;
+export const updateApplicationBodyCurrentStepMax = 7;
 
 export const updateApplicationBodyPinRegExp = new RegExp('^[0-9]{4,6}$');
 export const updateApplicationBodyPinConfirmationRegExp = new RegExp('^[0-9]{4,6}$');
@@ -205,6 +205,125 @@ export const ListApplicationsForReviewResponseItem = zod.object({
 export const ListApplicationsForReviewResponse = zod.array(ListApplicationsForReviewResponseItem)
 
 
+export const GetAdminApplicationParams = zod.object({
+  "applicationId": zod.coerce.string()
+})
+
+export const GetAdminApplicationResponse = zod.object({
+  "id": zod.string(),
+  "reference": zod.string(),
+  "categoryId": zod.enum(['category-1', 'category-2', 'category-3', 'category-4']),
+  "categoryName": zod.string(),
+  "status": zod.enum(['draft', 'submitted', 'under_review', 'needs_information', 'approved', 'rejected']),
+  "currentStep": zod.number().int(),
+  "hasPin": zod.boolean(),
+  "answers": zod.record(zod.string(), zod.unknown()),
+  "applicantName": zod.string().nullish(),
+  "applicantEmail": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "submittedAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary Get administrator dashboard totals
+ */
+export const GetAdminOverviewResponse = zod.object({
+  "totalUsers": zod.number().int(),
+  "totalApplications": zod.number().int(),
+  "pendingApplications": zod.number().int(),
+  "underReviewApplications": zod.number().int(),
+  "approvedApplications": zod.number().int(),
+  "rejectedApplications": zod.number().int(),
+  "needsInformationApplications": zod.number().int(),
+  "unresolvedSupportRequests": zod.number().int()
+})
+
+
+/**
+ * @summary Search and list user accounts with enrollment status
+ */
+export const ListAdminUsersQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "accountStatus": zod.enum(['active', 'suspended']).optional()
+})
+
+export const ListAdminUsersResponse = zod.object({
+  "users": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string().nullable(),
+  "username": zod.string().nullable(),
+  "email": zod.string().nullable(),
+  "accountStatus": zod.enum(['active', 'suspended']),
+  "categoryId": zod.string().nullable(),
+  "categoryName": zod.string().nullable(),
+  "applicationReference": zod.string().nullable(),
+  "registrationDate": zod.coerce.date(),
+  "enrollmentStatus": zod.string().nullable()
+})),
+  "totalCount": zod.number().int()
+})
+
+
+export const UpdateAdminUserStatusParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const UpdateAdminUserStatusBody = zod.object({
+  "accountStatus": zod.enum(['active', 'suspended'])
+})
+
+export const UpdateAdminUserStatusResponse = zod.object({
+  "userId": zod.string(),
+  "name": zod.string().nullable(),
+  "username": zod.string().nullable(),
+  "email": zod.string().nullable(),
+  "accountStatus": zod.enum(['active', 'suspended']),
+  "categoryId": zod.string().nullable(),
+  "categoryName": zod.string().nullable(),
+  "applicationReference": zod.string().nullable(),
+  "registrationDate": zod.coerce.date(),
+  "enrollmentStatus": zod.string().nullable()
+})
+
+
+export const GetAdminApplicationHistoryParams = zod.object({
+  "applicationId": zod.coerce.string()
+})
+
+export const GetAdminApplicationHistoryResponseItem = zod.object({
+  "id": zod.string(),
+  "eventType": zod.string(),
+  "note": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "actorUserId": zod.string()
+})
+export const GetAdminApplicationHistoryResponse = zod.array(GetAdminApplicationHistoryResponseItem)
+
+
+export const AddAdminApplicationNoteParams = zod.object({
+  "applicationId": zod.coerce.string()
+})
+
+export const addAdminApplicationNoteBodyNoteMax = 4000;
+
+
+
+export const AddAdminApplicationNoteBody = zod.object({
+  "note": zod.string().min(1).max(addAdminApplicationNoteBodyNoteMax)
+})
+
+export const AddAdminApplicationNoteResponse = zod.object({
+  "id": zod.string(),
+  "eventType": zod.string(),
+  "note": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "actorUserId": zod.string()
+})
+
+
 /**
  * @summary Approve, reject, or request more information
  */
@@ -214,11 +333,17 @@ export const DecideApplicationParams = zod.object({
 
 export const decideApplicationBodyNoteMax = 4000;
 
+export const decideApplicationBodyReopenSectionsItemMin = 0;
+export const decideApplicationBodyReopenSectionsItemMax = 6;
+
+export const decideApplicationBodyReopenSectionsMax = 7;
+
 
 
 export const DecideApplicationBody = zod.object({
-  "decision": zod.enum(['approve', 'reject', 'request_information']),
-  "note": zod.string().max(decideApplicationBodyNoteMax).optional()
+  "decision": zod.enum(['approve', 'reject', 'request_information', 'mark_under_review']),
+  "note": zod.string().max(decideApplicationBodyNoteMax).optional(),
+  "reopenSections": zod.array(zod.number().int().min(decideApplicationBodyReopenSectionsItemMin).max(decideApplicationBodyReopenSectionsItemMax)).min(1).max(decideApplicationBodyReopenSectionsMax).optional()
 })
 
 export const DecideApplicationResponse = zod.object({
@@ -244,10 +369,21 @@ export const DecideApplicationResponse = zod.object({
  */
 export const ListMySupportTicketsResponseItem = zod.object({
   "id": zod.string(),
-  "applicationId": zod.string().nullish(),
+  "applicantUserId": zod.string(),
+  "applicationId": zod.string().nullable(),
+  "applicationReference": zod.string().nullable(),
   "subject": zod.string(),
+  "category": zod.enum(['enrollment', 'account', 'technical', 'documents', 'other']),
   "message": zod.string(),
-  "status": zod.enum(['open', 'answered', 'closed']),
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "actorUserId": zod.string(),
+  "actorRole": zod.enum(['applicant', 'administrator']),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "assignedToUserId": zod.string().nullable(),
+  "status": zod.enum(['open', 'in_progress', 'resolved', 'answered', 'closed']),
   "response": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -269,15 +405,62 @@ export const createSupportTicketBodyMessageMax = 5000;
 export const CreateSupportTicketBody = zod.object({
   "applicationId": zod.string().nullish(),
   "subject": zod.string().min(createSupportTicketBodySubjectMin).max(createSupportTicketBodySubjectMax),
+  "category": zod.enum(['enrollment', 'account', 'technical', 'documents', 'other']),
   "message": zod.string().min(createSupportTicketBodyMessageMin).max(createSupportTicketBodyMessageMax)
 })
 
 export const CreateSupportTicketResponse = zod.object({
   "id": zod.string(),
-  "applicationId": zod.string().nullish(),
+  "applicantUserId": zod.string(),
+  "applicationId": zod.string().nullable(),
+  "applicationReference": zod.string().nullable(),
   "subject": zod.string(),
+  "category": zod.enum(['enrollment', 'account', 'technical', 'documents', 'other']),
   "message": zod.string(),
-  "status": zod.enum(['open', 'answered', 'closed']),
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "actorUserId": zod.string(),
+  "actorRole": zod.enum(['applicant', 'administrator']),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "assignedToUserId": zod.string().nullable(),
+  "status": zod.enum(['open', 'in_progress', 'resolved', 'answered', 'closed']),
+  "response": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const AddApplicantSupportMessageParams = zod.object({
+  "ticketId": zod.coerce.string()
+})
+
+export const addApplicantSupportMessageBodyMessageMax = 5000;
+
+
+
+export const AddApplicantSupportMessageBody = zod.object({
+  "message": zod.string().min(1).max(addApplicantSupportMessageBodyMessageMax)
+})
+
+export const AddApplicantSupportMessageResponse = zod.object({
+  "id": zod.string(),
+  "applicantUserId": zod.string(),
+  "applicationId": zod.string().nullable(),
+  "applicationReference": zod.string().nullable(),
+  "subject": zod.string(),
+  "category": zod.enum(['enrollment', 'account', 'technical', 'documents', 'other']),
+  "message": zod.string(),
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "actorUserId": zod.string(),
+  "actorRole": zod.enum(['applicant', 'administrator']),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "assignedToUserId": zod.string().nullable(),
+  "status": zod.enum(['open', 'in_progress', 'resolved', 'answered', 'closed']),
   "response": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -287,12 +470,28 @@ export const CreateSupportTicketResponse = zod.object({
 /**
  * @summary List support requests for authorized administrators
  */
+export const ListSupportTicketsForAdminQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "status": zod.enum(['open', 'in_progress', 'resolved']).optional()
+})
+
 export const ListSupportTicketsForAdminResponseItem = zod.object({
   "id": zod.string(),
-  "applicationId": zod.string().nullish(),
+  "applicantUserId": zod.string(),
+  "applicationId": zod.string().nullable(),
+  "applicationReference": zod.string().nullable(),
   "subject": zod.string(),
+  "category": zod.enum(['enrollment', 'account', 'technical', 'documents', 'other']),
   "message": zod.string(),
-  "status": zod.enum(['open', 'answered', 'closed']),
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "actorUserId": zod.string(),
+  "actorRole": zod.enum(['applicant', 'administrator']),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "assignedToUserId": zod.string().nullable(),
+  "status": zod.enum(['open', 'in_progress', 'resolved', 'answered', 'closed']),
   "response": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -313,15 +512,57 @@ export const replyToSupportTicketBodyResponseMax = 5000;
 
 export const ReplyToSupportTicketBody = zod.object({
   "response": zod.string().min(1).max(replyToSupportTicketBodyResponseMax),
-  "status": zod.enum(['answered', 'closed'])
+  "status": zod.enum(['open', 'in_progress', 'resolved'])
 })
 
 export const ReplyToSupportTicketResponse = zod.object({
   "id": zod.string(),
-  "applicationId": zod.string().nullish(),
+  "applicantUserId": zod.string(),
+  "applicationId": zod.string().nullable(),
+  "applicationReference": zod.string().nullable(),
   "subject": zod.string(),
+  "category": zod.enum(['enrollment', 'account', 'technical', 'documents', 'other']),
   "message": zod.string(),
-  "status": zod.enum(['open', 'answered', 'closed']),
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "actorUserId": zod.string(),
+  "actorRole": zod.enum(['applicant', 'administrator']),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "assignedToUserId": zod.string().nullable(),
+  "status": zod.enum(['open', 'in_progress', 'resolved', 'answered', 'closed']),
+  "response": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const AssignSupportTicketParams = zod.object({
+  "ticketId": zod.coerce.string()
+})
+
+export const AssignSupportTicketBody = zod.object({
+  "assigneeUserId": zod.string().nullable()
+})
+
+export const AssignSupportTicketResponse = zod.object({
+  "id": zod.string(),
+  "applicantUserId": zod.string(),
+  "applicationId": zod.string().nullable(),
+  "applicationReference": zod.string().nullable(),
+  "subject": zod.string(),
+  "category": zod.enum(['enrollment', 'account', 'technical', 'documents', 'other']),
+  "message": zod.string(),
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "actorUserId": zod.string(),
+  "actorRole": zod.enum(['applicant', 'administrator']),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "assignedToUserId": zod.string().nullable(),
+  "status": zod.enum(['open', 'in_progress', 'resolved', 'answered', 'closed']),
   "response": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()

@@ -11,18 +11,23 @@ import {
 } from 'lucide-react';
 import {
   getGetApplicationQueryKey, getGetApplicantSummaryQueryKey,
+  getGetAdminApplicationHistoryQueryKey, getGetAdminApplicationQueryKey,
+  getGetAdminOverviewQueryKey,
   getListApplicationsForReviewQueryKey, getListMyApplicationsQueryKey,
-  getListMySupportTicketsQueryKey, getListSupportTicketsForAdminQueryKey,
+  getListAdminUsersQueryKey, getListMySupportTicketsQueryKey, getListSupportTicketsForAdminQueryKey,
+  useAddAdminApplicationNote, useAddApplicantSupportMessage, useAssignSupportTicket,
   useCreateApplication, useCreateSupportTicket, useDecideApplication,
+  useGetAdminApplication, useGetAdminApplicationHistory, useGetAdminOverview,
   useGetApplication, useGetApplicantSummary, useListApplicationsForReview,
-  useListEnrollmentCategories, useListMyApplications, useListMySupportTickets,
+  useListAdminUsers, useListEnrollmentCategories, useListMyApplications, useListMySupportTickets,
   useListSupportTicketsForAdmin, useReplyToSupportTicket, useSubmitApplication,
-  useUpdateApplication,
+  useUpdateAdminUserStatus, useUpdateApplication,
 } from '@workspace/api-client-react';
 import type {
-  ApplicationDecision, EnrollmentApplication, EnrollmentCategory, SupportTicket,
+  AdminUser, ApplicationDecision, ApplicationEvent, EnrollmentApplication, EnrollmentCategory, SupportTicket,
 } from '@workspace/api-client-react';
 import { CategoryEntryForm, type CategoryEntryAnswers } from './components/CategoryEntryForm';
+import { EnrollmentWizard } from './components/EnrollmentWizard';
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
 
 const queryClient = new QueryClient({
@@ -118,8 +123,24 @@ function EmptyPanel({ title, message, action }: { title: string; message: string
 }
 
 function StatusPill({ status, testId }: { status: string; testId?: string }) {
-  const label = status.replaceAll('_', ' ');
-  return <span className={`status-pill status-${status}`} data-testid={testId ?? `status-${status}-current`}>{label}</span>;
+  const labels: Record<string, string> = {
+    draft: 'Draft',
+    in_progress: 'In Progress',
+    submitted: 'Pending Review',
+    under_review: 'Under Review',
+    needs_information: 'Additional Information Required',
+    approved: 'Approved',
+    rejected: 'Rejected',
+    open: 'Open',
+    answered: 'In Progress',
+    closed: 'Resolved',
+    resolved: 'Resolved',
+  };
+  return <span className={`status-pill status-${status}`} data-testid={testId ?? `status-${status}-current`}>{labels[status] ?? status.replaceAll('_', ' ')}</span>;
+}
+
+function applicationDisplayStatus(application: Pick<EnrollmentApplication, 'status' | 'currentStep'>) {
+  return application.status === 'draft' && application.currentStep > 0 ? 'in_progress' : application.status;
 }
 
 function AppFrame({ children, active = 'dashboard' }: { children: ReactNode; active?: string }) {
@@ -284,6 +305,7 @@ function AuthGate({ children }: { children: ReactNode }) {
 }
 
 function Dashboard() {
+  const { user } = useUser();
   const summary = useGetApplicantSummary();
   const applications = useListMyApplications();
   const categories = useListEnrollmentCategories();
@@ -313,7 +335,7 @@ function Dashboard() {
   return <AppFrame active="dashboard">
     <div className="dashboard-layout">
       <div className="dashboard-main">
-        <PageHeading eyebrow="YOUR ENROLLMENT" title="A good place to begin." detail="Choose one enrollment path to start your application." />
+         <PageHeading eyebrow="YOUR ENROLLMENT" title="A good place to begin." detail={`Signed in as ${user?.fullName || user?.primaryEmailAddress?.emailAddress || 'your account'}. Choose one enrollment path to start your application.`} />
         {failure ? <ErrorPanel message="Your enrollment information is temporarily unavailable." retry={() => { void summary.refetch(); void applications.refetch(); void categories.refetch(); }} /> :
           busy ? <LoadingPanel /> : <>
             <section className="selection-section rise-delay">
@@ -355,7 +377,7 @@ function Dashboard() {
           {summary.isLoading ? <div className="summary-skeleton"><div /><div /><div /></div> : summary.data ? <>
             <div className="summary-total" data-testid="text-summary-total">{summary.data.total}<span> applications</span></div>
             <div className="summary-list">
-              <SummaryLine label="Drafts" value={summary.data.drafts} tone="slate" />
+              <SummaryLine label="Draft / in progress" value={summary.data.drafts} tone="slate" />
               <SummaryLine label="In review" value={summary.data.inReview} tone="blue" />
               <SummaryLine label="Approved" value={summary.data.approved} tone="green" />
               <SummaryLine label="Needs attention" value={summary.data.needsAttention} tone="amber" />
@@ -379,7 +401,7 @@ function ApplicationRow({ application }: { application: EnrollmentApplication })
   return <Link href={href} className="application-row" data-testid={`row-application-${application.id}`}>
     <span className="application-file"><FileText size={18} /></span>
     <span className="application-row-main"><b>{application.categoryName}</b><small>{application.reference} <span>·</span> Updated {formatDate(application.updatedAt)}</small></span>
-      <StatusPill status={application.status} testId={`status-application-${application.id}`} /><ArrowRight className="row-arrow" size={16} />
+      <StatusPill status={applicationDisplayStatus(application)} testId={`status-application-${application.id}`} /><ArrowRight className="row-arrow" size={16} />
   </Link>;
 }
 
@@ -409,49 +431,30 @@ function DraftApplication() {
   const submit = useSubmitApplication();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  const [context, setContext] = useState<string | null>(null);
   const [replacementCategory, setReplacementCategory] = useState<EnrollmentCategory['id'] | ''>('');
-  const [step, setStep] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const application = app.data;
   if (app.isLoading) return <AppFrame><LoadingPanel /></AppFrame>;
   if (app.isError || !application) return <AppFrame><ErrorPanel message="This application could not be found or opened." retry={() => void app.refetch()} /></AppFrame>;
-  if (application.status !== 'draft') return <AppFrame>
+  if (!['draft', 'needs_information'].includes(application.status)) return <AppFrame>
     <section className="state-card"><span className="state-icon"><FileCheck2 size={20} /></span><h2>This application has already been submitted</h2><p>Its current status and any updates are available in the application detail view.</p><Link href={`/applications/${id}`} className="button button-primary" data-testid="link-open-submitted">View application <ArrowRight size={15} /></Link></section>
     {showSuccess && <div className="success-overlay">
       <section className="success-dialog" role="dialog" aria-modal="true" aria-labelledby="submission-success-title" data-testid="modal-submission-success">
         <button className="modal-close" onClick={() => setShowSuccess(false)} aria-label="Close submission confirmation" data-testid="button-close-success"><span aria-hidden="true">×</span></button>
         <span className="success-seal"><CheckCircle2 size={25} /></span>
         <div className="eyebrow">APPLICATION RECEIVED</div>
-        <h2 id="submission-success-title">Your application was submitted</h2>
-        <p>Your enrollment application is now in the review process. You can follow its current status at any time.</p>
+        <h2 id="submission-success-title">Enrollment Submitted Successfully!</h2>
+        <p>Your enrollment application has been submitted successfully. Your information is now awaiting review by our authorized enrollment team.</p>
         <div className="success-reference"><span>REFERENCE</span><b className="mono">{application.reference}</b></div>
-        <button className="button button-primary" onClick={() => setLocation(`/applications/${id}`)} data-testid="button-view-submitted-status">View application status <ArrowRight size={15} /></button>
+        <div className="review-field"><span>Selected category</span><b>{application.categoryName}</b></div>
+        <div className="review-field"><span>Submission date</span><b>{formatDate(application.submittedAt)}</b></div>
+        <div className="review-field"><span>Current status</span><b>Pending Review</b></div>
+        <button className="button button-primary" onClick={() => setLocation(`/applications/${id}`)} data-testid="button-view-submitted-status">View Application Status <ArrowRight size={15} /></button>
+        <button className="button button-quiet" onClick={() => setLocation('/dashboard')} data-testid="button-return-dashboard">Return to Dashboard</button>
       </section>
     </div>}
   </AppFrame>;
-  const activeStep = step ?? Math.min(application.currentStep, 1);
-  const answerValue = context ?? String(application.answers?.additionalContext ?? '');
-  const saveProgress = (nextStep: number, message = 'Progress saved') => {
-    setFeedback('');
-    update.mutate({
-      applicationId: id,
-      data: {
-        currentStep: nextStep,
-        answers: { ...application.answers, additionalContext: answerValue },
-      },
-    }, {
-      onSuccess: (saved) => {
-        queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
-        queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
-        setStep(nextStep);
-        setFeedback(message);
-      },
-      onError: () => setFeedback('We could not save your changes. Please try again.'),
-    });
-  };
   const changeCategory = () => {
     if (!replacementCategory || replacementCategory === application.categoryId) return;
     const next = categories.data?.find((category) => category.id === replacementCategory);
@@ -464,24 +467,40 @@ function DraftApplication() {
         queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
         queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
-        setContext('');
         setReplacementCategory('');
-        setStep(0);
         setFeedback('');
       },
       onError: () => setFeedback('The category could not be changed. Please try again.'),
     });
   };
-  const submitDraft = () => {
-    submit.mutate({ applicationId: id }, {
-      onSuccess: (saved) => {
+  const saveStep = async (answers: Record<string, unknown>, currentStep: number) => {
+    setFeedback('');
+    try {
+      const saved = await update.mutateAsync({
+        applicationId: id,
+        data: { answers, currentStep },
+      });
+      queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
+      queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
+      return true;
+    } catch {
+      setFeedback('We could not save your changes. Please try again.');
+      return false;
+    }
+  };
+  const submitDraft = async () => {
+    try {
+      const saved = await submit.mutateAsync({ applicationId: id });
         queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
         queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
         setShowSuccess(true);
-      },
-      onError: () => setFeedback('Your application was not submitted. Please try again.'),
-    });
+      return true;
+    } catch {
+      setFeedback('Your application was not submitted. Please try again.');
+      return false;
+    }
   };
   if (application.answers?.categoryEntryComplete !== true) {
     return <CategoryEntryForm
@@ -511,60 +530,43 @@ function DraftApplication() {
             queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
             queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
             queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
-            setStep(0);
           },
           onError: () => setFeedback('Your details could not be saved. Check the form and try again.'),
         });
       }}
     />;
   }
-  return <AppFrame>
-    <div className={`form-page category-form-${application.categoryId}`}>
-      <div className="form-top"><Link href="/dashboard" className="back-link" data-testid="link-back-dashboard"><ArrowLeft size={16} /> Dashboard</Link>
-        <span className="draft-reference">{application.reference}</span></div>
-      <details className="category-change">
-        <summary>Change enrollment category</summary>
-        <div className="category-change-panel">
-          <p>Changing category clears the saved details and PIN. The change is recorded in your application history.</p>
-          <select className="text-input select-input" value={replacementCategory || application.categoryId} onChange={(event) => setReplacementCategory(event.target.value as EnrollmentCategory['id'] | '')} aria-label="Choose a replacement enrollment category" data-testid="select-change-category">
-            {(categories.data ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-          </select>
-          <button className="button button-quiet" onClick={changeCategory} disabled={update.isPending || !replacementCategory || replacementCategory === application.categoryId} data-testid="button-change-category">Change category</button>
-        </div>
-      </details>
-      <div className="form-heading"><div className="eyebrow">APPLICATION · {application.categoryName}</div><h1>Let’s complete your application.</h1><p>Your progress is saved to your secure account. You can return any time before submitting.</p></div>
-      <div className="progress-track" aria-label={`Step ${activeStep + 1} of 2`} data-testid="progress-application">
-        {['Application details', 'Review & submit'].map((label, n) => <div className={`progress-step ${n <= activeStep ? 'progress-current' : ''}`} key={label}><span>{n < activeStep ? <Check size={13} /> : `0${n + 1}`}</span><b>{label}</b></div>)}
-      </div>
-      <div className="form-workspace portal-scroll">
-        {activeStep === 0 ? <section className="form-card">
-          <div className="form-card-heading"><span className="form-card-icon"><FileText size={18} /></span><div><h2>{application.categoryName}</h2><p>Your category details and PIN are saved. Add any optional context for your application.</p></div></div>
-          <label className="field-label" htmlFor="application-context">Additional context <span>Optional</span></label>
-          <textarea id="application-context" rows={5} value={answerValue} onChange={(event) => setContext(event.target.value)}
-            placeholder="Add any context you would like included with your application." className="text-input form-textarea" data-testid="input-application-context" />
-          <div className="field-help">You can edit this note before submitting. No documents or live video are collected here.</div>
-          <div className="disabled-storage" aria-disabled="true" data-testid="disabled-storage-placeholder"><LockKeyhole size={16} /><span><b>Document and live-video storage</b><small>Not currently available in this portal</small></span><span className="disabled-tag">Unavailable</span></div>
-          <div className="form-actions"><span className="save-status" role="status" data-testid="text-save-status">{feedback}</span>
-            <PrimaryButton onClick={() => saveProgress(0)} disabled={update.isPending} testId="button-save-progress">{update.isPending ? 'Saving…' : 'Save progress'}</PrimaryButton>
-            <PrimaryButton onClick={() => saveProgress(1)} disabled={update.isPending} testId="button-next-step">Continue <ArrowRight size={16} /></PrimaryButton>
-          </div>
-        </section> : <section className="form-card review-card">
-          <div className="form-card-heading"><span className="form-card-icon"><BadgeCheck size={18} /></span><div><h2>Review your application</h2><p>Check the selected category, PIN, and optional context before submitting.</p></div></div>
-          <div className="review-field"><span>Enrollment path</span><b>{application.categoryName}</b></div>
-          {getCategoryEntryFields(application.answers, application.categoryId).map((field) =>
-            <div className="review-field" key={field.label}><span>{field.label}</span><b>{field.value}</b></div>)}
-          <div className="review-field"><span>Application reference</span><b className="mono">{application.reference}</b></div>
-          <div className="review-field"><span>Enrollment PIN</span><b>{application.hasPin ? 'Created securely' : 'Not created'}</b></div>
-          <div className="review-field review-context"><span>Additional context</span><b>{answerValue.trim() || 'No additional context provided'}</b></div>
-          <div className="review-callout"><ShieldCheck size={18} /><p>Once submitted, your application enters review. You’ll be able to follow its status from your dashboard.</p></div>
-          {feedback && <p className="inline-error" role="alert" data-testid="text-submit-feedback">{feedback}</p>}
-          <div className="form-actions"><button className="text-action" onClick={() => setStep(0)} data-testid="button-edit-application"><ArrowLeft size={15} /> Back to details</button>
-            <PrimaryButton onClick={submitDraft} disabled={submit.isPending} testId="button-submit-application">{submit.isPending ? 'Submitting…' : 'Submit application'} <ArrowRight size={15} /></PrimaryButton>
-          </div>
-        </section>}
-      </div>
-    </div>
-  </AppFrame>;
+  const requested = application.answers?.__requestedSections;
+  const reopenedSections = Array.isArray(requested)
+    ? requested.filter((index): index is number => Number.isInteger(index) && index >= 0 && index <= 6)
+    : [];
+  const changeCategoryFromWizard = (categoryId: string) => {
+    const next = categories.data?.find((category) => category.id === categoryId);
+    if (!next || next.id === application.categoryId || application.status !== 'draft') return;
+    if (!window.confirm(`Change to ${next.name}? This resets the saved details and PIN. The change will be recorded.`)) return;
+    update.mutate({ applicationId: id, data: { categoryId: next.id } }, {
+      onSuccess: (saved) => {
+        queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
+        queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
+        setFeedback('');
+      },
+      onError: () => setFeedback('The category could not be changed. Please try again.'),
+    });
+  };
+  return <EnrollmentWizard
+    application={application}
+    categories={categories.data ?? []}
+    status={application.status}
+    storageAvailable={false}
+    maxUploadBytes={10 * 1024 * 1024}
+    isSaving={update.isPending}
+    isSubmitting={submit.isPending}
+    error={feedback}
+    reopenedSections={reopenedSections}
+    saveStep={saveStep}
+    submit={submitDraft}
+    onChangeCategory={changeCategoryFromWizard}
+  />;
 }
 
 function ApplicationDetail() {
@@ -578,7 +580,7 @@ function ApplicationDetail() {
     <div className="detail-page">
       <Link href="/dashboard" className="back-link" data-testid="link-detail-back"><ArrowLeft size={16} /> Your applications</Link>
       <section className="detail-hero">
-        <div className="detail-meta"><span className="eyebrow">APPLICATION RECORD</span><StatusPill status={record.status} testId={`status-detail-${record.id}`} /></div>
+        <div className="detail-meta"><span className="eyebrow">APPLICATION RECORD</span><StatusPill status={applicationDisplayStatus(record)} testId={`status-detail-${record.id}`} /></div>
         <h1>{record.categoryName}</h1><p className="mono detail-reference">{record.reference}</p>
         <div className="detail-created">Last updated {formatDate(record.updatedAt)}</div>
       </section>
@@ -586,11 +588,11 @@ function ApplicationDetail() {
         <section className="detail-card"><div className="detail-card-title"><Activity size={17} /><h2>Verification progress</h2></div>
           <div className="status-timeline">
             <div className={`status-event complete`}><span><Check size={13} /></span><div><b>Application created</b><small>{formatDate(record.createdAt)}</small></div></div>
-            <div className={`status-event ${record.status !== 'draft' ? 'complete' : 'current'}`}><span>{record.status !== 'draft' ? <Check size={13} /> : <span />}</span><div><b>Submitted for review</b><small>{record.submittedAt ? formatDate(record.submittedAt) : 'Not yet submitted'}</small></div></div>
-            <div className={`status-event ${['approved', 'rejected', 'needs_information'].includes(record.status) ? 'complete' : ''}`}><span>{['approved', 'rejected', 'needs_information'].includes(record.status) ? <Check size={13} /> : null}</span><div><b>Verification decision</b><small>{record.status === 'under_review' || record.status === 'submitted' ? 'Review in progress' : record.status.replaceAll('_', ' ')}</small></div></div>
+            <div className={`status-event ${record.submittedAt ? 'complete' : 'current'}`}><span>{record.submittedAt ? <Check size={13} /> : <span />}</span><div><b>Submitted for review</b><small>{record.submittedAt ? formatDate(record.submittedAt) : 'Not yet submitted'}</small></div></div>
+            <div className={`status-event ${['approved', 'rejected'].includes(record.status) ? 'complete' : ''}`}><span>{['approved', 'rejected'].includes(record.status) ? <Check size={13} /> : null}</span><div><b>Verification decision</b><small>{record.status === 'under_review' || record.status === 'submitted' ? 'Review in progress' : record.status === 'needs_information' ? 'Additional information required' : record.status.replaceAll('_', ' ')}</small></div></div>
           </div>
           {record.reviewNote && <div className="review-note"><b>Update from the review team</b><p>{record.reviewNote}</p></div>}
-          {record.status === 'draft' && <Link href={`/apply/${record.id}`} className="button button-primary" data-testid="link-continue-draft">Continue application <ArrowRight size={15} /></Link>}
+          {['draft', 'needs_information'].includes(record.status) && <Link href={`/apply/${record.id}`} className="button button-primary" data-testid="link-continue-draft">{record.status === 'needs_information' ? 'Provide requested information' : 'Continue application'} <ArrowRight size={15} /></Link>}
         </section>
         <section className="detail-card detail-help"><span className="help-icon"><MessageCircle size={18} /></span><h2>Questions about this application?</h2><p>Send a note to the support team and follow the reply here.</p><Link href="/support" className="text-action" data-testid="link-detail-support">Contact support <ArrowRight size={14} /></Link></section>
       </div>
@@ -605,6 +607,7 @@ function SupportPage() {
   const queryClient = useQueryClient();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [category, setCategory] = useState<'enrollment' | 'account' | 'technical' | 'documents' | 'other'>('enrollment');
   const [applicationId, setApplicationId] = useState('');
   const [notice, setNotice] = useState('');
   const canSubmit = subject.trim().length >= 3 && message.trim().length >= 5;
@@ -612,10 +615,10 @@ function SupportPage() {
     event.preventDefault();
     if (!canSubmit) return;
     setNotice('');
-    create.mutate({ data: { subject: subject.trim(), message: message.trim(), applicationId: applicationId || null } }, {
+    create.mutate({ data: { subject: subject.trim(), category, message: message.trim(), applicationId: applicationId || null } }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListMySupportTicketsQueryKey() });
-        setSubject(''); setMessage(''); setApplicationId('');
+        setSubject(''); setMessage(''); setApplicationId(''); setCategory('enrollment');
         setNotice('Your support request has been sent.');
       },
       onError: () => setNotice('Your request could not be sent. Please try again.'),
@@ -630,12 +633,17 @@ function SupportPage() {
           <form onSubmit={send} className="support-form">
             <label className="field-label" htmlFor="support-subject">Subject</label>
             <input id="support-subject" className="text-input" value={subject} onChange={(e) => setSubject(e.target.value)} minLength={3} maxLength={200} required placeholder="What can we help with?" data-testid="input-support-subject" />
+            <label className="field-label" htmlFor="support-category">Request category</label>
+            <select id="support-category" className="text-input select-input" value={category} onChange={(e) => setCategory(e.target.value as typeof category)} data-testid="select-support-category">
+              <option value="enrollment">Enrollment</option><option value="account">Account</option><option value="technical">Technical</option><option value="documents">Documents</option><option value="other">Other</option>
+            </select>
             <label className="field-label" htmlFor="support-application">Related application <span>Optional</span></label>
             <select id="support-application" className="text-input select-input" value={applicationId} onChange={(e) => setApplicationId(e.target.value)} data-testid="select-support-application">
               <option value="">No application selected</option>{(applications.data ?? []).map((application) => <option key={application.id} value={application.id}>{application.reference} · {application.categoryName}</option>)}
             </select>
             <label className="field-label" htmlFor="support-message">Message</label>
             <textarea id="support-message" className="text-input form-textarea support-message-input" value={message} onChange={(e) => setMessage(e.target.value)} minLength={5} maxLength={5000} required placeholder="Tell us a little more so we can help." data-testid="input-support-message" />
+            <p className="field-help">Secure attachments are not available right now. Do not include identity documents in this message.</p>
             <div className="support-form-end"><span className="save-status" role="status" data-testid="text-support-feedback">{notice}</span><PrimaryButton kind="submit" disabled={!canSubmit || create.isPending} testId="button-send-support">{create.isPending ? 'Sending…' : 'Send message'} <ArrowRight size={15} /></PrimaryButton></div>
           </form>
         </section>
@@ -651,20 +659,47 @@ function SupportPage() {
 }
 
 function TicketCard({ ticket }: { ticket: SupportTicket }) {
+  const addMessage = useAddApplicantSupportMessage();
+  const queryClient = useQueryClient();
+  const [draft, setDraft] = useState('');
+  const [error, setError] = useState('');
+  const send = () => {
+    if (!draft.trim()) return;
+    setError('');
+    addMessage.mutate({ ticketId: ticket.id, data: { message: draft.trim() } }, {
+      onSuccess: () => {
+        setDraft('');
+        queryClient.invalidateQueries({ queryKey: getListMySupportTicketsQueryKey() });
+      },
+      onError: () => setError('Your reply could not be sent. Please try again.'),
+    });
+  };
   return <article className="ticket-card" data-testid={`ticket-${ticket.id}`}>
     <div className="ticket-head"><span className="ticket-subject">{ticket.subject}</span><StatusPill status={ticket.status} testId={`status-ticket-${ticket.id}`} /></div>
+    <div className="ticket-date">{ticket.category.replaceAll('_', ' ')}{ticket.applicationReference ? ` · ${ticket.applicationReference}` : ''}</div>
     <div className="ticket-date">Opened {formatDate(ticket.createdAt)}</div>
-    <p className="ticket-message">{ticket.message}</p>
-    {ticket.response && <div className="ticket-response"><b>Reply from support</b><p>{ticket.response}</p></div>}
+    <div className="ticket-conversation" aria-label="Support conversation">
+      {(ticket.messages ?? []).map((item) => <div key={item.id} className={item.actorRole === 'administrator' ? 'ticket-response' : 'ticket-message'}>
+        <b>{item.actorRole === 'administrator' ? 'Support team' : 'You'}</b><p>{item.body}</p><small>{formatDate(item.createdAt)}</small>
+      </div>)}
+    </div>
+    {!['resolved', 'closed'].includes(ticket.status) && <div className="ticket-reply-form">
+      <label className="field-label" htmlFor={`support-reply-${ticket.id}`}>Reply</label>
+      <textarea id={`support-reply-${ticket.id}`} className="text-input form-textarea" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={5000} rows={2} data-testid={`input-support-reply-${ticket.id}`} />
+      {error && <p className="inline-error" role="alert">{error}</p>}
+      <button className="button button-quiet" onClick={send} disabled={!draft.trim() || addMessage.isPending} data-testid={`button-support-reply-${ticket.id}`}>{addMessage.isPending ? 'Sending…' : 'Send reply'} <ArrowRight size={14} /></button>
+    </div>}
   </article>;
 }
 
-function AdminShell({ children, active = 'review' }: { children: ReactNode; active?: string }) {
+function AdminShell({ children, active = 'overview' }: { children: ReactNode; active?: string }) {
   const { signOut } = useClerk();
   return <div className="admin-shell portal-frame">
     <aside className="admin-sidebar"><div className="sidebar-brand"><Brand inverse /></div><div className="workspace-label">STAFF WORKSPACE</div>
       <nav className="side-nav" aria-label="Staff navigation">
-        <Link href="/admin" className={`nav-link ${active === 'review' ? 'nav-link-active' : ''}`} data-testid="link-admin-review"><FileCheck2 size={18} /><span>Review queue</span></Link>
+        <Link href="/admin" className={`nav-link ${active === 'overview' ? 'nav-link-active' : ''}`} data-testid="link-admin-overview"><Activity size={18} /><span>Overview</span></Link>
+        <Link href="/admin/review" className={`nav-link ${active === 'review' ? 'nav-link-active' : ''}`} data-testid="link-admin-review"><FileCheck2 size={18} /><span>Review queue</span></Link>
+        <Link href="/admin/users" className={`nav-link ${active === 'users' ? 'nav-link-active' : ''}`} data-testid="link-admin-users"><CheckCircle2 size={18} /><span>Users</span></Link>
         <Link href="/admin/support" className={`nav-link ${active === 'support' ? 'nav-link-active' : ''}`} data-testid="link-admin-support"><Headphones size={18} /><span>Support inbox</span></Link>
       </nav>
       <div className="sidebar-bottom"><div className="privacy-note"><LockKeyhole size={17} /><div><b>Restricted workspace</b><span>Access verified by service</span></div></div>
@@ -677,8 +712,10 @@ function AdminShell({ children, active = 'review' }: { children: ReactNode; acti
 
 function AdminGate({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();
-  if (!isLoaded) return <main className="portal-frame auth-loading"><LoadingPanel label="Checking staff access" /></main>;
+  const { isLoaded: userLoaded, user } = useUser();
+  if (!isLoaded || (isSignedIn && !userLoaded)) return <main className="portal-frame auth-loading"><LoadingPanel label="Checking staff access" /></main>;
   if (!isSignedIn) return <SignedOutNotice />;
+  if (user?.publicMetadata?.role !== 'admin') return <main className="signedout-page portal-frame"><Brand /><div className="signedout-card"><span className="state-icon"><LockKeyhole size={21} /></span><div className="eyebrow">RESTRICTED WORKSPACE</div><h1>Administrator access required</h1><p>This console is available only to authorized administrators.</p><Link href="/dashboard" className="button button-primary" data-testid="link-admin-denied-dashboard">Return to your dashboard <ArrowRight size={15} /></Link></div></main>;
   return <>{children}</>;
 }
 

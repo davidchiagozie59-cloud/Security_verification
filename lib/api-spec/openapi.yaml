@@ -163,6 +163,174 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/EnrollmentApplication"
+  /admin/applications/{applicationId}:
+    get:
+      operationId: getAdminApplication
+      tags: [administration]
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Full enrollment record for an authorized reviewer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrollmentApplication"
+  /admin/overview:
+    get:
+      operationId: getAdminOverview
+      tags: [administration]
+      summary: Get administrator dashboard totals
+      responses:
+        "200":
+          description: Database-backed overview totals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverview"
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags: [administration]
+      summary: Search and list user accounts with enrollment status
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: accountStatus
+          in: query
+          schema:
+            type: string
+            enum: [active, suspended]
+      responses:
+        "200":
+          description: User accounts and latest enrollment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserList"
+  /admin/users/{userId}/status:
+    patch:
+      operationId: updateAdminUserStatus
+      tags: [administration]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserStatusUpdate"
+      responses:
+        "200":
+          description: Updated account status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+  /admin/users/{userId}/role:
+    patch:
+      operationId: updateAdminUserRole
+      tags: [administration]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserRoleUpdate"
+      responses:
+        "200":
+          description: Updated staff role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+  /portal/settings:
+    get:
+      operationId: getPortalSettings
+      tags: [portal]
+      summary: Get public portal content and theme settings
+      responses:
+        "200":
+          description: Portal theme and editable content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalSettings"
+  /admin/settings:
+    put:
+      operationId: updatePortalSettings
+      tags: [administration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortalSettings"
+      responses:
+        "200":
+          description: Updated portal settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalSettings"
+  /admin/applications/{applicationId}/history:
+    get:
+      operationId: getAdminApplicationHistory
+      tags: [administration]
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Application audit history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApplicationEvent"
+  /admin/applications/{applicationId}/notes:
+    post:
+      operationId: addAdminApplicationNote
+      tags: [administration]
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationNoteInput"
+      responses:
+        "201":
+          description: Internal note recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationEvent"
   /admin/applications/{applicationId}/decision:
     post:
       operationId: decideApplication
@@ -218,11 +386,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SupportTicket"
+  /support/tickets/{ticketId}/messages:
+    post:
+      operationId: addApplicantSupportMessage
+      tags: [enrollment]
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportMessageInput"
+      responses:
+        "201":
+          description: Applicant message added to the conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
   /admin/support/tickets:
     get:
       operationId: listSupportTicketsForAdmin
       tags: [administration]
       summary: List support requests for authorized administrators
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, in_progress, resolved]
       responses:
         "200":
           description: Support requests
@@ -252,6 +453,29 @@ paths:
       responses:
         "200":
           description: Updated support request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+  /admin/support/tickets/{ticketId}/assignment:
+    patch:
+      operationId: assignSupportTicket
+      tags: [administration]
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportAssignmentInput"
+      responses:
+        "200":
+          description: Support request assigned to an authorized administrator
           content:
             application/json:
               schema:
@@ -334,7 +558,7 @@ components:
         currentStep:
           type: integer
           minimum: 0
-          maximum: 2
+          maximum: 7
         answers:
           type: object
           additionalProperties: true
@@ -350,10 +574,134 @@ components:
       properties:
         decision:
           type: string
-          enum: [approve, reject, request_information]
+          enum: [approve, reject, request_information, mark_under_review]
         note:
           type: string
           maxLength: 4000
+        reopenSections:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          minItems: 1
+          maxItems: 7
+          uniqueItems: true
+    ApplicationNoteInput:
+      type: object
+      required: [note]
+      properties:
+        note:
+          type: string
+          minLength: 1
+          maxLength: 4000
+    ApplicationEvent:
+      type: object
+      required: [id, eventType, note, createdAt, actorUserId]
+      properties:
+        id:
+          type: string
+        eventType:
+          type: string
+        note:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        actorUserId:
+          type: string
+    AdminOverview:
+      type: object
+      required: [totalUsers, totalApplications, pendingApplications, underReviewApplications, approvedApplications, rejectedApplications, needsInformationApplications, unresolvedSupportRequests]
+      properties:
+        totalUsers: { type: integer }
+        totalApplications: { type: integer }
+        pendingApplications: { type: integer }
+        underReviewApplications: { type: integer }
+        approvedApplications: { type: integer }
+        rejectedApplications: { type: integer }
+        needsInformationApplications: { type: integer }
+        unresolvedSupportRequests: { type: integer }
+    AdminUser:
+      type: object
+      required: [userId, name, username, email, role, accountStatus, applicationId, categoryId, categoryName, applicationReference, registrationDate, enrollmentStatus]
+      properties:
+        userId: { type: string }
+        name: { type: ["string", "null"] }
+        username: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        role: { type: string, enum: [applicant, admin, sub_admin, moderator] }
+        accountStatus: { type: string, enum: [active, suspended] }
+        applicationId: { type: ["string", "null"] }
+        categoryId: { type: ["string", "null"] }
+        categoryName: { type: ["string", "null"] }
+        applicationReference: { type: ["string", "null"] }
+        registrationDate: { type: string, format: date-time }
+        enrollmentStatus: { type: ["string", "null"] }
+    AdminUserList:
+      type: object
+      required: [users, totalCount]
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUser"
+        totalCount: { type: integer }
+    AdminUserStatusUpdate:
+      type: object
+      required: [accountStatus]
+      properties:
+        accountStatus:
+          type: string
+          enum: [active, suspended]
+    AdminUserRoleUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [applicant, admin, sub_admin, moderator]
+    PortalSettings:
+      type: object
+      required: [hero, cards, theme, screenCopy]
+      properties:
+        hero:
+          type: object
+          required: [title, description, getStartedLabel, loginLabel]
+          properties:
+            title: { type: string, maxLength: 160 }
+            description: { type: string, maxLength: 500 }
+            getStartedLabel: { type: string, maxLength: 60 }
+            loginLabel: { type: string, maxLength: 60 }
+        cards:
+          type: array
+          minItems: 4
+          maxItems: 4
+          items:
+            type: object
+            required: [id, title, description, buttonLabel, backgroundColor, logoDataUrl]
+            properties:
+              id: { type: string, enum: [category-1, category-2, category-3, category-4] }
+              title: { type: string, maxLength: 100 }
+              description: { type: string, maxLength: 240 }
+              buttonLabel: { type: string, maxLength: 60 }
+              backgroundColor: { type: string, pattern: "^#[0-9A-Fa-f]{6}$" }
+              logoDataUrl: { type: ["string", "null"], maxLength: 6000000 }
+        theme:
+          type: object
+          required: [pinScreenBackground, buttonSize, buttonPlacement, categoryInputTransparent]
+          properties:
+            pinScreenBackground: { type: string, pattern: "^#[0-9A-Fa-f]{6}$" }
+            buttonSize: { type: string, enum: [compact, standard, large] }
+            buttonPlacement: { type: string, enum: [left, center, right] }
+            categoryInputTransparent: { type: boolean }
+        screenCopy:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: string
+              maxLength: 500
     ApplicantSummary:
       type: object
       required: [total, drafts, inReview, approved, needsAttention]
@@ -370,19 +718,32 @@ components:
           type: integer
     SupportTicket:
       type: object
-      required: [id, subject, message, status, createdAt, updatedAt]
+      required: [id, applicantUserId, applicationId, applicationReference, subject, category, message, messages, assignedToUserId, status, createdAt, updatedAt]
       properties:
         id:
           type: string
+        applicantUserId:
+          type: string
         applicationId:
+          type: ["string", "null"]
+        applicationReference:
           type: ["string", "null"]
         subject:
           type: string
+        category:
+          type: string
+          enum: [enrollment, account, technical, documents, other]
         message:
           type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportMessage"
+        assignedToUserId:
+          type: ["string", "null"]
         status:
           type: string
-          enum: [open, answered, closed]
+          enum: [open, in_progress, resolved, answered, closed]
         response:
           type: ["string", "null"]
         createdAt:
@@ -393,7 +754,7 @@ components:
           format: date-time
     SupportTicketInput:
       type: object
-      required: [subject, message]
+      required: [subject, category, message]
       properties:
         applicationId:
           type: ["string", "null"]
@@ -401,6 +762,9 @@ components:
           type: string
           minLength: 3
           maxLength: 200
+        category:
+          type: string
+          enum: [enrollment, account, technical, documents, other]
         message:
           type: string
           minLength: 5
@@ -415,5 +779,28 @@ components:
           maxLength: 5000
         status:
           type: string
-          enum: [answered, closed]
+          enum: [open, in_progress, resolved]
+    SupportMessage:
+      type: object
+      required: [id, actorUserId, actorRole, body, createdAt]
+      properties:
+        id: { type: string }
+        actorUserId: { type: string }
+        actorRole: { type: string, enum: [applicant, administrator] }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+    SupportMessageInput:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 5000
+    SupportAssignmentInput:
+      type: object
+      required: [assigneeUserId]
+      properties:
+        assigneeUserId:
+          type: ["string", "null"]
 

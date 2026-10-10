@@ -12,7 +12,7 @@ export interface ApplicationUpdate {
   categoryId?: ApplicationUpdateCategoryId;
   /**
      * @minimum 0
-     * @maximum 2
+     * @maximum 7
      */
   currentStep?: number;
   answers?: ApplicationUpdateAnswers;

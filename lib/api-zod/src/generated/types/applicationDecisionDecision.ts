@@ -13,4 +13,5 @@ export const ApplicationDecisionDecision = {
   approve: 'approve',
   reject: 'reject',
   request_information: 'request_information',
+  mark_under_review: 'mark_under_review',
 } as const;

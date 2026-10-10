@@ -10,6 +10,7 @@ export type SupportReplyInputStatus = typeof SupportReplyInputStatus[keyof typeo
 
 
 export const SupportReplyInputStatus = {
-  answered: 'answered',
-  closed: 'closed',
+  open: 'open',
+  in_progress: 'in_progress',
+  resolved: 'resolved',
 } as const;

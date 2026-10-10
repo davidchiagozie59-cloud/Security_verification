@@ -5,14 +5,23 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SupportMessage } from './supportMessage';
+import type { SupportTicketCategory } from './supportTicketCategory';
 import type { SupportTicketStatus } from './supportTicketStatus';
 
 export interface SupportTicket {
   id: string;
+  applicantUserId: string;
   /** @nullable */
-  applicationId?: string | null;
+  applicationId: string | null;
+  /** @nullable */
+  applicationReference: string | null;
   subject: string;
+  category: SupportTicketCategory;
   message: string;
+  messages: SupportMessage[];
+  /** @nullable */
+  assignedToUserId: string | null;
   status: SupportTicketStatus;
   /** @nullable */
   response?: string | null;

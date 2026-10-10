@@ -101,7 +101,7 @@ export interface ApplicationUpdate {
   categoryId?: ApplicationUpdateCategoryId;
   /**
      * @minimum 0
-     * @maximum 2
+     * @maximum 7
      */
   currentStep?: number;
   answers?: ApplicationUpdateAnswers;
@@ -118,12 +118,93 @@ export const ApplicationDecisionDecision = {
   approve: 'approve',
   reject: 'reject',
   request_information: 'request_information',
+  mark_under_review: 'mark_under_review',
 } as const;
 
 export interface ApplicationDecision {
   decision: ApplicationDecisionDecision;
   /** @maxLength 4000 */
   note?: string;
+  /**
+     * @minItems 1
+     * @maxItems 7
+     * @items.minimum 0
+     * @items.maximum 6
+     */
+  reopenSections?: number[];
+}
+
+export interface ApplicationNoteInput {
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  note: string;
+}
+
+export interface ApplicationEvent {
+  id: string;
+  eventType: string;
+  /** @nullable */
+  note: string | null;
+  createdAt: string;
+  actorUserId: string;
+}
+
+export interface AdminOverview {
+  totalUsers: number;
+  totalApplications: number;
+  pendingApplications: number;
+  underReviewApplications: number;
+  approvedApplications: number;
+  rejectedApplications: number;
+  needsInformationApplications: number;
+  unresolvedSupportRequests: number;
+}
+
+export type AdminUserAccountStatus = typeof AdminUserAccountStatus[keyof typeof AdminUserAccountStatus];
+
+
+export const AdminUserAccountStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export interface AdminUser {
+  userId: string;
+  /** @nullable */
+  name: string | null;
+  /** @nullable */
+  username: string | null;
+  /** @nullable */
+  email: string | null;
+  accountStatus: AdminUserAccountStatus;
+  /** @nullable */
+  categoryId: string | null;
+  /** @nullable */
+  categoryName: string | null;
+  /** @nullable */
+  applicationReference: string | null;
+  registrationDate: string;
+  /** @nullable */
+  enrollmentStatus: string | null;
+}
+
+export interface AdminUserList {
+  users: AdminUser[];
+  totalCount: number;
+}
+
+export type AdminUserStatusUpdateAccountStatus = typeof AdminUserStatusUpdateAccountStatus[keyof typeof AdminUserStatusUpdateAccountStatus];
+
+
+export const AdminUserStatusUpdateAccountStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export interface AdminUserStatusUpdate {
+  accountStatus: AdminUserStatusUpdateAccountStatus;
 }
 
 export interface ApplicantSummary {
@@ -134,27 +215,74 @@ export interface ApplicantSummary {
   needsAttention: number;
 }
 
+export type SupportTicketCategory = typeof SupportTicketCategory[keyof typeof SupportTicketCategory];
+
+
+export const SupportTicketCategory = {
+  enrollment: 'enrollment',
+  account: 'account',
+  technical: 'technical',
+  documents: 'documents',
+  other: 'other',
+} as const;
+
 export type SupportTicketStatus = typeof SupportTicketStatus[keyof typeof SupportTicketStatus];
 
 
 export const SupportTicketStatus = {
   open: 'open',
+  in_progress: 'in_progress',
+  resolved: 'resolved',
   answered: 'answered',
   closed: 'closed',
 } as const;
 
+export type SupportMessageActorRole = typeof SupportMessageActorRole[keyof typeof SupportMessageActorRole];
+
+
+export const SupportMessageActorRole = {
+  applicant: 'applicant',
+  administrator: 'administrator',
+} as const;
+
+export interface SupportMessage {
+  id: string;
+  actorUserId: string;
+  actorRole: SupportMessageActorRole;
+  body: string;
+  createdAt: string;
+}
+
 export interface SupportTicket {
   id: string;
+  applicantUserId: string;
   /** @nullable */
-  applicationId?: string | null;
+  applicationId: string | null;
+  /** @nullable */
+  applicationReference: string | null;
   subject: string;
+  category: SupportTicketCategory;
   message: string;
+  messages: SupportMessage[];
+  /** @nullable */
+  assignedToUserId: string | null;
   status: SupportTicketStatus;
   /** @nullable */
   response?: string | null;
   createdAt: string;
   updatedAt: string;
 }
+
+export type SupportTicketInputCategory = typeof SupportTicketInputCategory[keyof typeof SupportTicketInputCategory];
+
+
+export const SupportTicketInputCategory = {
+  enrollment: 'enrollment',
+  account: 'account',
+  technical: 'technical',
+  documents: 'documents',
+  other: 'other',
+} as const;
 
 export interface SupportTicketInput {
   /** @nullable */
@@ -164,6 +292,7 @@ export interface SupportTicketInput {
      * @maxLength 200
      */
   subject: string;
+  category: SupportTicketInputCategory;
   /**
      * @minLength 5
      * @maxLength 5000
@@ -175,8 +304,9 @@ export type SupportReplyInputStatus = typeof SupportReplyInputStatus[keyof typeo
 
 
 export const SupportReplyInputStatus = {
-  answered: 'answered',
-  closed: 'closed',
+  open: 'open',
+  in_progress: 'in_progress',
+  resolved: 'resolved',
 } as const;
 
 export interface SupportReplyInput {
@@ -186,6 +316,19 @@ export interface SupportReplyInput {
      */
   response: string;
   status: SupportReplyInputStatus;
+}
+
+export interface SupportMessageInput {
+  /**
+     * @minLength 1
+     * @maxLength 5000
+     */
+  message: string;
+}
+
+export interface SupportAssignmentInput {
+  /** @nullable */
+  assigneeUserId: string | null;
 }
 
 export type ListApplicationsForReviewParams = {
@@ -202,5 +345,32 @@ export const ListApplicationsForReviewStatus = {
   needs_information: 'needs_information',
   approved: 'approved',
   rejected: 'rejected',
+} as const;
+
+export type ListAdminUsersParams = {
+search?: string;
+accountStatus?: ListAdminUsersAccountStatus;
+};
+
+export type ListAdminUsersAccountStatus = typeof ListAdminUsersAccountStatus[keyof typeof ListAdminUsersAccountStatus];
+
+
+export const ListAdminUsersAccountStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export type ListSupportTicketsForAdminParams = {
+search?: string;
+status?: ListSupportTicketsForAdminStatus;
+};
+
+export type ListSupportTicketsForAdminStatus = typeof ListSupportTicketsForAdminStatus[keyof typeof ListSupportTicketsForAdminStatus];
+
+
+export const ListSupportTicketsForAdminStatus = {
+  open: 'open',
+  in_progress: 'in_progress',
+  resolved: 'resolved',
 } as const;
 

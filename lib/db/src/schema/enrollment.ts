@@ -22,6 +22,8 @@ export const applicationStatus = pgEnum("application_status", [
 
 export const supportStatus = pgEnum("support_status", [
   "open",
+  "in_progress",
+  "resolved",
   "answered",
   "closed",
 ]);
@@ -88,9 +90,23 @@ export const supportTicketsTable = pgTable(
       { onDelete: "set null" },
     ),
     subject: text("subject").notNull(),
+    category: text("category").notNull().default("other"),
     message: text("message").notNull(),
+    messages: jsonb("messages")
+      .$type<
+        Array<{
+          id: string;
+          actorUserId: string;
+          actorRole: "applicant" | "administrator";
+          body: string;
+          createdAt: string;
+        }>
+      >()
+      .notNull()
+      .default([]),
     status: supportStatus("status").notNull().default("open"),
     response: text("response"),
+    assignedToUserId: text("assigned_to_user_id"),
     updatedByUserId: text("updated_by_user_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

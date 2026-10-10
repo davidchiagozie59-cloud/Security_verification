@@ -11,4 +11,11 @@ export interface ApplicationDecision {
   decision: ApplicationDecisionDecision;
   /** @maxLength 4000 */
   note?: string;
+  /**
+     * @minItems 1
+     * @maxItems 7
+     * @items.minimum 0
+     * @items.maximum 6
+     */
+  reopenSections?: number[];
 }

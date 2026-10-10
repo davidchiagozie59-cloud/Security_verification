@@ -11,6 +11,8 @@ export type SupportTicketStatus = typeof SupportTicketStatus[keyof typeof Suppor
 
 export const SupportTicketStatus = {
   open: 'open',
+  in_progress: 'in_progress',
+  resolved: 'resolved',
   answered: 'answered',
   closed: 'closed',
 } as const;

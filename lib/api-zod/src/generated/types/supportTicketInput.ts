@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SupportTicketInputCategory } from './supportTicketInputCategory';
 
 export interface SupportTicketInput {
   /** @nullable */
@@ -14,6 +15,7 @@ export interface SupportTicketInput {
      * @maxLength 200
      */
   subject: string;
+  category: SupportTicketInputCategory;
   /**
      * @minLength 5
      * @maxLength 5000
