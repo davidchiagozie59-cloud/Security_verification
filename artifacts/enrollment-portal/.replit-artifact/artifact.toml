@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Custom Enrollment & Verification Portal"
+description = "A secure enrollment service for applicants to select an enrollment category, submit identity and supporting evidence, track their application, and receive decisions, with an administrative review console."
+version = "1.0.0"
+id = "artifacts/enrollment-portal"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21914
+
+[services.development]
+run = "pnpm --filter @workspace/enrollment-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/enrollment-portal", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/enrollment-portal/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21914"
+BASE_PATH = "/"

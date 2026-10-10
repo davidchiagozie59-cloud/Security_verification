@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: enrollment
+    description: Applicant enrollment and application operations
+  - name: administration
+    description: Administrator application review and support
 paths:
   /healthz:
     get:
@@ -24,6 +28,234 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /enrollment/categories:
+    get:
+      operationId: listEnrollmentCategories
+      tags: [enrollment]
+      summary: List the four available enrollment categories
+      responses:
+        "200":
+          description: Available enrollment categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnrollmentCategory"
+  /me/applications:
+    get:
+      operationId: listMyApplications
+      tags: [enrollment]
+      summary: List the signed-in applicant's applications
+      responses:
+        "200":
+          description: Applicant applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnrollmentApplication"
+  /applications:
+    post:
+      operationId: createApplication
+      tags: [enrollment]
+      summary: Create an application draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationInput"
+      responses:
+        "201":
+          description: Draft created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrollmentApplication"
+  /applications/{applicationId}:
+    parameters:
+      - name: applicationId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getApplication
+      tags: [enrollment]
+      summary: Get an application owned by the signed-in applicant
+      responses:
+        "200":
+          description: Application detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrollmentApplication"
+    patch:
+      operationId: updateApplication
+      tags: [enrollment]
+      summary: Save changes to an application draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationUpdate"
+      responses:
+        "200":
+          description: Updated application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrollmentApplication"
+  /applications/{applicationId}/submit:
+    post:
+      operationId: submitApplication
+      tags: [enrollment]
+      summary: Submit a completed application for review
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Submitted application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrollmentApplication"
+  /dashboard/summary:
+    get:
+      operationId: getApplicantSummary
+      tags: [enrollment]
+      summary: Get applicant dashboard summary
+      responses:
+        "200":
+          description: Applicant dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicantSummary"
+  /admin/applications:
+    get:
+      operationId: listApplicationsForReview
+      tags: [administration]
+      summary: List applications for authorized administrators
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [submitted, under_review, needs_information, approved, rejected]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Applications matching the review filters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnrollmentApplication"
+  /admin/applications/{applicationId}/decision:
+    post:
+      operationId: decideApplication
+      tags: [administration]
+      summary: Approve, reject, or request more information
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationDecision"
+      responses:
+        "200":
+          description: Application decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrollmentApplication"
+  /support/tickets:
+    get:
+      operationId: listMySupportTickets
+      tags: [enrollment]
+      summary: List the signed-in applicant's support requests
+      responses:
+        "200":
+          description: Support requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SupportTicket"
+    post:
+      operationId: createSupportTicket
+      tags: [enrollment]
+      summary: Create a support request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketInput"
+      responses:
+        "201":
+          description: Support request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+  /admin/support/tickets:
+    get:
+      operationId: listSupportTicketsForAdmin
+      tags: [administration]
+      summary: List support requests for authorized administrators
+      responses:
+        "200":
+          description: Support requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SupportTicket"
+  /admin/support/tickets/{ticketId}/reply:
+    post:
+      operationId: replyToSupportTicket
+      tags: [administration]
+      summary: Reply to and manage a support request
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportReplyInput"
+      responses:
+        "200":
+          description: Updated support request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +265,143 @@ components:
           type: string
       required:
         - status
+    EnrollmentCategory:
+      type: object
+      required: [id, name, description, accent]
+      properties:
+        id:
+          type: string
+          enum: [category-1, category-2, category-3, category-4]
+        name:
+          type: string
+        description:
+          type: string
+        accent:
+          type: string
+    ApplicationStatus:
+      type: string
+      enum: [draft, submitted, under_review, needs_information, approved, rejected]
+    EnrollmentApplication:
+      type: object
+      required: [id, reference, categoryId, categoryName, status, currentStep, answers, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        reference:
+          type: string
+        categoryId:
+          type: string
+          enum: [category-1, category-2, category-3, category-4]
+        categoryName:
+          type: string
+        status:
+          $ref: "#/components/schemas/ApplicationStatus"
+        currentStep:
+          type: integer
+        answers:
+          type: object
+          additionalProperties: true
+        applicantName:
+          type: ["string", "null"]
+        applicantEmail:
+          type: ["string", "null"]
+        reviewNote:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        submittedAt:
+          type: ["string", "null"]
+          format: date-time
+    ApplicationInput:
+      type: object
+      required: [categoryId]
+      properties:
+        categoryId:
+          type: string
+          enum: [category-1, category-2, category-3, category-4]
+    ApplicationUpdate:
+      type: object
+      properties:
+        currentStep:
+          type: integer
+          minimum: 0
+        answers:
+          type: object
+          additionalProperties: true
+    ApplicationDecision:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approve, reject, request_information]
+        note:
+          type: string
+          maxLength: 4000
+    ApplicantSummary:
+      type: object
+      required: [total, drafts, inReview, approved, needsAttention]
+      properties:
+        total:
+          type: integer
+        drafts:
+          type: integer
+        inReview:
+          type: integer
+        approved:
+          type: integer
+        needsAttention:
+          type: integer
+    SupportTicket:
+      type: object
+      required: [id, subject, message, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        applicationId:
+          type: ["string", "null"]
+        subject:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+          enum: [open, answered, closed]
+        response:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SupportTicketInput:
+      type: object
+      required: [subject, message]
+      properties:
+        applicationId:
+          type: ["string", "null"]
+        subject:
+          type: string
+          minLength: 3
+          maxLength: 200
+        message:
+          type: string
+          minLength: 5
+          maxLength: 5000
+    SupportReplyInput:
+      type: object
+      required: [response, status]
+      properties:
+        response:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        status:
+          type: string
+          enum: [answered, closed]
 
