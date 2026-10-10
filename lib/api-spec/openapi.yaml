@@ -340,7 +340,10 @@ components:
           additionalProperties: true
         pin:
           type: string
-          pattern: "^[0-9]{6}$"
+          pattern: "^[0-9]{4,6}$"
+        pinConfirmation:
+          type: string
+          pattern: "^[0-9]{4,6}$"
     ApplicationDecision:
       type: object
       required: [decision]

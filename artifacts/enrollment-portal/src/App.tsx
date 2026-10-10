@@ -467,7 +467,7 @@ function DraftApplication() {
         setContext('');
         setReplacementCategory('');
         setStep(0);
-        setFeedback('Category changed. Your previous details and PIN were cleared.');
+        setFeedback('');
       },
       onError: () => setFeedback('The category could not be changed. Please try again.'),
     });
@@ -496,7 +496,7 @@ function DraftApplication() {
       error={feedback}
       onReplacementCategoryChange={setReplacementCategory}
       onChangeCategory={changeCategory}
-      onComplete={(entryAnswers: CategoryEntryAnswers, entryPin: string) => {
+      onComplete={(entryAnswers: CategoryEntryAnswers, entryPin: string, entryPinConfirmation?: string) => {
         setFeedback('');
         update.mutate({
           applicationId: id,
@@ -504,6 +504,7 @@ function DraftApplication() {
             currentStep: 0,
             answers: { ...application.answers, ...entryAnswers, categoryEntryComplete: true },
             pin: entryPin,
+            ...(entryPinConfirmation ? { pinConfirmation: entryPinConfirmation } : {}),
           },
         }, {
           onSuccess: (saved) => {
@@ -532,7 +533,7 @@ function DraftApplication() {
         </div>
       </details>
       <div className="form-heading"><div className="eyebrow">APPLICATION · {application.categoryName}</div><h1>Let’s complete your application.</h1><p>Your progress is saved to your secure account. You can return any time before submitting.</p></div>
-      <div className="progress-track" aria-label={`Step ${activeStep + 1} of 3`} data-testid="progress-application">
+      <div className="progress-track" aria-label={`Step ${activeStep + 1} of 2`} data-testid="progress-application">
         {['Application details', 'Review & submit'].map((label, n) => <div className={`progress-step ${n <= activeStep ? 'progress-current' : ''}`} key={label}><span>{n < activeStep ? <Check size={13} /> : `0${n + 1}`}</span><b>{label}</b></div>)}
       </div>
       <div className="form-workspace portal-scroll">

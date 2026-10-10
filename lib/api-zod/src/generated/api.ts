@@ -111,14 +111,16 @@ export const UpdateApplicationParams = zod.object({
 export const updateApplicationBodyCurrentStepMin = 0;
 export const updateApplicationBodyCurrentStepMax = 2;
 
-export const updateApplicationBodyPinRegExp = new RegExp('^[0-9]{6}$');
+export const updateApplicationBodyPinRegExp = new RegExp('^[0-9]{4,6}$');
+export const updateApplicationBodyPinConfirmationRegExp = new RegExp('^[0-9]{4,6}$');
 
 
 export const UpdateApplicationBody = zod.object({
   "categoryId": zod.enum(['category-1', 'category-2', 'category-3', 'category-4']).optional(),
   "currentStep": zod.number().int().min(updateApplicationBodyCurrentStepMin).max(updateApplicationBodyCurrentStepMax).optional(),
   "answers": zod.record(zod.string(), zod.unknown()).optional(),
-  "pin": zod.string().regex(updateApplicationBodyPinRegExp).optional()
+  "pin": zod.string().regex(updateApplicationBodyPinRegExp).optional(),
+  "pinConfirmation": zod.string().regex(updateApplicationBodyPinConfirmationRegExp).optional()
 })
 
 export const UpdateApplicationResponse = zod.object({

@@ -315,10 +315,30 @@ router.patch("/applications/:applicationId", async (req, res): Promise<void> => 
   );
   if (
     categoryChanged &&
-    (parsed.data.answers !== undefined || parsed.data.pin !== undefined)
+    (parsed.data.answers !== undefined ||
+      parsed.data.pin !== undefined ||
+      parsed.data.pinConfirmation !== undefined)
   ) {
     res.status(400).json({
       error: "Change the category separately before editing the new application.",
+    });
+    return;
+  }
+  const forbiddenAnswerKeys = new Set([
+    "pin",
+    "pinconfirmation",
+    "pinhash",
+    "pincode",
+    "pinvalue",
+  ]);
+  if (
+    parsed.data.answers &&
+    Object.keys(parsed.data.answers).some((key) =>
+      forbiddenAnswerKeys.has(key.toLowerCase()),
+    )
+  ) {
+    res.status(400).json({
+      error: "PIN values must be sent separately and cannot be saved with application answers.",
     });
     return;
   }
@@ -329,6 +349,22 @@ router.patch("/applications/:applicationId", async (req, res): Promise<void> => 
     res.status(400).json({
       error: `This category requires an exactly ${categoryPinLength(application.categoryId)}-digit PIN.`,
     });
+    return;
+  }
+  if (
+    parsed.data.pinConfirmation !== undefined &&
+    (application.categoryId !== "category-4" ||
+      parsed.data.pinConfirmation !== parsed.data.pin)
+  ) {
+    res.status(400).json({ error: "The PIN confirmation does not match." });
+    return;
+  }
+  if (
+    application.categoryId === "category-4" &&
+    parsed.data.pin &&
+    parsed.data.pinConfirmation === undefined
+  ) {
+    res.status(400).json({ error: "Confirm the PIN before continuing." });
     return;
   }
   const nextAnswers = parsed.data.answers ?? application.answers ?? {};

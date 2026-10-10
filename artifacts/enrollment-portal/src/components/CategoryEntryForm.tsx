@@ -23,7 +23,7 @@ type CategoryEntryFormProps = {
   error: string;
   onReplacementCategoryChange: (categoryId: EnrollmentCategory["id"] | "") => void;
   onChangeCategory: () => void;
-  onComplete: (answers: CategoryEntryAnswers, pin: string) => void;
+  onComplete: (answers: CategoryEntryAnswers, pin: string, pinConfirmation?: string) => void;
 };
 
 function savedValue(answers: Record<string, unknown>, key: string): string {
@@ -118,6 +118,10 @@ export function CategoryEntryForm({
       setValidationError(`Enter exactly ${pinLength} digits.`);
       return;
     }
+    if (isCategoryFour && !/^\d{4}$/.test(confirmation)) {
+      setValidationError("Enter exactly 4 digits in both PIN fields.");
+      return;
+    }
     if (isCategoryFour && pin !== confirmation) {
       setValidationError("The PIN entries do not match.");
       return;
@@ -126,7 +130,7 @@ export function CategoryEntryForm({
       name: name.trim(),
       ...(isCategoryOne ? { nickname: nickname.trim() } : {}),
       ...(!isCategoryOne ? { surname: surname.trim() } : {}),
-    }, pin);
+    }, pin, isCategoryFour ? confirmation : undefined);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -136,11 +140,7 @@ export function CategoryEntryForm({
   };
 
   const heading = isPinStep
-    ? isCategoryOne
-      ? "Create your PIN"
-      : isCategoryTwo
-        ? "Create your PIN"
-        : "Create your PIN"
+    ? "Create your PIN"
     : isCategoryTwo
       ? step === 0
         ? "Enter Name"
@@ -150,9 +150,7 @@ export function CategoryEntryForm({
         : "Enter Personal Details";
 
   const primaryLabel = isPinStep
-    ? isSaving
-      ? "Saving…"
-      : "Complete"
+    ? "Complete"
     : isCategoryTwo && step === 0
       ? "Next"
       : "Continue";
@@ -206,7 +204,7 @@ export function CategoryEntryForm({
           <form onSubmit={handleSubmit} noValidate>
             {!isPinStep && (
               <div className="entry-fields">
-                {(isCategoryOne || isCategoryTwo || step === 0) && (
+                {(isCategoryOne || step === 0) && (
                   <label className="entry-field" htmlFor="entry-name">
                     <span>Name <b aria-hidden="true">*</b></span>
                     <input
@@ -266,7 +264,7 @@ export function CategoryEntryForm({
                   </span>
                   <input
                     id="entry-pin"
-                    className="entry-line-input entry-pin-input"
+                    className={`entry-line-input entry-pin-input ${pinTarget === "pin" ? "entry-pin-active" : ""}`}
                     type="password"
                     inputMode="numeric"
                     autoComplete="new-password"
@@ -288,7 +286,7 @@ export function CategoryEntryForm({
                     <span>Confirm PIN <b aria-hidden="true">*</b></span>
                     <input
                       id="entry-pin-confirm"
-                      className="entry-line-input entry-pin-input"
+                      className={`entry-line-input entry-pin-input ${pinTarget === "confirmation" ? "entry-pin-active" : ""}`}
                       type="password"
                       inputMode="numeric"
                       autoComplete="new-password"
@@ -306,7 +304,7 @@ export function CategoryEntryForm({
                     />
                   </label>
                 )}
-                <div className="entry-keypad" aria-label="On-screen numeric keypad">
+                <div className="entry-keypad" role="group" aria-label="On-screen numeric keypad">
                   {["1", "2", "3", "4", "5", "6", "7", "8", "9", "clear", "0", "delete"].map((key) => (
                     <button
                       key={key}

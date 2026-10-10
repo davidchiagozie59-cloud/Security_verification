@@ -16,6 +16,8 @@ export interface ApplicationUpdate {
      */
   currentStep?: number;
   answers?: ApplicationUpdateAnswers;
-  /** @pattern ^[0-9]{6}$ */
+  /** @pattern ^[0-9]{4,6}$ */
   pin?: string;
+  /** @pattern ^[0-9]{4,6}$ */
+  pinConfirmation?: string;
 }
