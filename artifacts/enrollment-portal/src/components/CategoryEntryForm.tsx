@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
-import { ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { EnrollmentCategory } from "@workspace/api-client-react";
 import { Link } from "wouter";
 
@@ -73,29 +73,8 @@ export function CategoryEntryForm({
 
   const moveForward = () => {
     setValidationError("");
-    if (step === 0) {
-      if (!name.trim()) {
-        setValidationError("Enter your name to continue.");
-        return;
-      }
-      if (isCategoryOne && !nickname.trim()) {
-        setValidationError("Enter your nickname to continue.");
-        return;
-      }
-      if (!isCategoryOne && !isCategoryTwo && !surname.trim()) {
-        setValidationError("Enter your surname to continue.");
-        return;
-      }
-      setStep(isCategoryTwo ? 1 : lastStep);
-      return;
-    }
-    if (isCategoryTwo && step === 1) {
-      if (!surname.trim()) {
-        setValidationError("Enter your surname to continue.");
-        return;
-      }
-      setStep(2);
-    }
+    if (step === 0) setStep(isCategoryTwo ? 1 : lastStep);
+    else if (isCategoryTwo && step === 1) setStep(2);
   };
 
   const moveBack = () => {
@@ -119,6 +98,18 @@ export function CategoryEntryForm({
 
   const finish = () => {
     setValidationError("");
+    if (!name.trim()) {
+      setValidationError("Enter your name to continue.");
+      return;
+    }
+    if (isCategoryOne && !nickname.trim()) {
+      setValidationError("Enter your nickname to continue.");
+      return;
+    }
+    if (!isCategoryOne && !surname.trim()) {
+      setValidationError("Enter your surname to continue.");
+      return;
+    }
     const pinPattern = new RegExp(`^\\d{${pinLength}}$`);
     if (!pinPattern.test(pin)) {
       setValidationError(`Enter exactly ${pinLength} digits.`);
@@ -201,15 +192,7 @@ export function CategoryEntryForm({
 
       <div className="entry-content">
         <section className="entry-card" aria-labelledby="category-entry-heading">
-          <div className="entry-brand"><span><ShieldCheck size={17} /></span> CivicEnroll</div>
-          <div className="entry-eyebrow">{categoryName}</div>
-          <div className="entry-step-label">{screenCopy.sectionIdLabel || `STEP 0${step + 1}`} <span>/ 0{lastStep + 1}</span></div>
-          <h1 id="category-entry-heading">{heading}</h1>
-          <p className="entry-intro">
-            {screenCopy.description || (isPinStep
-              ? `Choose an exactly ${pinLength}-digit PIN for this application.`
-              : "Enter the required details to continue.")}
-          </p>
+          <h1 id="category-entry-heading" className="sr-only">{heading}</h1>
 
           <form onSubmit={handleSubmit} noValidate>
             {!isPinStep && (
