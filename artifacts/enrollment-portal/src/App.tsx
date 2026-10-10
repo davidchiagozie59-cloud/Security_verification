@@ -22,6 +22,7 @@ import {
 import type {
   ApplicationDecision, EnrollmentApplication, EnrollmentCategory, SupportTicket,
 } from '@workspace/api-client-react';
+import { CategoryEntryForm, type CategoryEntryAnswers } from './components/CategoryEntryForm';
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
 
 const queryClient = new QueryClient({
@@ -388,6 +389,17 @@ function formatDate(date?: string | null) {
   return Number.isNaN(parsed.getTime()) ? '—' : new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(parsed);
 }
 
+function getCategoryEntryFields(answers: Record<string, unknown>, categoryId: string) {
+  const fields = [
+    { label: 'Name', value: answers.name },
+    ...(categoryId === 'category-1'
+      ? [{ label: 'Nickname', value: answers.nickname }]
+      : [{ label: 'Surname', value: answers.surname }]),
+  ];
+  return fields.filter((field): field is { label: string; value: string } =>
+    typeof field.value === 'string' && field.value.trim().length > 0);
+}
+
 function DraftApplication() {
   const params = useParams<{ applicationId?: string }>();
   const id = params.applicationId ?? '';
@@ -398,8 +410,6 @@ function DraftApplication() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [context, setContext] = useState<string | null>(null);
-  const [pin, setPin] = useState('');
-  const [pinConfirmation, setPinConfirmation] = useState('');
   const [replacementCategory, setReplacementCategory] = useState<EnrollmentCategory['id'] | ''>('');
   const [step, setStep] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
@@ -421,16 +431,15 @@ function DraftApplication() {
       </section>
     </div>}
   </AppFrame>;
-  const activeStep = step ?? Math.min(application.currentStep, 2);
+  const activeStep = step ?? Math.min(application.currentStep, 1);
   const answerValue = context ?? String(application.answers?.additionalContext ?? '');
-  const saveProgress = (nextStep: number, nextPin?: string, message = 'Progress saved') => {
+  const saveProgress = (nextStep: number, message = 'Progress saved') => {
     setFeedback('');
     update.mutate({
       applicationId: id,
       data: {
         currentStep: nextStep,
         answers: { ...application.answers, additionalContext: answerValue },
-        ...(nextPin ? { pin: nextPin } : {}),
       },
     }, {
       onSuccess: (saved) => {
@@ -438,23 +447,10 @@ function DraftApplication() {
         queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
         setStep(nextStep);
-        setPin('');
-        setPinConfirmation('');
         setFeedback(message);
       },
       onError: () => setFeedback('We could not save your changes. Please try again.'),
     });
-  };
-  const savePinAndContinue = () => {
-    setFeedback('');
-    if (pin || pinConfirmation) {
-      if (!/^\d{6}$/.test(pin)) { setFeedback('Create a six-digit numeric PIN.'); return; }
-      if (pin !== pinConfirmation) { setFeedback('The PINs do not match.'); return; }
-      saveProgress(2, pin, 'PIN saved securely');
-      return;
-    }
-    if (!application.hasPin) { setFeedback('Create and confirm a six-digit PIN to continue.'); return; }
-    saveProgress(2, undefined, 'Your saved PIN is ready');
   };
   const changeCategory = () => {
     if (!replacementCategory || replacementCategory === application.categoryId) return;
@@ -469,8 +465,6 @@ function DraftApplication() {
         queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
         setContext('');
-        setPin('');
-        setPinConfirmation('');
         setReplacementCategory('');
         setStep(0);
         setFeedback('Category changed. Your previous details and PIN were cleared.');
@@ -489,6 +483,40 @@ function DraftApplication() {
       onError: () => setFeedback('Your application was not submitted. Please try again.'),
     });
   };
+  if (application.answers?.categoryEntryComplete !== true) {
+    return <CategoryEntryForm
+      key={application.categoryId}
+      categoryId={application.categoryId}
+      categoryName={application.categoryName}
+      reference={application.reference}
+      savedAnswers={application.answers ?? {}}
+      categories={categories.data ?? []}
+      replacementCategoryId={replacementCategory}
+      isSaving={update.isPending}
+      error={feedback}
+      onReplacementCategoryChange={setReplacementCategory}
+      onChangeCategory={changeCategory}
+      onComplete={(entryAnswers: CategoryEntryAnswers, entryPin: string) => {
+        setFeedback('');
+        update.mutate({
+          applicationId: id,
+          data: {
+            currentStep: 0,
+            answers: { ...application.answers, ...entryAnswers, categoryEntryComplete: true },
+            pin: entryPin,
+          },
+        }, {
+          onSuccess: (saved) => {
+            queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
+            queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
+            queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
+            setStep(0);
+          },
+          onError: () => setFeedback('Your details could not be saved. Check the form and try again.'),
+        });
+      }}
+    />;
+  }
   return <AppFrame>
     <div className={`form-page category-form-${application.categoryId}`}>
       <div className="form-top"><Link href="/dashboard" className="back-link" data-testid="link-back-dashboard"><ArrowLeft size={16} /> Dashboard</Link>
@@ -505,11 +533,11 @@ function DraftApplication() {
       </details>
       <div className="form-heading"><div className="eyebrow">APPLICATION · {application.categoryName}</div><h1>Let’s complete your application.</h1><p>Your progress is saved to your secure account. You can return any time before submitting.</p></div>
       <div className="progress-track" aria-label={`Step ${activeStep + 1} of 3`} data-testid="progress-application">
-        {['Application details', 'Create PIN', 'Review & submit'].map((label, n) => <div className={`progress-step ${n <= activeStep ? 'progress-current' : ''}`} key={label}><span>{n < activeStep ? <Check size={13} /> : `0${n + 1}`}</span><b>{label}</b></div>)}
+        {['Application details', 'Review & submit'].map((label, n) => <div className={`progress-step ${n <= activeStep ? 'progress-current' : ''}`} key={label}><span>{n < activeStep ? <Check size={13} /> : `0${n + 1}`}</span><b>{label}</b></div>)}
       </div>
       <div className="form-workspace portal-scroll">
         {activeStep === 0 ? <section className="form-card">
-          <div className="form-card-heading"><span className="form-card-icon"><FileText size={18} /></span><div><h2>{application.categoryName}</h2><p>Category-specific entry fields will be added with the four category briefs.</p></div></div>
+          <div className="form-card-heading"><span className="form-card-icon"><FileText size={18} /></span><div><h2>{application.categoryName}</h2><p>Your category details and PIN are saved. Add any optional context for your application.</p></div></div>
           <label className="field-label" htmlFor="application-context">Additional context <span>Optional</span></label>
           <textarea id="application-context" rows={5} value={answerValue} onChange={(event) => setContext(event.target.value)}
             placeholder="Add any context you would like included with your application." className="text-input form-textarea" data-testid="input-application-context" />
@@ -519,26 +547,17 @@ function DraftApplication() {
             <PrimaryButton onClick={() => saveProgress(0)} disabled={update.isPending} testId="button-save-progress">{update.isPending ? 'Saving…' : 'Save progress'}</PrimaryButton>
             <PrimaryButton onClick={() => saveProgress(1)} disabled={update.isPending} testId="button-next-step">Continue <ArrowRight size={16} /></PrimaryButton>
           </div>
-        </section> : activeStep === 1 ? <section className="form-card pin-card">
-          <div className="form-card-heading"><span className="form-card-icon"><LockKeyhole size={18} /></span><div><h2>Create your enrollment PIN</h2><p>This PIN is stored as a salted server-side hash and is never shown to staff.</p></div></div>
-          {application.hasPin && <div className="field-help">A PIN is already set. Leave both fields blank to keep it, or enter a new PIN to replace it.</div>}
-          <label className="field-label" htmlFor="application-pin">Six-digit PIN</label>
-          <input id="application-pin" className="text-input" type="password" inputMode="numeric" autoComplete="new-password" pattern="[0-9]{6}" maxLength={6} value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="••••••" data-testid="input-application-pin" />
-          <label className="field-label" htmlFor="application-pin-confirm">Confirm PIN</label>
-          <input id="application-pin-confirm" className="text-input" type="password" inputMode="numeric" autoComplete="new-password" pattern="[0-9]{6}" maxLength={6} value={pinConfirmation} onChange={(event) => setPinConfirmation(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="••••••" data-testid="input-application-pin-confirm" />
-          {feedback && <p className="inline-error" role="status" data-testid="text-pin-feedback">{feedback}</p>}
-          <div className="form-actions"><button className="text-action" onClick={() => { setStep(0); setFeedback(''); }} data-testid="button-back-details"><ArrowLeft size={15} /> Back to details</button>
-            <PrimaryButton onClick={savePinAndContinue} disabled={update.isPending} testId="button-save-pin">{update.isPending ? 'Saving…' : 'Save PIN & continue'} <ArrowRight size={16} /></PrimaryButton>
-          </div>
         </section> : <section className="form-card review-card">
           <div className="form-card-heading"><span className="form-card-icon"><BadgeCheck size={18} /></span><div><h2>Review your application</h2><p>Check the selected category, PIN, and optional context before submitting.</p></div></div>
           <div className="review-field"><span>Enrollment path</span><b>{application.categoryName}</b></div>
+          {getCategoryEntryFields(application.answers, application.categoryId).map((field) =>
+            <div className="review-field" key={field.label}><span>{field.label}</span><b>{field.value}</b></div>)}
           <div className="review-field"><span>Application reference</span><b className="mono">{application.reference}</b></div>
           <div className="review-field"><span>Enrollment PIN</span><b>{application.hasPin ? 'Created securely' : 'Not created'}</b></div>
           <div className="review-field review-context"><span>Additional context</span><b>{answerValue.trim() || 'No additional context provided'}</b></div>
           <div className="review-callout"><ShieldCheck size={18} /><p>Once submitted, your application enters review. You’ll be able to follow its status from your dashboard.</p></div>
           {feedback && <p className="inline-error" role="alert" data-testid="text-submit-feedback">{feedback}</p>}
-          <div className="form-actions"><button className="text-action" onClick={() => setStep(1)} data-testid="button-edit-application"><ArrowLeft size={15} /> Back to PIN</button>
+          <div className="form-actions"><button className="text-action" onClick={() => setStep(0)} data-testid="button-edit-application"><ArrowLeft size={15} /> Back to details</button>
             <PrimaryButton onClick={submitDraft} disabled={submit.isPending} testId="button-submit-application">{submit.isPending ? 'Submitting…' : 'Submit application'} <ArrowRight size={15} /></PrimaryButton>
           </div>
         </section>}
@@ -730,6 +749,8 @@ function AdminApplicationReview() {
           <div className="detail-card-title"><FileText size={17} /><h2>Applicant record</h2></div>
           <div className="review-field"><span>Applicant</span><b>{application.applicantName || 'Not provided'}</b></div>
           <div className="review-field"><span>Email</span><b>{application.applicantEmail || 'Not provided'}</b></div>
+          {getCategoryEntryFields(application.answers, application.categoryId).map((field) =>
+            <div className="review-field" key={field.label}><span>{field.label}</span><b>{field.value}</b></div>)}
           <div className="review-field"><span>Created</span><b>{formatDate(application.createdAt)}</b></div>
           <div className="review-field"><span>Submitted</span><b>{formatDate(application.submittedAt)}</b></div>
           <div className="review-field review-context"><span>Additional context</span><b>{String(application.answers?.additionalContext ?? 'No additional context provided')}</b></div>

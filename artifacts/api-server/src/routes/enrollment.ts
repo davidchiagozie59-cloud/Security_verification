@@ -130,6 +130,19 @@ function answerString(answers: Record<string, unknown>, key: string): string | n
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function categoryPinLength(categoryId: string): number {
+  return categoryId === "category-2" ? 6 : 4;
+}
+
+function hasRequiredCategoryDetails(
+  categoryId: string,
+  answers: Record<string, unknown>,
+): boolean {
+  const requiredFields =
+    categoryId === "category-1" ? ["name", "nickname"] : ["name", "surname"];
+  return requiredFields.every((field) => answerString(answers, field) !== null);
+}
+
 function serializeApplication(
   application: typeof enrollmentApplicationsTable.$inferSelect,
 ) {
@@ -145,7 +158,10 @@ function serializeApplication(
     answers,
     applicantName:
       answerString(answers, "fullName") ??
-      ([answerString(answers, "firstName"), answerString(answers, "lastName")]
+      ([
+        answerString(answers, "name") ?? answerString(answers, "firstName"),
+        answerString(answers, "surname") ?? answerString(answers, "lastName"),
+      ]
         .filter(Boolean)
         .join(" ") ||
         null),
@@ -306,6 +322,51 @@ router.patch("/applications/:applicationId", async (req, res): Promise<void> => 
     });
     return;
   }
+  if (
+    parsed.data.pin &&
+    parsed.data.pin.length !== categoryPinLength(application.categoryId)
+  ) {
+    res.status(400).json({
+      error: `This category requires an exactly ${categoryPinLength(application.categoryId)}-digit PIN.`,
+    });
+    return;
+  }
+  const nextAnswers = parsed.data.answers ?? application.answers ?? {};
+  const entryIsComplete = nextAnswers.categoryEntryComplete === true;
+  const wasEntryComplete = application.answers?.categoryEntryComplete === true;
+  if (
+    parsed.data.answers?.categoryEntryComplete === true &&
+    !hasRequiredCategoryDetails(application.categoryId, nextAnswers)
+  ) {
+    res.status(400).json({
+      error: "Enter all required category details before continuing.",
+    });
+    return;
+  }
+  if (
+    parsed.data.answers?.categoryEntryComplete === true &&
+    !wasEntryComplete &&
+    !parsed.data.pin
+  ) {
+    res.status(400).json({
+      error: "Create the required category PIN before continuing.",
+    });
+    return;
+  }
+  if (
+    parsed.data.answers?.categoryEntryComplete === true &&
+    !parsed.data.pin &&
+    !application.pinHash
+  ) {
+    res.status(400).json({ error: "Create the required category PIN before continuing." });
+    return;
+  }
+  if (entryIsComplete && !hasRequiredCategoryDetails(application.categoryId, nextAnswers)) {
+    res.status(400).json({
+      error: "Enter all required category details before saving this application.",
+    });
+    return;
+  }
   const pinHash = parsed.data.pin
     ? (() => {
         const salt = randomBytes(16).toString("hex");
@@ -368,7 +429,17 @@ router.post("/applications/:applicationId/submit", async (req, res): Promise<voi
     res.status(409).json({ error: "This application has already been submitted." });
     return;
   }
-  if (Object.keys(application.answers).length === 0) {
+  const answers = application.answers ?? {};
+  if (
+    answers.categoryEntryComplete !== true ||
+    !hasRequiredCategoryDetails(application.categoryId, answers)
+  ) {
+    res.status(400).json({
+      error: "Complete the required category details before submitting.",
+    });
+    return;
+  }
+  if (Object.keys(answers).length === 0) {
     res.status(400).json({ error: "Complete the application before submitting it." });
     return;
   }
