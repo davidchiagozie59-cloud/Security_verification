@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 44" fill="none">
+  <rect x="1" y="4" width="36" height="36" rx="11" fill="#174D80"/>
+  <path d="M19 10.5 29 14v7.7c0 6.2-4.3 10-10 12.5-5.7-2.5-10-6.3-10-12.5V14l10-3.5Z" stroke="white" stroke-width="1.7" stroke-linejoin="round"/>
+  <path d="m14.7 21.8 3.2 3.1 5.8-6.2" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="47" y="29" fill="#1B3550" font-family="DM Sans, sans-serif" font-size="20" font-weight="700" letter-spacing="-1">Civic</text>
+  <text x="97" y="29" fill="#3B6682" font-family="DM Sans, sans-serif" font-size="20" font-weight="500" letter-spacing="-1">Enroll</text>
+</svg>
