@@ -152,6 +152,7 @@ function copyText(settings: PortalSettings | undefined, screen: string, key: str
 
 function AppFrame({ children, active = 'dashboard' }: { children: ReactNode; active?: string }) {
   const { signOut } = useClerk();
+  const { user } = useUser();
   const [menuOpen, setMenuOpen] = useState(false);
   const [, setLocation] = useLocation();
   const links = [
@@ -171,6 +172,12 @@ function AppFrame({ children, active = 'dashboard' }: { children: ReactNode; act
               <Icon size={18} strokeWidth={1.8} /><span>{label}</span>
             </Link>
           ))}
+          {user?.publicMetadata?.role === 'admin' && (
+            <Link href="/admin" onClick={() => setMenuOpen(false)}
+              className={`nav-link ${active === 'admin' ? 'nav-link-active' : ''}`} data-testid="link-nav-admin">
+              <ShieldCheck size={18} strokeWidth={1.8} /><span>Admin panel</span>
+            </Link>
+          )}
         </nav>
         <div className="sidebar-bottom">
           <div className="privacy-note"><LockKeyhole size={17} /><div><b>Your information is protected</b><span>Secure application workspace</span></div></div>

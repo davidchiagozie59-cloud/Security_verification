@@ -1,0 +1,444 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "DM Sans", Arial, sans-serif;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.category-entry-screen {
+  --entry-background: #0eae46;
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100svh;
+  flex-direction: column;
+  overflow: hidden;
+  padding: clamp(18px, 3.5vh, 36px) clamp(18px, 5vw, 64px);
+  color: #fff;
+  background-color: var(--entry-background);
+}
+
+.category-entry-screen-category-1 {
+  --entry-background: #0ead46;
+}
+
+.entry-top-row {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.entry-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #ffffffd9;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.entry-reference {
+  color: #ffffffa8;
+  font-size: 9px;
+}
+
+.entry-category-switch {
+  align-self: flex-end;
+  margin-top: 10px;
+  color: #ffffffe0;
+  font-size: 10px;
+}
+
+.entry-category-switch summary {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.entry-content {
+  display: grid;
+  flex: 1 0 auto;
+  place-items: center;
+  min-height: 0;
+  padding: 24px 0;
+}
+
+.entry-card {
+  width: min(100%, 570px);
+  margin: auto;
+  padding: clamp(26px, 5vw, 50px);
+  border: 1px solid #ffffff35;
+  border-radius: 22px;
+  background: #062c3020;
+  box-shadow: 0 24px 70px #06302c22;
+}
+
+.entry-card h1 {
+  margin: 10px 0 7px;
+  color: #fff;
+  font: 500 clamp(28px, 4vw, 39px)/1.08 Georgia, serif;
+  letter-spacing: -.04em;
+}
+
+.entry-fields,
+.entry-pin-panel {
+  display: grid;
+  gap: 19px;
+  margin-top: 30px;
+}
+
+.entry-field {
+  display: grid;
+  gap: 5px;
+  color: #ffffffed;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.entry-field > span b {
+  color: #fff;
+}
+
+.entry-line-input {
+  display: block;
+  width: 100%;
+  min-height: 43px;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid #ffffff85;
+  border-radius: 0;
+  outline: none;
+  color: #fff;
+  background: transparent;
+  font: 12px "DM Sans", Arial, sans-serif;
+}
+
+.entry-line-input::placeholder {
+  color: #ffffff8a;
+}
+
+.entry-line-input:focus {
+  border-bottom: 2px solid #fff;
+}
+
+.entry-pin-input {
+  max-width: 310px;
+  font-size: 20px;
+  letter-spacing: .28em;
+}
+
+.entry-keypad {
+  display: grid;
+  width: min(100%, 300px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  margin: 18px auto 0;
+}
+
+.entry-key {
+  display: grid;
+  min-height: 48px;
+  place-items: center;
+  border: 0;
+  color: #fff;
+  background: transparent;
+  font: 500 17px "DM Sans", Arial, sans-serif;
+  cursor: pointer;
+}
+
+.entry-error {
+  margin: 14px 0 0;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.entry-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 24px;
+}
+
+.entry-step-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 0;
+  border: 0;
+  color: #ffffffd9;
+  background: transparent;
+  font: 600 10px "DM Sans", Arial, sans-serif;
+  cursor: pointer;
+}
+
+.entry-primary-button {
+  display: inline-flex;
+  min-width: 128px;
+  min-height: 43px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 17px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--entry-background);
+  background: #fff;
+  box-shadow: 0 7px 18px #042c3027;
+  font: 700 11px "DM Sans", Arial, sans-serif;
+  cursor: pointer;
+}
+
+.category-entry-screen.entry-input-transparent .entry-line-input {
+  background: transparent;
+}
+
+.category-entry-screen .entry-content {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  width: 100%;
+  min-height: 0;
+  padding: 20px clamp(18px, 5vw, 64px) 36px;
+}
+
+.category-entry-screen .entry-card {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: clamp(20px, 4vw, 48px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.category-entry-screen .entry-card form {
+  width: 100%;
+}
+
+.category-entry-screen .entry-fields,
+.category-entry-screen .entry-pin-panel {
+  width: min(100%, 480px);
+  margin: 0 auto;
+}
+
+.category-entry-screen .entry-fields {
+  gap: 23px;
+}
+
+.category-entry-screen .entry-actions {
+  justify-content: center;
+  gap: 20px;
+}
+
+.category-entry-screen .entry-line-input {
+  background: transparent;
+  border-radius: 0;
+}
+
+.category-one-reference-screen {
+  background:
+    linear-gradient(180deg, #0d7d43 0%, #0c7440 59%, #0b663d 100%);
+}
+
+.category-one-reference-header {
+  position: absolute;
+  z-index: 3;
+  top: 26px;
+  right: 24px;
+  left: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.category-one-reference-menu-button {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 0;
+  color: #fff;
+  background: transparent;
+}
+
+.category-one-reference-language {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.category-one-reference-flag {
+  width: 24px;
+  height: 16px;
+  border-radius: 1px;
+}
+
+.category-one-reference-content {
+  position: absolute;
+  top: 36.8%;
+  right: 10%;
+  left: 10%;
+  width: auto !important;
+  padding: 0 !important;
+}
+
+.category-one-reference-card {
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+.category-one-reference-fields,
+.category-one-reference-pin {
+  width: 100% !important;
+  margin: 0 !important;
+  position: relative;
+}
+
+.category-one-reference-fields {
+  gap: 29px !important;
+}
+
+.category-one-reference-screen .entry-field > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.category-one-reference-screen .entry-line-input {
+  min-height: 47px;
+  padding: 12px 0;
+  border-bottom-color: #ffffffc4;
+  font-size: 15px;
+}
+
+.category-one-reference-screen .entry-line-input::placeholder {
+  color: transparent;
+}
+
+.category-one-reference-screen .entry-line-input:focus::placeholder {
+  color: #ffffff99;
+}
+
+.category-one-pin-visibility {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  color: #fff;
+  background: transparent;
+}
+
+.category-one-reference-screen .entry-pin-input {
+  max-width: 100%;
+  padding-right: 50px;
+}
+
+.category-one-reference-screen .entry-actions {
+  width: 100%;
+  margin-top: 30px;
+}
+
+.category-one-reference-screen .entry-primary-button {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 999px;
+  color: #0d6d3f;
+  font-size: 13px;
+}
+
+.category-one-reference-screen .entry-keypad {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.category-one-reference-screen .entry-pin-panel:focus-within .entry-keypad {
+  max-height: 220px;
+  opacity: 1;
+}
+
+.category-one-reference-footer {
+  position: absolute;
+  bottom: max(38px, env(safe-area-inset-bottom));
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffffed;
+  font-size: 14px;
+  text-decoration: none;
+  transform: translateX(-50%);
+}
+
+.category-one-reference-menu {
+  position: absolute;
+  z-index: 4;
+  top: 60px;
+  left: 16px;
+  display: grid;
+  gap: 10px;
+  min-width: 180px;
+  padding: 14px;
+  border: 1px solid #ffffff40;
+  border-radius: 10px;
+  background: #0b663d;
+}
+
+.category-one-reference-menu a,
+.category-one-reference-menu summary {
+  color: #fff;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+@media (max-width: 560px) {
+  .category-one-reference-header {
+    top: 27px;
+  }
+
+  .category-one-reference-content {
+    top: 37%;
+  }
+
+  .category-one-reference-footer {
+    bottom: max(48px, env(safe-area-inset-bottom));
+  }
+}
