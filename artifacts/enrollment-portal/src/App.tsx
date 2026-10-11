@@ -325,9 +325,9 @@ function Dashboard() {
   const [createError, setCreateError] = useState('');
   const palette = ['#0EAD46', '#0C4DA1', '#0072AE', '#FFFFFF'];
   const iconColors = ['#168341', '#244fc7', '#087eaf', '#174d80'];
-  const activeApplication = (applications.data ?? []).find((application) =>
-    ['draft', 'submitted', 'under_review', 'needs_information'].includes(application.status),
-  );
+  const activeStatuses = ['draft', 'submitted', 'under_review', 'needs_information'];
+  const applicationsForCategory = (categoryId: string) =>
+    (applications.data ?? []).filter((application) => application.categoryId === categoryId);
 
   const begin = (category: EnrollmentCategory) => {
     setCreateError('');
@@ -345,7 +345,7 @@ function Dashboard() {
   return <AppFrame active="dashboard">
     <div className="dashboard-layout">
       <div className="dashboard-main">
-         <PageHeading eyebrow="YOUR ENROLLMENT" title={copyText(portalSettings.data, 'dashboard', 'title', 'A good place to begin.')} detail={copyText(portalSettings.data, 'dashboard', 'description', `Signed in as ${user?.fullName || user?.primaryEmailAddress?.emailAddress || 'your account'}. Choose one enrollment path to start your application.`)} />
+         <PageHeading eyebrow="YOUR ENROLLMENT" title={copyText(portalSettings.data, 'dashboard', 'title', 'A good place to begin.')} detail={copyText(portalSettings.data, 'dashboard', 'description', `Signed in as ${user?.fullName || user?.primaryEmailAddress?.emailAddress || 'your account'}. Start a separate application for each enrollment category.`)} />
         {failure ? <ErrorPanel message="Your enrollment information is temporarily unavailable." retry={() => { void summary.refetch(); void applications.refetch(); void categories.refetch(); }} /> :
           busy ? <LoadingPanel /> : <>
             <section className="selection-section rise-delay">
@@ -353,10 +353,12 @@ function Dashboard() {
               <div className="category-grid">
                 {(categories.data ?? []).slice(0, 4).map((category, index) => {
                   const cardSettings = portalSettings.data?.cards.find((card) => card.id === category.id);
-                  const selected = activeApplication?.categoryId === category.id;
-                  const locked = Boolean(activeApplication && !selected);
-                  return <button type="button" key={category.id} disabled={create.isPending || locked} onClick={() => {
-                    if (selected && activeApplication) {
+                  const categoryApplications = applicationsForCategory(category.id);
+                  const activeApplication = categoryApplications.find((application) => activeStatuses.includes(application.status));
+                  const selected = Boolean(activeApplication);
+                  const completedApplication = categoryApplications[0];
+                  return <button type="button" key={category.id} disabled={create.isPending} onClick={() => {
+                    if (activeApplication) {
                       setLocation(['draft', 'needs_information'].includes(activeApplication.status) ? `/apply/${activeApplication.id}` : `/applications/${activeApplication.id}`);
                       return;
                     }
@@ -368,7 +370,7 @@ function Dashboard() {
                     {cardSettings?.logoDataUrl ? <img src={cardSettings.logoDataUrl} alt="" className="category-logo" /> : <span className="category-symbol" style={{ color: iconColors[index] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>}
                     <span className="category-title">{cardSettings?.title ?? category.name}</span>
                     <span className="category-description">{cardSettings?.description ?? category.description}</span>
-                    <span className="category-select">{create.isPending ? 'Starting…' : selected ? ['draft', 'needs_information'].includes(activeApplication.status) ? 'Continue application' : 'View current status' : locked ? 'Unavailable for this application' : cardSettings?.buttonLabel ?? 'Select category'} <ArrowUpRight size={15} /></span>
+                    <span className="category-select">{create.isPending ? 'Starting…' : selected ? ['draft', 'needs_information'].includes(activeApplication!.status) ? 'Continue application' : 'View current status' : completedApplication ? 'Start another application' : cardSettings?.buttonLabel ?? 'Select category'} <ArrowUpRight size={15} /></span>
                   </button>;
                 })}
               </div>
@@ -376,9 +378,9 @@ function Dashboard() {
               {createError && <p className="inline-error" role="alert" data-testid="text-create-error">{createError}</p>}
             </section>
             <section className="recent-section">
-              <div className="section-line"><div><h2>Recent applications</h2><p>Your saved and submitted work in one place.</p></div><Link href="/dashboard" className="subtle-link" data-testid="link-all-applications">View all <ArrowRight size={14} /></Link></div>
+              <div className="section-line"><div><h2>Your applications</h2><p>Each application has one enrollment category and its own status.</p></div><span className="step-indicator">{(applications.data ?? []).length} total</span></div>
               {(applications.data ?? []).length === 0 ? <EmptyPanel title="Your application list is clear" message="Choose an enrollment path above to create your first draft." /> :
-                <div className="application-list">{(applications.data ?? []).slice(0, 3).map((app) => <ApplicationRow key={app.id} application={app} />)}</div>}
+                 <div className="application-list">{(applications.data ?? []).map((app) => <ApplicationRow key={app.id} application={app} />)}</div>}
             </section>
           </>}
       </div>

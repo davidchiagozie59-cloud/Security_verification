@@ -251,7 +251,7 @@
 .category-select { display: flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 12px; color: #fff; font-size: 10px; font-weight: 700; }
 .category-4 .category-select { color: #1b5b82; }
 .section-line .subtle-link { display: inline-flex; gap: 6px; align-items: center; color: #256083; font-size: 10px; font-weight: 600; text-decoration: none; }
-.application-list { overflow: hidden; border: 1px solid #e1e8ee; border-radius: 13px; background: #fff; box-shadow: var(--shadow-soft); }
+.application-list { max-height: clamp(120px, 25vh, 240px); overflow-x: hidden; overflow-y: auto; border: 1px solid #e1e8ee; border-radius: 13px; background: #fff; box-shadow: var(--shadow-soft); }
 .application-row { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 15px; color: #264158; text-decoration: none; transition: background .16s ease; }
 .application-row + .application-row { border-top: 1px solid #edf1f4; }
 .application-row:hover { background: #f7fafb; }

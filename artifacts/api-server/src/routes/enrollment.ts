@@ -706,6 +706,7 @@ router.post("/applications", async (req, res): Promise<void> => {
     .where(
       and(
         eq(enrollmentApplicationsTable.clerkUserId, res.locals.userId),
+        eq(enrollmentApplicationsTable.categoryId, categoryId),
         inArray(enrollmentApplicationsTable.status, [...activeStatuses]),
       ),
     )
@@ -713,13 +714,7 @@ router.post("/applications", async (req, res): Promise<void> => {
     .limit(1);
 
   if (existing) {
-    if (existing.status === "draft" && existing.categoryId === categoryId) {
-      res.status(201).json(CreateApplicationResponse.parse(serializeApplication(existing)));
-      return;
-    }
-    res.status(409).json({
-      error: "You already have an active application. Continue it or contact support.",
-    });
+    res.status(201).json(CreateApplicationResponse.parse(serializeApplication(existing)));
     return;
   }
 
@@ -1446,11 +1441,8 @@ router.patch("/admin/users/:userId/status", requirePrimaryAdmin, async (req, res
       res.status(403).json({ error: "Staff accounts cannot be suspended here." });
       return;
     }
-    const updated = await clerkClient.users.updateUser(params.data.userId, {
-      publicMetadata: {
-        ...target.publicMetadata,
-        accountStatus: parsed.data.accountStatus,
-      },
+    const updated = await clerkClient.users.updateUserMetadata(params.data.userId, {
+      publicMetadata: { accountStatus: parsed.data.accountStatus },
     });
     const email =
       updated.emailAddresses.find(
@@ -1495,8 +1487,8 @@ router.patch("/admin/users/:userId/role", requirePrimaryAdmin, async (req, res):
   }
   try {
     const target = await clerkClient.users.getUser(params.data.userId);
-    const updated = await clerkClient.users.updateUser(params.data.userId, {
-      publicMetadata: { ...target.publicMetadata, role: parsed.data.role },
+    const updated = await clerkClient.users.updateUserMetadata(params.data.userId, {
+      publicMetadata: { role: parsed.data.role },
     });
     const email =
       updated.emailAddresses.find((address) => address.id === updated.primaryEmailAddressId)?.emailAddress ??
