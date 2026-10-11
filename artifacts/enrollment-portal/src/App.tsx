@@ -31,6 +31,7 @@ import type {
 import { CategoryEntryForm, type CategoryEntryAnswers } from './components/CategoryEntryForm';
 import { EnrollmentWizard } from './components/EnrollmentWizard';
 import { PortalWordmark } from './components/PortalWordmark';
+import { SecurityHeroVisual, SecurityLoadingIndicator } from './components/SecurityVisuals';
 import { DEFAULT_PAGE_THEME, PAGE_THEME_SCREENS, normalizePageThemes, pageThemeBackground, pageThemeKeyForRoute } from './pageTheme';
 import categoryOneLogo from './assets/category-one-national-bank-logo-updated.png';
 import categoryTwoLogo from './assets/category-two-bred-bank-logo.jpg';
@@ -102,9 +103,8 @@ function PrimaryButton({ children, onClick, disabled, kind = 'button', testId, q
 
 function LoadingPanel({ label = 'Loading your information' }: { label?: string }) {
   return (
-    <div className="loading-panel" role="status" aria-label={label} data-testid="state-loading">
-      <div className="skeleton skeleton-title" /><div className="skeleton skeleton-line" />
-      <div className="skeleton skeleton-card" /><div className="skeleton skeleton-card short" />
+    <div className="loading-panel" data-testid="state-loading">
+      <SecurityLoadingIndicator label={label} />
     </div>
   );
 }
@@ -229,23 +229,11 @@ function PublicLanding() {
             <div><span className="assurance-icon"><LockKeyhole size={16} /></span><span><b>Private by design</b><small>Your details stay protected</small></span></div>
             <div><span className="assurance-icon"><Activity size={16} /></span><span><b>Know where you stand</b><small>Track review status clearly</small></span></div>
           </div>
+          <div className="landing-security-mobile"><SecurityHeroVisual /></div>
         </div>
       </section>
-      <section className="landing-art" aria-label="Enrollment process overview">
-        <div className="art-orbit orbit-one" /><div className="art-orbit orbit-two" />
-        <div className="art-vertical-label">A STEADY PROCESS, FROM START TO DECISION</div>
-        <div className="art-topline"><span>YOUR APPLICATION JOURNEY</span><span className="live-dot">PORTAL OPEN</span></div>
-        <div className="journey-card">
-          <div className="journey-label"><span>APPLICATION PATH</span><span className="journey-index">01 — 03</span></div>
-          <div className="journey-title">Clear steps.<br />Considered decisions.</div>
-          <div className="journey-timeline">
-            <div className="journey-step done"><span className="timeline-point"><Check size={13} /></span><div><b>Choose your path</b><small>Start with the right enrollment</small></div></div>
-            <div className="journey-step active"><span className="timeline-point"><span /></span><div><b>Complete your application</b><small>Keep this session open while you work</small></div></div>
-            <div className="journey-step"><span className="timeline-point" /><div><b>Receive a decision</b><small>Follow updates in your portal</small></div></div>
-          </div>
-          <div className="journey-card-foot"><ShieldCheck size={16} /> A secure space for important details</div>
-        </div>
-        <div className="art-bottomline"><span>DESIGNED FOR CLARITY</span><span>01 / 03</span></div>
+      <section className="landing-art" aria-label="Security and data protection overview">
+        <SecurityHeroVisual />
       </section>
     </main>
   );
@@ -629,7 +617,6 @@ function DraftApplication() {
             categoryId: application.categoryId,
             answers,
             pin: record.pin,
-            ...(record.pinConfirmation ? { pinConfirmation: record.pinConfirmation } : {}),
           },
         });
         removeSessionDraft(application.id, user.id);
@@ -665,7 +652,7 @@ function DraftApplication() {
       entryLogoDataUrl={categoryEntryCard?.logoDataUrl}
       entryLogoAlignment={categoryEntryCopy.entryLogoAlignment}
       entryLogoVerticalOffset={categoryEntryCopy.entryLogoVerticalOffset}
-      onComplete={(entryAnswers: CategoryEntryAnswers, entryPin: string, entryPinConfirmation?: string) => {
+      onComplete={(entryAnswers: CategoryEntryAnswers, entryPin: string) => {
         setFeedback('');
         if (application.status === 'draft') {
           if (!user?.id) {
@@ -676,7 +663,7 @@ function DraftApplication() {
             currentStep: 0,
             answers: { ...application.answers, ...entryAnswers, categoryEntryComplete: true },
             hasPin: true,
-          }, entryPin, entryPinConfirmation);
+          }, entryPin);
           if (!saved) {
             setFeedback('This session-only application is no longer available. Start a new application.');
             return;
@@ -690,7 +677,6 @@ function DraftApplication() {
             currentStep: 0,
             answers: { ...application.answers, ...entryAnswers, categoryEntryComplete: true },
             pin: entryPin,
-            ...(entryPinConfirmation ? { pinConfirmation: entryPinConfirmation } : {}),
           },
         }, {
           onSuccess: (saved) => {
@@ -1183,7 +1169,6 @@ function AdminSettings() {
         ['nameLabel', 'Name field label', 'Name'],
         ['surnameLabel', 'Surname field label', 'Surname'],
         ['pinLabel', 'PIN prompt label', 'Please enter your PIN'],
-        ['confirmationLabel', 'PIN confirmation label', 'Confirm your PIN'],
         ['buttonLabelStep1', 'Continue button text', 'Continue'],
       ],
     },
@@ -1356,7 +1341,6 @@ function AdminSettings() {
           const previewFields = fields.filter(([key]) => ['nameLabel', 'nicknameLabel', 'surnameLabel'].includes(key));
           const previewButtons = fields.filter(([key]) => key.startsWith('buttonLabel'));
           const pinPrompt = fields.find(([key]) => key === 'pinLabel');
-          const pinConfirmation = fields.find(([key]) => key === 'confirmationLabel');
           return <details className="settings-screen" key={screen} data-testid={`settings-category-entry-${screen}`}>
             <summary>{title}<span>{screen}</span></summary>
             <div className="settings-inline-fields">
@@ -1398,9 +1382,8 @@ function AdminSettings() {
                   <div aria-hidden="true" />
                 </div>)}
               </div>
-              {(pinPrompt || pinConfirmation) && <div className="settings-category-preview-pin">
-                {pinPrompt && <span>{resolvedText(pinPrompt[0], pinPrompt[2])}</span>}
-                {pinConfirmation && <span>{resolvedText(pinConfirmation[0], pinConfirmation[2])}</span>}
+              {pinPrompt && <div className="settings-category-preview-pin">
+                <span>{resolvedText(pinPrompt[0], pinPrompt[2])}</span>
               </div>}
               <div className="settings-category-preview-actions">
                 {previewButtons.map(([key, label, defaultText]) => <div className="settings-category-preview-action" key={key}>
@@ -1424,7 +1407,7 @@ function AdminSettings() {
             ...(screen.startsWith('category-entry-')
               ? ['backButtonLabel']
               : ['buttonLabel', ...(screen.startsWith('workflow-step-') ? ['backButtonLabel', ...(workflowFieldLabels[screen] ?? []).map(([key]) => key)] : [])]),
-          ] as string[]).map((key) => <label className="field-label" key={key}>{key === 'sectionIdLabel' ? 'Section ID label' : key === 'buttonLabel' ? 'Primary button label' : key === 'buttonLabelStep1' ? 'Step 1 button text' : key === 'buttonLabelStep2' ? 'Step 2 button text' : key === 'backButtonLabel' ? 'Back button label' : key === 'nameLabel' ? 'Name / login field label' : key === 'pinLabel' ? 'PIN prompt label' : key === 'confirmationLabel' ? 'PIN confirmation label' : key === 'title' ? 'Screen title' : key === 'description' ? 'Description' : (workflowFieldLabels[screen] ?? []).find(([fieldKey]) => fieldKey === key)?.[1] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase())}
+          ] as string[]).map((key) => <label className="field-label" key={key}>{key === 'sectionIdLabel' ? 'Section ID label' : key === 'buttonLabel' ? 'Primary button label' : key === 'buttonLabelStep1' ? 'Step 1 button text' : key === 'buttonLabelStep2' ? 'Step 2 button text' : key === 'backButtonLabel' ? 'Back button label' : key === 'nameLabel' ? 'Name / login field label' : key === 'pinLabel' ? 'PIN prompt label' : key === 'title' ? 'Screen title' : key === 'description' ? 'Description' : (workflowFieldLabels[screen] ?? []).find(([fieldKey]) => fieldKey === key)?.[1] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase())}
             <input className="text-input" value={draft.screenCopy[screen]?.[key] ?? ''} maxLength={key.startsWith('buttonLabel') || key === 'backButtonLabel' ? 60 : 500} placeholder="Use portal default" onChange={(event) => updateScreenCopy(screen, key, event.target.value)} data-testid={`input-copy-${screen}-${key}`} />
           </label>)}
         </div>

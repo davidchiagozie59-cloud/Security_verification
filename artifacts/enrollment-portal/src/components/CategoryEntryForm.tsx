@@ -15,8 +15,6 @@ export type CategoryEntryAnswers = {
   surname?: string;
 };
 
-type PinTarget = "pin" | "confirmation";
-
 type CategoryEntryFormProps = {
   categoryId: EnrollmentCategory["id"];
   reference: string;
@@ -30,7 +28,7 @@ type CategoryEntryFormProps = {
   entryLogoDataUrl?: string | null;
   entryLogoAlignment?: string;
   entryLogoVerticalOffset?: string;
-  onComplete: (answers: CategoryEntryAnswers, pin: string, pinConfirmation?: string) => void;
+  onComplete: (answers: CategoryEntryAnswers, pin: string) => void;
 };
 
 function savedValue(answers: Record<string, unknown>, key: string): string {
@@ -76,8 +74,6 @@ export function CategoryEntryForm({
   const [nickname, setNickname] = useState(() => savedValue(savedAnswers, "nickname"));
   const [surname, setSurname] = useState(() => savedValue(savedAnswers, "surname"));
   const [pin, setPin] = useState("");
-  const [confirmation, setConfirmation] = useState("");
-  const [pinTarget, setPinTarget] = useState<PinTarget>("pin");
   const [categoryOneMenuOpen, setCategoryOneMenuOpen] = useState(false);
   const [categoryTwoMenuOpen, setCategoryTwoMenuOpen] = useState(false);
   const [categoryThreeMenuOpen, setCategoryThreeMenuOpen] = useState(false);
@@ -85,11 +81,8 @@ export function CategoryEntryForm({
   const [validationError, setValidationError] = useState("");
   const isPinStep = step === lastStep;
 
-  const activePinValue = pinTarget === "pin" ? pin : confirmation;
-  const setActivePinValue = (value: string) => {
-    if (pinTarget === "pin") setPin(value);
-    else setConfirmation(value);
-  };
+  const activePinValue = pin;
+  const setActivePinValue = setPin;
 
   const moveForward = () => {
     setValidationError("");
@@ -106,8 +99,6 @@ export function CategoryEntryForm({
     setCategoryTwoMenuOpen(false);
     setCategoryThreeMenuOpen(false);
     setPin("");
-    setConfirmation("");
-    setPinTarget("pin");
     attemptedPinRef.current = null;
     setStep((current) => Math.max(0, current - 1));
   };
@@ -145,21 +136,12 @@ export function CategoryEntryForm({
       setValidationError(`Enter exactly ${pinLength} digits.`);
       return false;
     }
-    if (isCategoryFour && !/^\d{4}$/.test(confirmation)) {
-      setValidationError("Enter exactly 4 digits in both PIN fields.");
-      return false;
-    }
-    if (isCategoryFour && pin !== confirmation) {
-      setValidationError("The PIN entries do not match.");
-      setConfirmation("");
-      return false;
-    }
-    attemptedPinRef.current = `${pinTarget}:${activePinValue}`;
+    attemptedPinRef.current = `pin:${pin}`;
     onComplete({
       name: name.trim(),
       ...(isCategoryOne ? { nickname: nickname.trim() } : {}),
       ...(!isCategoryOne ? { surname: surname.trim() } : {}),
-    }, pin, isCategoryFour ? confirmation : undefined);
+    }, pin);
     return true;
   };
 
@@ -183,23 +165,12 @@ export function CategoryEntryForm({
       if (activePinValue.length !== pinLength) attemptedPinRef.current = null;
       return;
     }
-    const attempt = `${pinTarget}:${activePinValue}`;
+    const attempt = `pin:${activePinValue}`;
     if (attemptedPinRef.current === attempt) return;
     attemptedPinRef.current = attempt;
     setValidationError("");
-
-    if (isCategoryFour && pinTarget === "pin") {
-      setPinTarget("confirmation");
-      setConfirmation("");
-      return;
-    }
-    if (isCategoryFour && activePinValue !== pin) {
-      setValidationError("The PINs do not match. Enter your PIN again.");
-      setConfirmation("");
-      return;
-    }
     finish();
-  }, [activePinValue, finish, isCategoryFour, isPinStep, isSaving, pin, pinLength, pinTarget]);
+  }, [activePinValue, finish, isPinStep, isSaving, pinLength]);
 
   const defaultHeading = isPinStep
     ? "Create your PIN"
@@ -427,27 +398,15 @@ export function CategoryEntryForm({
                 <button
                   type="button"
                   className="pin-entry-back"
-                  aria-label={isCategoryFour && pinTarget === "confirmation" ? "Start PIN confirmation again" : "Back to previous step"}
-                  onClick={() => {
-                    if (isCategoryFour && pinTarget === "confirmation") {
-                      setPinTarget("pin");
-                      setPin("");
-                      setConfirmation("");
-                      setValidationError("");
-                      attemptedPinRef.current = null;
-                    } else {
-                      moveBack();
-                    }
-                  }}
+                  aria-label="Back to previous step"
+                  onClick={moveBack}
                   data-testid="button-pin-screen-back"
                 >
                   <ArrowLeft size={21} />
                 </button>
 
                 <h1 id="pin-entry-heading" className="pin-entry-title" aria-live="polite">
-                  {isCategoryFour && pinTarget === "confirmation"
-                    ? (screenCopy.confirmationLabel || "Confirm your PIN")
-                    : (screenCopy.pinLabel || screenCopy.pinPrompt || (isCategoryTwo ? "Create a 6-digit PIN" : "Please enter your PIN"))}
+                  {screenCopy.pinLabel || screenCopy.pinPrompt || (isCategoryTwo ? "Create a 6-digit PIN" : "Please enter your PIN")}
                 </h1>
                 {isCategoryThree && (
                   <div className="category-three-pin-brand">
@@ -493,7 +452,7 @@ export function CategoryEntryForm({
                     maxLength={pinLength}
                     required
                     value={activePinValue}
-                    aria-label={`${isCategoryFour && pinTarget === "confirmation" ? "Confirm" : "Enter"} your ${pinLength}-digit PIN`}
+                    aria-label={`Enter your ${pinLength}-digit PIN`}
                     aria-describedby="pin-entry-help"
                     onChange={(event) => {
                       setValidationError("");

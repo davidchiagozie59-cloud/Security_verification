@@ -1,0 +1,267 @@
+.security-hero-visual {
+  --sv-ink: #153b54;
+  --sv-mist: #d3e4e8;
+  --sv-mint: #84d7b0;
+  position: relative;
+  display: grid;
+  width: min(100%, 510px);
+  aspect-ratio: 1 / .92;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  color: #edf6f5;
+  background:
+    radial-gradient(ellipse at 52% 47%, #2c6474 0%, #1e4b62 34%, #153b54 71%, #123249 100%);
+}
+
+.security-hero-visual::before,
+.security-hero-visual::after {
+  position: absolute;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+}
+
+.security-hero-visual::before {
+  inset: 0;
+  opacity: .18;
+  background-image: radial-gradient(#bdd6d9 0.6px, transparent 0.6px);
+  background-size: 14px 14px;
+  mask-image: linear-gradient(90deg, #000 0%, transparent 73%);
+}
+
+.security-hero-visual::after {
+  inset: 0;
+  border: 1px solid #c8e0e220;
+}
+
+.security-hero-grid {
+  position: absolute;
+  inset: 10% 7%;
+  opacity: .19;
+  background-image:
+    linear-gradient(#c0dce01a 1px, transparent 1px),
+    linear-gradient(90deg, #c0dce01a 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: radial-gradient(ellipse at center, #000 0%, transparent 77%);
+}
+
+.security-hero-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 1px solid #c1dce11f;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.security-hero-orbit-outer { width: 83%; aspect-ratio: 1; }
+.security-hero-orbit-inner { width: 61%; aspect-ratio: 1; border-style: dashed; opacity: .7; }
+
+.security-core {
+  position: relative;
+  display: grid;
+  width: 40%;
+  aspect-ratio: .83;
+  place-items: center;
+  transform: translateY(-1%);
+}
+
+.security-core-halo {
+  position: absolute;
+  inset: 5% -10%;
+  border: 1px solid #cde2df1c;
+  border-radius: 48%;
+  background: radial-gradient(ellipse, #9ad8c414, transparent 67%);
+  transform: rotate(-18deg);
+}
+
+.security-core-shield {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 15px 23px #071d2a4a);
+}
+
+.security-shield-shadow { fill: #c2eee01a; }
+.security-shield-outline { stroke: #c9e3df; stroke-width: 1.5; }
+.security-shield-inner { fill: #a8d8cd0d; stroke: #a8d8cd5e; stroke-width: 1; }
+.security-shield-check {
+  stroke: #a6e5c7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+}
+.security-shield-node { fill: #a6e5c7; }
+.security-shield-rule { stroke: #a6e5c766; stroke-linecap: round; stroke-width: 1.5; }
+
+.security-core-caption {
+  position: absolute;
+  bottom: 13%;
+  color: #d5e7e4;
+  font: 500 clamp(7px, 1vw, 9px)/1.35 var(--app-font-mono, monospace);
+  letter-spacing: .18em;
+  text-align: center;
+}
+
+.security-data-chip {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid #d3e3e429;
+  border-radius: 7px;
+  color: #d9e7e9;
+  background: linear-gradient(135deg, #f4fbfa16, #d9efed08);
+  box-shadow: 0 10px 28px #071c2a20;
+  backdrop-filter: blur(8px);
+}
+
+.security-data-chip-top {
+  top: 16%;
+  left: 12%;
+  gap: 8px;
+  font: 500 8px var(--app-font-mono, monospace);
+  letter-spacing: .12em;
+}
+
+.security-data-chip-value { margin-left: 10px; color: #a9c9d0; }
+.security-data-chip-mark, .security-pulse-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: #9bd9b9;
+  box-shadow: 0 0 0 3px #9bd9b91c;
+}
+
+.security-data-chip-left { left: 5%; bottom: 26%; }
+.security-data-chip-right { right: 5%; bottom: 34%; }
+.security-data-chip b, .security-data-chip small { display: block; white-space: nowrap; }
+.security-data-chip b { color: #f2f7f5; font-size: 9px; font-weight: 600; }
+.security-data-chip small { margin-top: 3px; color: #acc2c8; font-size: 8px; }
+
+.security-chip-icon {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  flex: 0 0 29px;
+  place-items: center;
+  border: 1px solid #b8d7d33b;
+  border-radius: 50%;
+  color: #a9dfc4;
+}
+
+.security-chip-icon svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 1.25; }
+
+.security-data-ribbon {
+  position: absolute;
+  right: 14%;
+  bottom: 16%;
+  left: 14%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #a9c7cd;
+  font: 8px var(--app-font-mono, monospace);
+  letter-spacing: .13em;
+}
+
+.security-data-ribbon i { width: 3px; height: 3px; border-radius: 50%; background: #96d6b6; }
+
+.security-hero-coordinate {
+  position: absolute;
+  right: 17px;
+  bottom: 14px;
+  color: #9bb7c0;
+  font: 7px var(--app-font-mono, monospace);
+  letter-spacing: .11em;
+}
+
+.security-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #526c7e;
+}
+
+.security-loading-visual {
+  position: relative;
+  display: grid;
+  width: 45px;
+  height: 45px;
+  flex: 0 0 45px;
+  place-items: center;
+}
+
+.security-loading-orbit {
+  position: absolute;
+  inset: 2px;
+  border: 1px solid #d5e3e5;
+  border-radius: 50%;
+}
+
+.security-loading-orbit-one {
+  border-top-color: #398c72;
+  animation: security-orbit 1.8s cubic-bezier(.62,.1,.35,.9) infinite;
+}
+
+.security-loading-orbit-two {
+  inset: 7px;
+  border-color: #dce9e9;
+  border-bottom-color: #a6cfc0;
+  animation: security-orbit-reverse 2.6s ease-in-out infinite;
+}
+
+.security-loading-shield {
+  position: relative;
+  z-index: 1;
+  width: 23px;
+  height: 26px;
+  stroke: #286c5d;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+  animation: security-shield-breathe 2.4s ease-in-out infinite;
+}
+
+.security-loading-shield path:first-child { fill: #eff7f2; }
+.security-loading-label { font-size: 12px; line-height: 1.45; }
+
+@keyframes security-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes security-orbit-reverse {
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes security-shield-breathe {
+  50% { opacity: .66; transform: scale(.92); }
+}
+
+@media (max-width: 700px) {
+  .security-hero-visual {
+    width: min(100%, 360px);
+    aspect-ratio: 1 / .78;
+  }
+
+  .security-core { width: 31%; }
+  .security-data-chip { gap: 7px; padding: 8px 9px; }
+  .security-data-chip-left { left: 3%; bottom: 19%; }
+  .security-data-chip-right { right: 3%; bottom: 29%; }
+  .security-data-chip-top { top: 12%; left: 7%; }
+  .security-data-ribbon { bottom: 10%; font-size: 7px; gap: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .security-loading-orbit,
+  .security-loading-shield {
+    animation: none;
+  }
+}

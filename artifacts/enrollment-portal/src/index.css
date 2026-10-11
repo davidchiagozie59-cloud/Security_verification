@@ -3017,3 +3017,139 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
     font-size: 8px;
   }
 }
+
+/* Keep entry fields visually transparent while focused or autofilled. */
+.category-entry-screen .entry-line-input:focus,
+.category-entry-screen .entry-line-input:focus-visible {
+  background-color: transparent !important;
+}
+
+.category-entry-screen .entry-line-input:-webkit-autofill,
+.category-entry-screen .entry-line-input:-webkit-autofill:hover,
+.category-entry-screen .entry-line-input:-webkit-autofill:focus,
+.category-entry-screen .entry-line-input:-webkit-autofill:active {
+  -webkit-text-fill-color: currentColor !important;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  background-color: transparent !important;
+  transition: background-color 99999s ease-out 0s;
+}
+
+/* A denser numeric pad without changing each category's PIN length or palette. */
+.category-entry-screen.entry-pin-stage .pin-entry-keypad {
+  top: 39% !important;
+  width: min(72vw, 286px) !important;
+  height: clamp(248px, 42dvh, 340px) !important;
+  gap: 0 !important;
+  grid-template-rows: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.category-entry-screen.entry-pin-stage .pin-entry-key {
+  width: clamp(43px, 14vw, 56px) !important;
+  height: auto !important;
+  aspect-ratio: 1;
+  font-size: clamp(21px, 5.4vw, 25px) !important;
+  font-weight: 500 !important;
+}
+
+.landing-art {
+  display: grid;
+  place-items: center;
+}
+
+.landing-art > .security-hero-visual {
+  width: min(100%, 510px);
+  margin: auto;
+}
+
+.landing-security-mobile {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .landing-art {
+    display: none;
+  }
+
+  .landing-content {
+    padding: 18px 0 10px;
+  }
+
+  .landing-content h1 {
+    margin: 19px 0 15px;
+    font-size: clamp(38px, 9.6vw, 51px);
+  }
+
+  .landing-assurances {
+    margin-top: 20px;
+    padding-top: 15px;
+  }
+
+  .landing-security-mobile {
+    display: block;
+    width: min(100%, 300px);
+    margin: 13px auto 0;
+  }
+
+  .landing-security-mobile .security-hero-visual {
+    width: 100%;
+    aspect-ratio: 3 / 1;
+  }
+
+  .landing-security-mobile .security-core {
+    width: 25%;
+  }
+
+  .landing-security-mobile .security-data-chip {
+    gap: 5px;
+    padding: 5px 7px;
+  }
+
+  .landing-security-mobile .security-data-chip-top {
+    font-size: 6px;
+  }
+
+  .landing-security-mobile .security-data-chip b {
+    font-size: 7px;
+  }
+
+  .landing-security-mobile .security-data-chip small {
+    font-size: 6px;
+  }
+
+  .landing-security-mobile .security-data-ribbon {
+    font-size: 6px;
+  }
+
+  .landing-security-mobile .security-hero-coordinate {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) and (max-height: 740px) {
+  .landing-content {
+    padding-block: 10px 6px;
+  }
+
+  .landing-security-mobile {
+    margin-top: 8px;
+  }
+
+  .landing-security-mobile .security-hero-visual {
+    aspect-ratio: 3.5 / 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .landing-security-mobile .security-data-chip-left,
+  .landing-security-mobile .security-data-ribbon,
+  .landing-security-mobile .security-hero-coordinate,
+  .landing-security-mobile .security-core-caption {
+    display: none;
+  }
+
+  .landing-security-mobile .security-data-chip-right {
+    right: 5%;
+    bottom: 6%;
+  }
+}

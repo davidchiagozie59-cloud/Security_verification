@@ -5,7 +5,6 @@ export type SessionEnrollmentDraft = {
   application: EnrollmentApplication;
   submissionId: string;
   pin?: string;
-  pinConfirmation?: string;
 };
 
 const sessionDrafts = new Map<string, SessionEnrollmentDraft>();
@@ -74,11 +73,10 @@ export function updateSessionDraft(
   ownerId: string,
   update: Partial<EnrollmentApplication>,
   pin?: string,
-  pinConfirmation?: string,
 ): SessionEnrollmentDraft | undefined {
   const draft = getSessionDraft(id, ownerId);
   if (!draft) return undefined;
-  const updated: SessionEnrollmentDraft = {
+  const updated = {
     ...draft,
     application: {
       ...draft.application,
@@ -86,8 +84,8 @@ export function updateSessionDraft(
       updatedAt: new Date().toISOString(),
     },
     ...(pin !== undefined ? { pin } : {}),
-    ...(pinConfirmation !== undefined ? { pinConfirmation } : {}),
-  };
+  } as SessionEnrollmentDraft & { pinConfirmation?: string };
+  delete updated.pinConfirmation;
   sessionDrafts.set(id, updated);
   return updated;
 }

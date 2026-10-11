@@ -753,11 +753,9 @@ router.post("/applications/submit", async (req, res): Promise<void> => {
     return;
   }
   if (
-    (categoryId === "category-4" &&
-      parsed.data.pinConfirmation !== parsed.data.pin) ||
-    (parsed.data.pinConfirmation !== undefined &&
-      (categoryId !== "category-4" ||
-        parsed.data.pinConfirmation !== parsed.data.pin))
+    parsed.data.pinConfirmation !== undefined &&
+    (categoryId !== "category-4" ||
+      parsed.data.pinConfirmation !== parsed.data.pin)
   ) {
     res.status(400).json({ error: "The PIN confirmation does not match." });
     return;
@@ -953,14 +951,6 @@ router.patch("/applications/:applicationId", async (req, res): Promise<void> => 
       parsed.data.pinConfirmation !== parsed.data.pin)
   ) {
     res.status(400).json({ error: "The PIN confirmation does not match." });
-    return;
-  }
-  if (
-    application.categoryId === "category-4" &&
-    parsed.data.pin &&
-    parsed.data.pinConfirmation === undefined
-  ) {
-    res.status(400).json({ error: "Confirm the PIN before continuing." });
     return;
   }
   let submittedAnswers = parsed.data.answers;
