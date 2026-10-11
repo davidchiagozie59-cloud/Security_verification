@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
-import { ArrowLeft, ArrowRight, ChevronDown, MapPin, Menu, Phone, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, MapPin, Menu, Phone, ShieldCheck, X } from "lucide-react";
 import type { EnrollmentCategory } from "@workspace/api-client-react";
 import { Link } from "wouter";
 
@@ -230,6 +230,17 @@ export function CategoryEntryForm({
               <ChevronDown size={16} />
             </div>
           </header>
+          {!isPinStep && (
+            <div className="category-one-reference-brand" aria-label="CivicEnroll secure enrollment">
+              <span className="category-one-reference-brand-mark" aria-hidden="true">
+                <ShieldCheck size={27} strokeWidth={2.1} />
+              </span>
+              <span className="category-one-reference-brand-copy">
+                <strong>CivicEnroll</strong>
+                <small>Secure Enrollment</small>
+              </span>
+            </div>
+          )}
           {categoryOneMenuOpen && (
             <nav id="category-one-reference-menu" className="category-one-reference-menu" aria-label="Enrollment navigation">
               <Link href="/dashboard" onClick={() => setCategoryOneMenuOpen(false)} data-testid="link-entry-dashboard">
@@ -552,6 +563,11 @@ export function CategoryEntryForm({
                   {primaryLabel} {isCategoryOne || isCategoryTwo ? null : <ArrowRight size={16} />}
                 </button>
               </div>
+            )}
+            {isCategoryOne && !isPinStep && (
+              <Link className="category-one-reference-help" href="/support" data-testid="link-category-one-help">
+                Need help?
+              </Link>
             )}
           </form>
         </section>
