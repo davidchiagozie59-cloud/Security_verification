@@ -5,9 +5,9 @@ import { ClerkProvider, SignIn, SignUp, useAuth, useClerk, useUser } from '@cler
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import {
-  Activity, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Check, CheckCircle2,
+  Activity, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, BadgeCheck, Check, CheckCircle2,
   ChevronDown, CircleHelp, FileCheck2, FileText, Headphones, Home, LifeBuoy,
-  LockKeyhole, LogOut, Menu, MessageCircle, Search, Settings, ShieldCheck,
+  GripVertical, LockKeyhole, LogOut, Menu, MessageCircle, Search, Settings, ShieldCheck,
 } from 'lucide-react';
 import {
   getGetApplicationQueryKey, getGetApplicantSummaryQueryKey,
@@ -212,7 +212,9 @@ function PublicLanding() {
   return (
     <main className="landing portal-frame">
       <section className="landing-copy">
-        <Brand />
+        <div className="brand-lockup landing-brand-wordmark" data-testid="landing-brand-wordmark">
+          <span className="brand-name">Civic<span>Enroll</span></span>
+        </div>
         <div className="landing-content rise">
           <div className="eyebrow"><span className="eyebrow-rule" />SECURE ENROLLMENT</div>
           <h1>{copyText(portalSettings.data, 'landing', 'title', hero?.title ?? 'Welcome to Our Enrollment Portal')}</h1>
@@ -316,6 +318,17 @@ function Dashboard() {
   const activeStatuses = ['draft', 'submitted', 'under_review', 'needs_information'];
   const applicationsForCategory = (categoryId: string) =>
     (applications.data ?? []).filter((application) => application.categoryId === categoryId);
+  const orderedCategories = useMemo(() => {
+    const items = (categories.data ?? []).slice(0, 4);
+    const order = portalSettings.data?.cards;
+    if (!order?.length) return items;
+    return items.sort((left, right) => {
+      const leftOrder = order.findIndex((card) => card.id === left.id);
+      const rightOrder = order.findIndex((card) => card.id === right.id);
+      return (leftOrder < 0 ? Number.MAX_SAFE_INTEGER : leftOrder)
+        - (rightOrder < 0 ? Number.MAX_SAFE_INTEGER : rightOrder);
+    });
+  }, [categories.data, portalSettings.data?.cards]);
 
   const begin = (category: EnrollmentCategory) => {
     setCreateError('');
@@ -339,7 +352,8 @@ function Dashboard() {
             <section className="selection-section rise-delay">
               <div className="section-line"><div><h2>{copyText(portalSettings.data, 'dashboard', 'title', 'Select an enrollment path')}</h2><p>{copyText(portalSettings.data, 'dashboard', 'description', 'Choose the option that best matches your application.')}</p></div><span className="step-indicator">{copyText(portalSettings.data, 'dashboard', 'sectionIdLabel', 'STEP 01 / 03')}</span></div>
               <div className="category-grid">
-                {(categories.data ?? []).slice(0, 4).map((category, index) => {
+                {orderedCategories.map((category, index) => {
+                  const categoryIndex = Math.max(0, Number(category.id.split('-')[1]) - 1);
                   const cardSettings = portalSettings.data?.cards.find((card) => card.id === category.id);
                   const categoryApplications = applicationsForCategory(category.id);
                   const activeApplication = categoryApplications.find((application) => activeStatuses.includes(application.status));
@@ -352,10 +366,10 @@ function Dashboard() {
                     }
                     begin(category);
                   }}
-                    className={`category-card category-${index + 1}`} style={{ '--category-tone': cardSettings?.backgroundColor ?? palette[index] } as CSSProperties & { '--category-tone': string }}
+                    className={`category-card category-${categoryIndex + 1}`} style={{ '--category-tone': cardSettings?.backgroundColor ?? palette[categoryIndex] } as CSSProperties & { '--category-tone': string }}
                     data-testid={`card-category-${category.id}`}>
                     <span className="category-number">0{index + 1}</span>
-                    {cardSettings?.logoDataUrl ? <img src={cardSettings.logoDataUrl} alt="" className="category-logo" /> : <span className="category-symbol" style={{ color: iconColors[index] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>}
+                    {cardSettings?.logoDataUrl ? <img src={cardSettings.logoDataUrl} alt="" className="category-logo" /> : <span className="category-symbol" style={{ color: iconColors[categoryIndex] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>}
                     <span className="category-title">{cardSettings?.title ?? category.name}</span>
                     <span className="category-description">{cardSettings?.description ?? category.description}</span>
                     <span className="category-select">{create.isPending ? 'Starting…' : selected ? ['draft', 'needs_information'].includes(activeApplication!.status) ? 'Continue application' : 'View current status' : completedApplication ? 'Start another application' : copyText(portalSettings.data, 'dashboard', 'buttonLabel', cardSettings?.buttonLabel ?? 'Select category')} <ArrowUpRight size={15} /></span>
@@ -892,6 +906,7 @@ function AdminSettings() {
   const [draft, setDraft] = useState<PortalSettings | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   useEffect(() => {
     if (settingsQuery.data) setDraft(settingsQuery.data);
   }, [settingsQuery.data]);
@@ -906,6 +921,30 @@ function AdminSettings() {
       ...current,
       cards: current.cards.map((card) => card.id === id ? { ...card, [key]: value } : card),
     } : current);
+  };
+  const reorderCards = (sourceId: string, targetId: string, afterTarget = false) => {
+    if (sourceId === targetId) return;
+    setDraft((current) => {
+      if (!current) return current;
+      const sourceIndex = current.cards.findIndex((card) => card.id === sourceId);
+      if (sourceIndex < 0 || !current.cards.some((card) => card.id === targetId)) return current;
+      const cards = [...current.cards];
+      const [movingCard] = cards.splice(sourceIndex, 1);
+      const targetIndex = cards.findIndex((card) => card.id === targetId);
+      cards.splice(targetIndex + (afterTarget ? 1 : 0), 0, movingCard);
+      return { ...current, cards };
+    });
+  };
+  const moveCard = (cardId: string, direction: -1 | 1) => {
+    setDraft((current) => {
+      if (!current) return current;
+      const sourceIndex = current.cards.findIndex((card) => card.id === cardId);
+      const targetIndex = sourceIndex + direction;
+      if (sourceIndex < 0 || targetIndex < 0 || targetIndex >= current.cards.length) return current;
+      const cards = [...current.cards];
+      [cards[sourceIndex], cards[targetIndex]] = [cards[targetIndex], cards[sourceIndex]];
+      return { ...current, cards };
+    });
   };
   const updateScreenCopy = (screen: string, key: string, value: string) => {
     setDraft((current) => current ? {
@@ -1008,6 +1047,44 @@ function AdminSettings() {
         <label className="field-label">Primary button label<input className="text-input" value={draft.hero.getStartedLabel} maxLength={60} onChange={(event) => updateHero('getStartedLabel', event.target.value)} /></label>
         <label className="field-label">Log-in button label<input className="text-input" value={draft.hero.loginLabel} maxLength={60} onChange={(event) => updateHero('loginLabel', event.target.value)} /></label>
       </div>
+    </section>
+    <section className="detail-card settings-panel">
+      <div className="detail-card-title"><GripVertical size={17} /><h2>Dashboard card order</h2></div>
+      <p className="field-help">Drag the cards into the order applicants should see, or use the arrow buttons. Save changes to publish the new order.</p>
+      <ol className="settings-card-order" aria-label="Enrollment card display order">
+        {draft.cards.map((card, index) => <li
+          key={card.id}
+          className={`settings-card-order-item ${draggedCardId === card.id ? 'settings-card-order-dragging' : ''}`}
+          draggable
+          onDragStart={(event) => {
+            setDraggedCardId(card.id);
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', card.id);
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            const sourceId = event.dataTransfer.getData('text/plain') || draggedCardId;
+            if (sourceId) {
+              const bounds = event.currentTarget.getBoundingClientRect();
+              reorderCards(sourceId, card.id, event.clientY > bounds.top + bounds.height / 2);
+            }
+            setDraggedCardId(null);
+          }}
+          onDragEnd={() => setDraggedCardId(null)}
+          data-testid={`settings-card-order-${card.id}`}
+        >
+          <span className="settings-card-order-grip" aria-hidden="true"><GripVertical size={16} /></span>
+          <span className="settings-card-order-name"><strong>{card.title}</strong><small>Position {index + 1}</small></span>
+          <span className="settings-card-order-actions">
+            <button type="button" className="settings-card-order-button" onClick={() => moveCard(card.id, -1)} disabled={index === 0} aria-label={`Move ${card.title} up`} title="Move up" data-testid={`button-card-order-up-${card.id}`}><ArrowUp size={15} /></button>
+            <button type="button" className="settings-card-order-button" onClick={() => moveCard(card.id, 1)} disabled={index === draft.cards.length - 1} aria-label={`Move ${card.title} down`} title="Move down" data-testid={`button-card-order-down-${card.id}`}><ArrowDown size={15} /></button>
+          </span>
+        </li>)}
+      </ol>
     </section>
     <section className="settings-card-grid" aria-label="Enrollment card settings">
       {draft.cards.map((card) => <article className="detail-card settings-panel" key={card.id} data-testid={`settings-card-${card.id}`}>
