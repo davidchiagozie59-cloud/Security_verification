@@ -374,6 +374,11 @@ export const getPortalSettingsResponseCardsMax = 4;
 export const getPortalSettingsResponseThemePinScreenBackgroundRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
 export const getPortalSettingsResponseScreenCopyMaxTwo = 500;
 
+export const getPortalSettingsResponsePageThemesColorRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const getPortalSettingsResponsePageThemesBlendColorRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const getPortalSettingsResponsePageThemesAngleMin = 0;
+export const getPortalSettingsResponsePageThemesAngleMax = 360;
+
 
 
 export const GetPortalSettingsResponse = zod.object({
@@ -397,7 +402,13 @@ export const GetPortalSettingsResponse = zod.object({
   "buttonPlacement": zod.enum(['left', 'center', 'right']),
   "categoryInputTransparent": zod.boolean()
 }),
-  "screenCopy": zod.record(zod.string(), zod.record(zod.string(), zod.string().max(getPortalSettingsResponseScreenCopyMaxTwo)))
+  "screenCopy": zod.record(zod.string(), zod.record(zod.string(), zod.string().max(getPortalSettingsResponseScreenCopyMaxTwo))),
+  "pageThemes": zod.record(zod.string(), zod.object({
+  "mode": zod.enum(['inherit', 'solid', 'gradient']),
+  "color": zod.string().regex(getPortalSettingsResponsePageThemesColorRegExp),
+  "blendColor": zod.string().regex(getPortalSettingsResponsePageThemesBlendColorRegExp),
+  "angle": zod.number().int().min(getPortalSettingsResponsePageThemesAngleMin).max(getPortalSettingsResponsePageThemesAngleMax)
+})).optional()
 })
 
 
@@ -424,6 +435,11 @@ export const updatePortalSettingsBodyCardsMax = 4;
 export const updatePortalSettingsBodyThemePinScreenBackgroundRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
 export const updatePortalSettingsBodyScreenCopyMaxTwo = 500;
 
+export const updatePortalSettingsBodyPageThemesColorRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const updatePortalSettingsBodyPageThemesBlendColorRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const updatePortalSettingsBodyPageThemesAngleMin = 0;
+export const updatePortalSettingsBodyPageThemesAngleMax = 360;
+
 
 
 export const UpdatePortalSettingsBody = zod.object({
@@ -447,7 +463,13 @@ export const UpdatePortalSettingsBody = zod.object({
   "buttonPlacement": zod.enum(['left', 'center', 'right']),
   "categoryInputTransparent": zod.boolean()
 }),
-  "screenCopy": zod.record(zod.string(), zod.record(zod.string(), zod.string().max(updatePortalSettingsBodyScreenCopyMaxTwo)))
+  "screenCopy": zod.record(zod.string(), zod.record(zod.string(), zod.string().max(updatePortalSettingsBodyScreenCopyMaxTwo))),
+  "pageThemes": zod.record(zod.string(), zod.object({
+  "mode": zod.enum(['inherit', 'solid', 'gradient']),
+  "color": zod.string().regex(updatePortalSettingsBodyPageThemesColorRegExp),
+  "blendColor": zod.string().regex(updatePortalSettingsBodyPageThemesBlendColorRegExp),
+  "angle": zod.number().int().min(updatePortalSettingsBodyPageThemesAngleMin).max(updatePortalSettingsBodyPageThemesAngleMax)
+})).optional()
 })
 
 export const updatePortalSettingsResponseHeroTitleMax = 160;
@@ -473,6 +495,11 @@ export const updatePortalSettingsResponseCardsMax = 4;
 export const updatePortalSettingsResponseThemePinScreenBackgroundRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
 export const updatePortalSettingsResponseScreenCopyMaxTwo = 500;
 
+export const updatePortalSettingsResponsePageThemesColorRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const updatePortalSettingsResponsePageThemesBlendColorRegExp = new RegExp('^#[0-9A-Fa-f]{6}$');
+export const updatePortalSettingsResponsePageThemesAngleMin = 0;
+export const updatePortalSettingsResponsePageThemesAngleMax = 360;
+
 
 
 export const UpdatePortalSettingsResponse = zod.object({
@@ -496,7 +523,13 @@ export const UpdatePortalSettingsResponse = zod.object({
   "buttonPlacement": zod.enum(['left', 'center', 'right']),
   "categoryInputTransparent": zod.boolean()
 }),
-  "screenCopy": zod.record(zod.string(), zod.record(zod.string(), zod.string().max(updatePortalSettingsResponseScreenCopyMaxTwo)))
+  "screenCopy": zod.record(zod.string(), zod.record(zod.string(), zod.string().max(updatePortalSettingsResponseScreenCopyMaxTwo))),
+  "pageThemes": zod.record(zod.string(), zod.object({
+  "mode": zod.enum(['inherit', 'solid', 'gradient']),
+  "color": zod.string().regex(updatePortalSettingsResponsePageThemesColorRegExp),
+  "blendColor": zod.string().regex(updatePortalSettingsResponsePageThemesBlendColorRegExp),
+  "angle": zod.number().int().min(updatePortalSettingsResponsePageThemesAngleMin).max(updatePortalSettingsResponsePageThemesAngleMax)
+})).optional()
 })
 
 

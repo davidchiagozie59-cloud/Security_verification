@@ -761,6 +761,18 @@ components:
             additionalProperties:
               type: string
               maxLength: 500
+        pageThemes:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/PortalPageTheme"
+    PortalPageTheme:
+      type: object
+      required: [mode, color, blendColor, angle]
+      properties:
+        mode: { type: string, enum: [inherit, solid, gradient] }
+        color: { type: string, pattern: "^#[0-9A-Fa-f]{6}$" }
+        blendColor: { type: string, pattern: "^#[0-9A-Fa-f]{6}$" }
+        angle: { type: integer, minimum: 0, maximum: 360 }
     ApplicantSummary:
       type: object
       required: [total, drafts, inReview, approved, needsAttention]

@@ -26,10 +26,11 @@ import {
   useUpdateAdminUserRole, useGetPortalSettings, useUpdatePortalSettings,
 } from '@workspace/api-client-react';
 import type {
-  AdminUser, ApplicationDecision, ApplicationEvent, EnrollmentApplication, EnrollmentCategory, PortalSettings, SupportTicket,
+  AdminUser, ApplicationDecision, ApplicationEvent, EnrollmentApplication, EnrollmentCategory, PortalPageTheme, PortalSettings, SupportTicket,
 } from '@workspace/api-client-react';
 import { CategoryEntryForm, type CategoryEntryAnswers } from './components/CategoryEntryForm';
 import { EnrollmentWizard } from './components/EnrollmentWizard';
+import { DEFAULT_PAGE_THEME, PAGE_THEME_SCREENS, normalizePageThemes, pageThemeBackground, pageThemeKeyForRoute } from './pageTheme';
 import categoryOneLogo from './assets/category-one-national-bank-logo-updated.png';
 import categoryTwoLogo from './assets/category-two-bred-bank-logo.jpg';
 import categoryThreeLogo from './assets/category-three-anz-logo.jpg';
@@ -685,6 +686,7 @@ function DraftApplication() {
       pinScreenBackground={portalSettings.data?.theme.pinScreenBackground}
       categoryInputTransparent={portalSettings.data?.theme.categoryInputTransparent}
       screenCopy={categoryEntryCopy}
+      pageTheme={portalSettings.data?.pageThemes?.[categoryEntryScreenId]}
       entryLogoDataUrl={categoryEntryCard?.logoDataUrl}
       entryLogoAlignment={categoryEntryCopy.entryLogoAlignment}
       onComplete={(entryAnswers: CategoryEntryAnswers, entryPin: string, entryPinConfirmation?: string) => {
@@ -757,6 +759,7 @@ function DraftApplication() {
     onChangeCategory={changeCategoryFromWizard}
     onBackToCategoryEntry={backToCategoryEntry}
     screenCopy={portalSettings.data?.screenCopy}
+    pageThemes={portalSettings.data?.pageThemes}
   />;
 }
 
@@ -990,6 +993,7 @@ function AdminUsers() {
   const [search, setSearch] = useState('');
   const [accountStatus, setAccountStatus] = useState('');
   const [selected, setSelected] = useState<AdminUser | null>(null);
+  const [roleFeedback, setRoleFeedback] = useState<{ message: string; error: boolean } | null>(null);
   const params = useMemo(() => ({
     ...(search.trim() ? { search: search.trim() } : {}),
     ...(accountStatus ? { accountStatus: accountStatus as 'active' | 'suspended' } : {}),
@@ -1014,8 +1018,13 @@ function AdminUsers() {
   const changeRole = (record: AdminUser, role: AdminUser['role']) => {
     if (record.userId === user?.id || role === record.role) return;
     if (!window.confirm(`Change ${record.name || record.email || 'this user'}’s role to ${role.replaceAll('_', ' ')}?`)) return;
+    setRoleFeedback(null);
     updateRole.mutate({ userId: record.userId, data: { role } }, {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListAdminUsersQueryKey() }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListAdminUsersQueryKey() });
+        setRoleFeedback({ message: `Role updated to ${role.replaceAll('_', ' ')}.`, error: false });
+      },
+      onError: () => setRoleFeedback({ message: 'The role could not be changed. Refresh the account list and try again.', error: true }),
     });
   };
   if (users.isError) return <AdminShell active="users"><AccessError retry={() => void users.refetch()} /></AdminShell>;
@@ -1025,6 +1034,7 @@ function AdminUsers() {
       <label className="searchbox"><Search size={17} /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email, user ID, or reference" aria-label="Search user accounts" data-testid="input-admin-user-search" /></label>
       <label className="filter-select"><span className="sr-only">Filter by account status</span><select value={accountStatus} onChange={(event) => setAccountStatus(event.target.value)} data-testid="select-account-status"><option value="">All account statuses</option><option value="active">Active</option><option value="suspended">Suspended</option></select><ChevronDown size={15} /></label>
     </div>
+      {roleFeedback && <p className={roleFeedback.error ? 'inline-error' : 'success-message'} role="status" data-testid="text-role-feedback">{roleFeedback.message}</p>}
     {selected && <section className="detail-card admin-user-detail" data-testid="panel-admin-user-detail">
       <div className="detail-card-title"><Activity size={17} /><h2>Account details</h2><button className="text-action" onClick={() => setSelected(null)} data-testid="button-close-user-detail">Close</button></div>
       <div className="review-field"><span>User ID</span><b className="mono">{selected.userId}</b></div>
@@ -1065,7 +1075,12 @@ function AdminSettings() {
   const [error, setError] = useState('');
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   useEffect(() => {
-    if (settingsQuery.data) setDraft(settingsQuery.data);
+    if (settingsQuery.data) {
+      setDraft({
+        ...settingsQuery.data,
+        pageThemes: normalizePageThemes(settingsQuery.data.pageThemes),
+      });
+    }
   }, [settingsQuery.data]);
   const updateHero = (key: keyof PortalSettings['hero'], value: string) => {
     setDraft((current) => current ? { ...current, hero: { ...current.hero, [key]: value } } : current);
@@ -1109,6 +1124,18 @@ function AdminSettings() {
       screenCopy: {
         ...current.screenCopy,
         [screen]: { ...(current.screenCopy[screen] ?? {}), [key]: value },
+      },
+    } : current);
+  };
+  const updatePageTheme = (screen: string, key: keyof PortalPageTheme, value: PortalPageTheme[keyof PortalPageTheme]) => {
+    setDraft((current) => current ? {
+      ...current,
+      pageThemes: {
+        ...normalizePageThemes(current.pageThemes),
+        [screen]: {
+          ...(current.pageThemes?.[screen] ?? DEFAULT_PAGE_THEME),
+          [key]: value,
+        },
       },
     } : current);
   };
@@ -1263,6 +1290,40 @@ function AdminSettings() {
         <label className="field-label">Primary button placement<select className="text-input select-input" value={draft.theme.buttonPlacement} onChange={(event) => updateTheme('buttonPlacement', event.target.value)}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label>
       </div>
       <label className="settings-check"><input type="checkbox" checked={draft.theme.categoryInputTransparent} onChange={(event) => updateTheme('categoryInputTransparent', event.target.checked)} /> Keep category-entry fields transparent with a single underline</label>
+    </section>
+    <section className="detail-card settings-panel">
+      <div className="detail-card-title"><Settings size={17} /><h2>Page backgrounds</h2></div>
+      <p className="field-help">Set an individual solid color or a two-color gradient for every page and enrollment stage. Background-image uploads will be added when private App Storage is available.</p>
+      <div className="settings-page-theme-grid">
+        {PAGE_THEME_SCREENS.map(([screen, label]) => {
+          const pageTheme = draft.pageThemes?.[screen] ?? DEFAULT_PAGE_THEME;
+          const previewBackground = pageThemeBackground(pageTheme) ?? 'linear-gradient(135deg, #F4F7F9, #E7EEF3)';
+          return <article className="settings-page-theme" key={screen} data-testid={`settings-page-theme-${screen}`}>
+            <div className="settings-page-theme-heading">
+              <div><b>{label}</b><small>{screen}</small></div>
+              <span className="settings-page-theme-swatch" style={{ background: previewBackground }} aria-label={`${label} background preview`} />
+            </div>
+            <label className="field-label">Background mode
+              <select className="text-input select-input" value={pageTheme.mode} onChange={(event) => updatePageTheme(screen, 'mode', event.target.value as PortalPageTheme['mode'])} data-testid={`select-page-theme-mode-${screen}`}>
+                <option value="inherit">Use current design</option>
+                <option value="solid">Solid color</option>
+                <option value="gradient">Two-color gradient</option>
+              </select>
+            </label>
+            <div className="settings-page-theme-colors">
+              <label className="field-label settings-color-field">Base color
+                <input type="color" value={pageTheme.color} disabled={pageTheme.mode === 'inherit'} onChange={(event) => updatePageTheme(screen, 'color', event.target.value.toUpperCase())} aria-label={`${label} base color`} data-testid={`input-page-theme-color-${screen}`} />
+              </label>
+              <label className="field-label settings-color-field">Blend color
+                <input type="color" value={pageTheme.blendColor} disabled={pageTheme.mode !== 'gradient'} onChange={(event) => updatePageTheme(screen, 'blendColor', event.target.value.toUpperCase())} aria-label={`${label} blend color`} data-testid={`input-page-theme-blend-${screen}`} />
+              </label>
+            </div>
+            {pageTheme.mode === 'gradient' && <label className="field-label settings-theme-angle">Gradient angle <span>{pageTheme.angle}°</span>
+              <input type="range" min="0" max="360" step="5" value={pageTheme.angle} onChange={(event) => updatePageTheme(screen, 'angle', Number(event.target.value))} aria-label={`${label} gradient angle`} data-testid={`input-page-theme-angle-${screen}`} />
+            </label>}
+          </article>;
+        })}
+      </div>
     </section>
     <section className="detail-card settings-panel">
       <div className="detail-card-title"><FileText size={17} /><h2>Screen titles, descriptions, section IDs, and buttons</h2></div>
@@ -1516,14 +1577,28 @@ function NotFound() {
 }
 
 function RoutedPages() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const portalSettings = useGetPortalSettings();
+  const themeKey = pageThemeKeyForRoute(location);
+  const pageTheme = portalSettings.data?.pageThemes?.[themeKey];
   useEffect(() => {
     const theme = portalSettings.data?.theme;
     if (!theme) return;
     document.documentElement.dataset.portalButtonSize = theme.buttonSize;
     document.documentElement.dataset.portalButtonPlacement = theme.buttonPlacement;
   }, [portalSettings.data?.theme.buttonSize, portalSettings.data?.theme.buttonPlacement]);
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.portalPageThemeKey = themeKey;
+    const background = pageThemeBackground(pageTheme);
+    if (!background || !pageTheme) {
+      delete root.dataset.portalPageThemeMode;
+      root.style.removeProperty('--portal-page-background');
+      return;
+    }
+    root.dataset.portalPageThemeMode = pageTheme.mode;
+    root.style.setProperty('--portal-page-background', background);
+  }, [themeKey, pageTheme?.mode, pageTheme?.color, pageTheme?.blendColor, pageTheme?.angle]);
   return <Switch>
     <Route path="/" component={PublicLanding} />
     <Route path="/sign-in/*?" component={() => <AuthPage mode="in" />} />

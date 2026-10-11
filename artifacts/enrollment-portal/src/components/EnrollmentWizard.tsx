@@ -3,12 +3,13 @@ import type { ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { EnrollmentApplication, EnrollmentCategory } from '@workspace/api-client-react';
+import type { EnrollmentApplication, EnrollmentCategory, PortalPageTheme } from '@workspace/api-client-react';
 import {
   ArrowLeft, ArrowRight, Check, CheckCircle2, ChevronDown, CircleAlert, FileImage,
   FileVideo2, LockKeyhole, ShieldCheck, Upload, Video, X,
 } from 'lucide-react';
 import './EnrollmentWizard.css';
+import { pageThemeBackground } from '../pageTheme';
 
 type WizardAnswers = Record<string, unknown>;
 
@@ -23,6 +24,7 @@ export type EnrollmentWizardProps = {
   error: string;
   reopenedSections: number[];
   screenCopy?: Record<string, Record<string, string>>;
+  pageThemes?: Record<string, PortalPageTheme>;
   saveStep: (answers: Record<string, unknown>, currentStep: number) => Promise<boolean>;
   submit: (answers: Record<string, unknown>) => Promise<boolean>;
   onChangeCategory: (categoryId: string) => void;
@@ -213,7 +215,7 @@ type LocalImage = { file: File; url: string };
 export function EnrollmentWizard({
   application, categories, status, storageAvailable, maxUploadBytes, isSaving, isSubmitting, error,
   reopenedSections, screenCopy = {}, saveStep, submit, onChangeCategory,
-  onBackToCategoryEntry,
+  onBackToCategoryEntry, pageThemes,
 }: EnrollmentWizardProps) {
   const copyForStep = (index: number) => screenCopy[`workflow-step-${index + 1}`] ?? {};
   const titleForStep = (index: number) => copyForStep(index).title || stageTitles[index];
@@ -230,6 +232,7 @@ export function EnrollmentWizard({
     return initial;
   });
   const [step, setStep] = useState(() => resumeAt(application.currentStep, reopenedSections));
+  const stageBackground = pageThemeBackground(pageThemes?.[`workflow-step-${step + 1}`]);
   const [editingFromPreview, setEditingFromPreview] = useState(false);
   const [localImages, setLocalImages] = useState<Record<string, LocalImage>>({});
   const [cameraState, setCameraState] = useState<'idle' | 'ready' | 'recording' | 'recorded' | 'denied' | 'unsupported'>('idle');
@@ -589,7 +592,7 @@ export function EnrollmentWizard({
 
   const uploadProgress = Math.min(100, Math.round((recordingSeconds / 12) * 100));
 
-  return <main className="ew-shell" data-testid="enrollment-wizard">
+  return <main className="ew-shell" style={stageBackground ? { background: stageBackground } : undefined} data-testid="enrollment-wizard">
     <header className="ew-topbar">
       <div className="ew-topbrand"><span><ShieldCheck size={18} /></span><b>Security Verification<small>Enrollment Portal</small></b></div>
       <div className="ew-top-meta"><span className={`ew-draft-status ${status === 'draft' ? '' : 'submitted'}`} data-testid="status-application">{status.replaceAll('_', ' ')}</span>
@@ -618,7 +621,7 @@ export function EnrollmentWizard({
         <div className="ew-rail-security" data-testid="notice-privacy"><LockKeyhole size={16} /><span><b>Your details stay private</b><small>Only share information requested for enrollment.</small></span></div>
       </aside>
 
-      <section className="ew-main" aria-live="polite">
+      <section className="ew-main" style={stageBackground ? { background: stageBackground } : undefined} aria-live="polite">
         <div className="ew-mobile-progress" data-testid="text-progress">SECTION {String(step + 1).padStart(2, '0')} OF 08</div>
         {step < 7 ? <form className="ew-form" onSubmit={(event) => { event.preventDefault(); void saveAndContinue(); }} noValidate>
           <div className="ew-content-scroll">

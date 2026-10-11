@@ -348,6 +348,30 @@ export type PortalSettingsTheme = {
 
 export type PortalSettingsScreenCopy = {[key: string]: {[key: string]: string}};
 
+export type PortalPageThemeMode = typeof PortalPageThemeMode[keyof typeof PortalPageThemeMode];
+
+
+export const PortalPageThemeMode = {
+  inherit: 'inherit',
+  solid: 'solid',
+  gradient: 'gradient',
+} as const;
+
+export interface PortalPageTheme {
+  mode: PortalPageThemeMode;
+  /** @pattern ^#[0-9A-Fa-f]{6}$ */
+  color: string;
+  /** @pattern ^#[0-9A-Fa-f]{6}$ */
+  blendColor: string;
+  /**
+     * @minimum 0
+     * @maximum 360
+     */
+  angle: number;
+}
+
+export type PortalSettingsPageThemes = {[key: string]: PortalPageTheme};
+
 export interface PortalSettings {
   hero: PortalSettingsHero;
   /**
@@ -357,6 +381,7 @@ export interface PortalSettings {
   cards: PortalSettingsCardsItem[];
   theme: PortalSettingsTheme;
   screenCopy: PortalSettingsScreenCopy;
+  pageThemes?: PortalSettingsPageThemes;
 }
 
 export interface ApplicantSummary {

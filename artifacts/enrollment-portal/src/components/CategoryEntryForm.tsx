@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown, MapPin, Menu, Phone, ShieldCheck, X } from "lucide-react";
-import type { EnrollmentCategory } from "@workspace/api-client-react";
+import type { EnrollmentCategory, PortalPageTheme } from "@workspace/api-client-react";
 import { Link } from "wouter";
+import { pageThemeBackground } from "../pageTheme";
 import categoryOneLogo from "../assets/category-one-national-bank-logo-updated.png";
 import categoryTwoLogo from "../assets/category-two-bred-bank-logo.jpg";
 import categoryThreeLogo from "../assets/category-three-anz-logo.jpg";
@@ -25,6 +26,7 @@ type CategoryEntryFormProps = {
   pinScreenBackground?: string;
   categoryInputTransparent?: boolean;
   screenCopy?: Record<string, string>;
+  pageTheme?: PortalPageTheme;
   entryLogoDataUrl?: string | null;
   entryLogoAlignment?: string;
   onComplete: (answers: CategoryEntryAnswers, pin: string, pinConfirmation?: string) => void;
@@ -44,6 +46,7 @@ export function CategoryEntryForm({
   pinScreenBackground,
   categoryInputTransparent = true,
   screenCopy = {},
+  pageTheme,
   entryLogoDataUrl,
   entryLogoAlignment = "center",
   onComplete,
@@ -215,12 +218,14 @@ export function CategoryEntryForm({
       : isCategoryThree
         ? "#0369a1"
         : pinScreenBackground;
-  const formBackgroundStyle = isPinStep && categoryPinBackground
-    ? ({
-        backgroundColor: categoryPinBackground,
-        "--entry-background": categoryPinBackground,
-      } as CSSProperties)
-    : undefined;
+  const customPageBackground = pageThemeBackground(pageTheme);
+  const formBackgroundStyle = ({
+    ...(isPinStep && categoryPinBackground ? {
+      backgroundColor: categoryPinBackground,
+      "--entry-background": categoryPinBackground,
+    } : {}),
+    ...(customPageBackground ? { background: customPageBackground } : {}),
+  } as CSSProperties);
 
   return (
     <main className={`category-entry-screen category-entry-screen-${categoryId} entry-logo-align-${logoAlignment} ${isCategoryOne || isCategoryThree ? "category-one-reference-screen" : ""} ${isCategoryOne && isPinStep ? "category-one-reference-pin-stage" : ""} ${isCategoryThree ? `category-three-reference-screen ${isPinStep ? "category-one-reference-pin-stage" : ""}` : ""} ${isCategoryTwo ? `category-two-reference-screen category-two-step-${step}` : ""} ${isCategoryFour ? "category-four-reference-screen" : ""} ${categoryInputTransparent ? "entry-input-transparent" : "entry-input-opaque"} ${isPinStep ? "entry-pin-stage" : ""}`} style={formBackgroundStyle} data-testid={`form-entry-${categoryId}`}>

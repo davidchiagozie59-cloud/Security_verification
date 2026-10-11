@@ -169,6 +169,7 @@ const defaultPortalSettings = {
     categoryInputTransparent: true,
   },
   screenCopy: {},
+  pageThemes: {},
 };
 
 type CategoryId = (typeof categories)[number]["id"];

@@ -7,6 +7,7 @@
  */
 import type { PortalSettingsCardsItem } from './portalSettingsCardsItem';
 import type { PortalSettingsHero } from './portalSettingsHero';
+import type { PortalSettingsPageThemes } from './portalSettingsPageThemes';
 import type { PortalSettingsScreenCopy } from './portalSettingsScreenCopy';
 import type { PortalSettingsTheme } from './portalSettingsTheme';
 
@@ -19,4 +20,5 @@ export interface PortalSettings {
   cards: PortalSettingsCardsItem[];
   theme: PortalSettingsTheme;
   screenCopy: PortalSettingsScreenCopy;
+  pageThemes?: PortalSettingsPageThemes;
 }
