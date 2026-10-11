@@ -778,6 +778,7 @@ html[data-portal-button-placement="right"] .category-one-reference-screen .entry
 .category-card:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 12px 22px #18344b22; }
 .category-card:disabled { cursor: not-allowed; opacity: .48; }
 .category-logo { width: 28px; height: 28px; object-fit: contain; margin: 0 0 10px; }
+.category-title { max-width: 100%; color: inherit; font-size: 13px; font-weight: 700; line-height: 1.25; letter-spacing: -.015em; overflow-wrap: anywhere; }
 .category-1 { border-color: #169d46; }.category-2 { border-color: #244fc7; }.category-3 { border-color: #1198d2; }.category-4 { color: #17374e; border-color: #cbd8e1; background: #fff; box-shadow: 0 6px 16px #17374e12; }
 .category-number { position: absolute; right: 14px; top: 13px; color: #ffffffb7; font: 9px var(--app-font-mono); }
 .category-4 .category-number { color: #8999a6; }

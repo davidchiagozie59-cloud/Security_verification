@@ -464,6 +464,7 @@ function Dashboard() {
                           : category.id === 'category-4'
                             ? <img src={categoryFourLogo} alt="BSP" className="category-logo category-four-default-logo" />
                             : <span className="category-symbol" style={{ color: iconColors[categoryIndex] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>}
+                    <span className="category-title">{cardSettings?.title ?? category.name}</span>
                     <span className="category-select">{selectionAction} <ArrowUpRight size={15} /></span>
                   </button>;
                 })}
