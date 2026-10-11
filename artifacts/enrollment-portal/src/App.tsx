@@ -206,28 +206,9 @@ function PageHeading({ eyebrow, title, detail, action }: { eyebrow: string; titl
 }
 
 function PublicLanding() {
-  const { isLoaded, isSignedIn } = useAuth();
   const portalSettings = useGetPortalSettings();
   const hero = portalSettings.data?.hero;
-  const applications = useListMyApplications({
-    query: {
-      enabled: isLoaded && Boolean(isSignedIn),
-      queryKey: getListMyApplicationsQueryKey(),
-    },
-  });
-  const latestApplication = applications.data?.[0];
-  const primaryDestination = !isLoaded || !isSignedIn
-    ? '/sign-in'
-    : applications.isLoading
-      ? '/dashboard'
-      : latestApplication
-        ? ['draft', 'needs_information'].includes(latestApplication.status)
-          ? `/apply/${latestApplication.id}`
-          : `/applications/${latestApplication.id}`
-        : '/dashboard';
-  const primaryLabel = latestApplication
-    ? ['draft', 'needs_information'].includes(latestApplication.status) ? 'Continue application' : 'View application status'
-    : hero?.getStartedLabel ?? 'Get Started';
+  const primaryLabel = hero?.getStartedLabel ?? 'Get Started';
   return (
     <main className="landing portal-frame">
       <section className="landing-copy">
@@ -237,7 +218,7 @@ function PublicLanding() {
           <h1>{copyText(portalSettings.data, 'landing', 'title', hero?.title ?? 'Welcome to Our Enrollment Portal')}</h1>
           <p className="landing-lede">{copyText(portalSettings.data, 'landing', 'description', hero?.description ?? 'Select your enrollment category and complete your application through our secure enrollment process.')}</p>
           <div className="landing-actions">
-            <Link href={primaryDestination} className="button button-primary" data-testid="link-get-started">
+            <Link href="/dashboard" className="button button-primary" data-testid="link-get-started">
               {copyText(portalSettings.data, 'landing', 'buttonLabel', primaryLabel)} <ArrowRight size={17} />
             </Link>
             <Link href="/sign-in" className="text-action" data-testid="link-sign-in">

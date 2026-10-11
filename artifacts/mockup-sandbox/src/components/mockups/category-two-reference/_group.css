@@ -207,28 +207,8 @@ body {
   z-index: 3;
   inset: 0 0 auto;
   height: 74px;
-  border-bottom: 1px solid #ffffff08;
-  background: #ffffff08;
-}
-
-.category-two-reference-statusbar {
-  position: absolute;
-  top: 15px;
-  right: 20px;
-  left: 20px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #fff;
-  font-size: 14px;
-}
-
-.category-two-reference-system-icons {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: auto;
-  opacity: .9;
+  border: 0;
+  background: transparent;
 }
 
 .category-two-reference-language {

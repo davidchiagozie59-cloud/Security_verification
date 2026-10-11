@@ -1,13 +1,9 @@
 import { useState, type FormEvent } from "react";
 import {
   ArrowLeft,
-  BatteryMedium,
   ChevronDown,
   MapPin,
-  MessageCircle,
   Phone,
-  Signal,
-  Wifi,
 } from "lucide-react";
 import "./_group.css";
 
@@ -40,15 +36,6 @@ export function CategoryTwoPreview({ variant = "current" }: CategoryTwoPreviewPr
       {isReference ? (
         <>
           <header className="category-two-reference-header">
-            <div className="category-two-reference-statusbar" aria-label="Local time and device status">
-              <span>6:18</span>
-              <MessageCircle size={12} fill="currentColor" aria-hidden="true" />
-              <div className="category-two-reference-system-icons" aria-hidden="true">
-                <Wifi size={13} />
-                <Signal size={14} />
-                <BatteryMedium size={16} />
-              </div>
-            </div>
             <button className="category-two-reference-language" type="button" onClick={() => setMenuOpen(!menuOpen)}>
               EN <ChevronDown size={16} />
             </button>

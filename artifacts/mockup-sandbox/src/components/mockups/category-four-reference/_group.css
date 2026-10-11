@@ -1,0 +1,108 @@
+.category-four-reference-screen {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: #153f35;
+  background: #fff url("/__mockup/images/category-four-reference.jpg") center / 100% 100% no-repeat;
+  font-family: "DM Sans", Arial, sans-serif;
+}
+
+.category-four-reference-screen.entry-pin-stage {
+  background-image: none;
+  background-color: #0b5147;
+}
+
+.category-four-reference-content {
+  position: absolute;
+  top: 32.3%;
+  right: 10%;
+  left: 10%;
+  width: auto;
+}
+
+.category-four-reference-card {
+  width: 100%;
+}
+
+.category-four-reference-screen .entry-fields {
+  display: grid;
+  gap: 29px;
+  margin-top: 0;
+}
+
+.category-four-reference-screen .entry-field {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  color: #0b5147;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.category-four-reference-screen .entry-field > span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  color: #0b5147c9;
+  font-size: 12px;
+  line-height: 14px;
+  pointer-events: none;
+}
+
+.category-four-reference-screen .entry-field:focus-within > span {
+  color: #073e34;
+}
+
+.category-four-reference-screen .entry-line-input {
+  display: block;
+  width: 100%;
+  min-height: 47px;
+  padding: 20px 0 3px;
+  border: 0;
+  border-bottom: 1px solid #0b514780;
+  border-radius: 0;
+  color: #153f35;
+  background: transparent;
+  font: 15px "DM Sans", Arial, sans-serif;
+}
+
+.category-four-reference-screen .entry-line-input:focus,
+.category-four-reference-screen .entry-line-input:focus-visible {
+  border-bottom: 1px solid #0b5147;
+  outline: none;
+  box-shadow: none;
+}
+
+.category-four-reference-screen .entry-line-input::placeholder {
+  color: transparent;
+}
+
+.category-four-reference-screen .entry-actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 30px;
+}
+
+.category-four-reference-screen .entry-primary-button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: #0b5147;
+  box-shadow: 0 7px 18px #042c3027;
+  font: 700 13px "DM Sans", Arial, sans-serif;
+  cursor: pointer;
+}
+
+.category-four-reference-screen .entry-primary-button:focus-visible {
+  outline: 2px solid #0b5147;
+  outline-offset: 3px;
+}

@@ -4,5 +4,6 @@ export const modules: ModuleMap = {
   "./components/mockups/category-one-reference/CategoryOnePreview.tsx": () => import("../components/mockups/category-one-reference/CategoryOnePreview.tsx"),
   "./components/mockups/category-one-reference/ReferenceMatch.tsx": () => import("../components/mockups/category-one-reference/ReferenceMatch.tsx"),
   "./components/mockups/category-two-reference/CategoryTwoPreview.tsx": () => import("../components/mockups/category-two-reference/CategoryTwoPreview.tsx"),
-  "./components/mockups/category-two-reference/ReferenceMatch.tsx": () => import("../components/mockups/category-two-reference/ReferenceMatch.tsx")
+  "./components/mockups/category-two-reference/ReferenceMatch.tsx": () => import("../components/mockups/category-two-reference/ReferenceMatch.tsx"),
+  "./components/mockups/category-four-reference/CategoryFourPreview.tsx": () => import("../components/mockups/category-four-reference/CategoryFourPreview.tsx")
 };

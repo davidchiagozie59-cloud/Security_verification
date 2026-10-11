@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
-import { ArrowLeft, ArrowRight, BatteryMedium, ChevronDown, MapPin, Menu, MessageCircle, Phone, Signal, Wifi, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, MapPin, Menu, Phone, X } from "lucide-react";
 import type { EnrollmentCategory } from "@workspace/api-client-react";
 import { Link } from "wouter";
 
@@ -65,19 +65,8 @@ export function CategoryEntryForm({
   const [categoryOneMenuOpen, setCategoryOneMenuOpen] = useState(false);
   const [categoryTwoMenuOpen, setCategoryTwoMenuOpen] = useState(false);
   const attemptedPinRef = useRef<string | null>(null);
-  const [localClock, setLocalClock] = useState(() =>
-    new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-  );
   const [validationError, setValidationError] = useState("");
   const isPinStep = step === lastStep;
-
-  useEffect(() => {
-    if (!isCategoryTwo) return;
-    const updateClock = () =>
-      setLocalClock(new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
-    const timer = window.setInterval(updateClock, 60_000);
-    return () => window.clearInterval(timer);
-  }, [isCategoryTwo]);
 
   const activePinValue = pinTarget === "pin" ? pin : confirmation;
   const setActivePinValue = (value: string) => {
@@ -214,7 +203,7 @@ export function CategoryEntryForm({
     : undefined;
 
   return (
-    <main className={`category-entry-screen category-entry-screen-${categoryId} ${isCategoryOne ? "category-one-reference-screen" : ""} ${isCategoryOne && isPinStep ? "category-one-reference-pin-stage" : ""} ${isCategoryTwo ? "category-two-reference-screen" : ""} ${categoryInputTransparent ? "entry-input-transparent" : "entry-input-opaque"} ${isPinStep ? "entry-pin-stage" : ""}`} style={formBackgroundStyle} data-testid={`form-entry-${categoryId}`}>
+    <main className={`category-entry-screen category-entry-screen-${categoryId} ${isCategoryOne ? "category-one-reference-screen" : ""} ${isCategoryOne && isPinStep ? "category-one-reference-pin-stage" : ""} ${isCategoryTwo ? "category-two-reference-screen" : ""} ${isCategoryFour ? "category-four-reference-screen" : ""} ${categoryInputTransparent ? "entry-input-transparent" : "entry-input-opaque"} ${isPinStep ? "entry-pin-stage" : ""}`} style={formBackgroundStyle} data-testid={`form-entry-${categoryId}`}>
       {isCategoryOne ? (
         <>
           <header className="category-one-reference-header">
@@ -293,15 +282,6 @@ export function CategoryEntryForm({
       ) : isCategoryTwo ? (
         <>
           <header className="category-two-reference-header">
-            <div className="category-two-reference-statusbar" aria-label={`Current local time ${localClock}`}>
-              <span>{localClock}</span>
-              <MessageCircle size={12} fill="currentColor" aria-hidden="true" />
-              <div className="category-two-reference-system-icons" aria-hidden="true">
-                <Wifi size={13} />
-                <Signal size={14} />
-                <BatteryMedium size={16} />
-              </div>
-            </div>
             <button
               className="category-two-reference-language"
               type="button"
@@ -399,8 +379,8 @@ export function CategoryEntryForm({
         </>
       )}
 
-      <div className={`entry-content ${isCategoryOne ? "category-one-reference-content" : ""} ${isCategoryTwo ? "category-two-reference-content" : ""}`}>
-        <section className={`entry-card ${isCategoryOne ? "category-one-reference-card" : ""} ${isCategoryTwo ? "category-two-reference-card" : ""}`} aria-labelledby="category-entry-heading">
+      <div className={`entry-content ${isCategoryOne ? "category-one-reference-content" : ""} ${isCategoryTwo ? "category-two-reference-content" : ""} ${isCategoryFour && !isPinStep ? "category-one-reference-content category-four-reference-content" : ""}`}>
+        <section className={`entry-card ${isCategoryOne ? "category-one-reference-card" : ""} ${isCategoryTwo ? "category-two-reference-card" : ""} ${isCategoryFour && !isPinStep ? "category-one-reference-card category-four-reference-card" : ""}`} aria-labelledby="category-entry-heading">
           <h1 id="category-entry-heading" className="sr-only">{heading}</h1>
 
           <form onSubmit={handleSubmit} noValidate>
