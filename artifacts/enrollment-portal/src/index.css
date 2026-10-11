@@ -299,24 +299,23 @@
 .category-entry-screen-category-2.category-two-reference-screen {
   overflow: hidden;
   padding: 0;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--entry-background) 97%, #fff 3%) 0%,
-      var(--entry-background) 54%,
-      color-mix(in srgb, var(--entry-background) 90%, #000 10%) 100%
-    );
+  background: linear-gradient(
+    180deg,
+    #0c4da1 0%,
+    #0c4da1 76%,
+    #0b4998 100%
+  );
 }
 
 .category-two-reference-screen::before {
   position: absolute;
   z-index: 0;
-  bottom: -210px;
+  bottom: -260px;
   left: -175px;
   width: min(115vw, 560px);
   height: 680px;
   border-radius: 48% 52% 0 0;
-  background: linear-gradient(132deg, #3982d24d 0%, #2d72bd38 42%, #1b5ca900 74%);
+  background: linear-gradient(132deg, #3982d23d 0%, #2d72bd30 42%, #1b5ca900 74%);
   content: "";
   pointer-events: none;
   transform: rotate(-22deg);
@@ -326,7 +325,7 @@
   position: absolute;
   z-index: 3;
   inset: 0 0 auto;
-  height: 108px;
+  height: 74px;
   border-bottom: 1px solid #ffffff08;
   background: #ffffff08;
 }
@@ -354,7 +353,7 @@
 
 .category-two-reference-language {
   position: absolute;
-  top: 72px;
+  top: 40px;
   right: 30px;
   display: inline-flex;
   min-width: 66px;
