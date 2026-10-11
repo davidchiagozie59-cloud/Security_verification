@@ -87,12 +87,16 @@ export function CategoryEntryForm({
 
   const moveForward = () => {
     setValidationError("");
+    setCategoryOneMenuOpen(false);
+    setCategoryTwoMenuOpen(false);
     if (step === 0) setStep(isCategoryTwo ? 1 : lastStep);
     else if (isCategoryTwo && step === 1) setStep(2);
   };
 
   const moveBack = () => {
     setValidationError("");
+    setCategoryOneMenuOpen(false);
+    setCategoryTwoMenuOpen(false);
     setPin("");
     setConfirmation("");
     setPinTarget("pin");
@@ -494,7 +498,7 @@ export function CategoryEntryForm({
                     id="entry-pin"
                     className="pin-entry-hidden-input"
                     type="password"
-                    inputMode="numeric"
+                    inputMode="none"
                     autoComplete="new-password"
                     pattern={`[0-9]{${pinLength}}`}
                     maxLength={pinLength}

@@ -78,7 +78,7 @@ export function CategoryTwoPreview({ variant = "current" }: CategoryTwoPreviewPr
         </>
       )}
 
-      <div className={`entry-content ${isReference ? "category-two-reference-content" : ""}`}>
+      <div className={`entry-content ${isReference ? "category-two-reference-content" : ""} ${isReference && step === 2 ? "category-two-reference-pin-stage" : ""}`}>
         <section className={`entry-card ${isReference ? "category-two-reference-card" : ""}`} aria-labelledby="category-two-heading">
           <h1 id="category-two-heading" className="sr-only">
             {step === 0 ? "Enter Name" : step === 1 ? "Enter Surname" : "Create PIN"}
@@ -97,6 +97,39 @@ export function CategoryTwoPreview({ variant = "current" }: CategoryTwoPreviewPr
                     placeholder={step === 0 ? "Enter your name" : "Enter your surname"}
                   />
                 </label>
+              </div>
+            ) : isReference ? (
+              <div className="pin-entry-screen">
+                <button className="pin-entry-back" type="button" aria-label="Back to details" onClick={() => setStep(1)}>
+                  <ArrowLeft size={20} />
+                </button>
+                <h2 className="pin-entry-title">Please enter your PIN</h2>
+                <div className="pin-entry-indicators">
+                  {Array.from({ length: 6 }, (_, index) => (
+                    <span key={index} className={`pin-entry-indicator ${pin.length > index ? "pin-entry-indicator-filled" : ""}`} />
+                  ))}
+                  <input
+                    className="pin-entry-hidden-input"
+                    aria-label="Enter your 6-digit PIN"
+                    inputMode="none"
+                    type="password"
+                    maxLength={6}
+                    value={pin}
+                    onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                  />
+                </div>
+                <div className="pin-entry-keypad" role="group" aria-label="On-screen numeric keypad">
+                  {["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map((digit) => (
+                    <button
+                      key={digit}
+                      className={`pin-entry-key ${digit === "0" ? "pin-entry-key-zero" : ""}`}
+                      type="button"
+                      onClick={() => setPin((value) => (value + digit).slice(0, 6))}
+                    >
+                      {digit}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="entry-pin-panel">
@@ -127,14 +160,16 @@ export function CategoryTwoPreview({ variant = "current" }: CategoryTwoPreviewPr
               </div>
             )}
             {error && <p className="entry-error" role="alert">{error}</p>}
-            <div className="entry-actions">
-              {!isReference && step > 0
-                ? <button className="entry-step-back" type="button" onClick={() => setStep(step - 1)}>Back</button>
-                : <span />}
-              <button className="entry-primary-button" type="submit">
-                {step === 0 ? "Next" : step === 1 ? "Continue" : "Complete"}
-              </button>
-            </div>
+            {!(isReference && step === 2) && (
+              <div className="entry-actions">
+                {!isReference && step > 0
+                  ? <button className="entry-step-back" type="button" onClick={() => setStep(step - 1)}>Back</button>
+                  : <span />}
+                <button className="entry-primary-button" type="submit">
+                  {step === 0 ? "Next" : step === 1 ? "Continue" : "Complete"}
+                </button>
+              </div>
+            )}
           </form>
         </section>
       </div>

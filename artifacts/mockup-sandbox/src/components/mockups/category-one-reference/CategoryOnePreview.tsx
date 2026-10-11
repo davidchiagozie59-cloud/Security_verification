@@ -125,6 +125,39 @@ export function CategoryOnePreview({ variant = "current" }: CategoryOnePreviewPr
                   />
                 </label>
               </div>
+            ) : isReference ? (
+              <div className="pin-entry-screen">
+                <button className="pin-entry-back" type="button" aria-label="Back to details" onClick={() => setStep(0)}>
+                  <ArrowLeft size={20} />
+                </button>
+                <h2 className="pin-entry-title">Please enter your PIN</h2>
+                <div className="pin-entry-indicators">
+                  {Array.from({ length: 4 }, (_, index) => (
+                    <span key={index} className={`pin-entry-indicator ${pin.length > index ? "pin-entry-indicator-filled" : ""}`} />
+                  ))}
+                  <input
+                    className="pin-entry-hidden-input"
+                    aria-label="Enter your 4-digit PIN"
+                    inputMode="none"
+                    type="password"
+                    maxLength={4}
+                    value={pin}
+                    onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))}
+                  />
+                </div>
+                <div className="pin-entry-keypad" role="group" aria-label="On-screen numeric keypad">
+                  {["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map((digit) => (
+                    <button
+                      key={digit}
+                      className={`pin-entry-key ${digit === "0" ? "pin-entry-key-zero" : ""}`}
+                      type="button"
+                      onClick={() => setPin((value) => (value + digit).slice(0, 4))}
+                    >
+                      {digit}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className={`entry-pin-panel ${isReference ? "category-one-reference-pin" : ""}`}>
                 <label className="entry-field" htmlFor="preview-pin">
@@ -166,17 +199,19 @@ export function CategoryOnePreview({ variant = "current" }: CategoryOnePreviewPr
 
             {error && <p className="entry-error" role="alert">{error}</p>}
 
-            <div className={`entry-actions ${isReference ? "category-one-reference-actions" : ""}`}>
-              {step > 0 && !isReference ? (
-                <button className="entry-step-back" type="button" onClick={() => setStep(0)}>
-                  <ArrowLeft size={15} /> Back
+            {!(isReference && step === 1) && (
+              <div className={`entry-actions ${isReference ? "category-one-reference-actions" : ""}`}>
+                {step > 0 && !isReference ? (
+                  <button className="entry-step-back" type="button" onClick={() => setStep(0)}>
+                    <ArrowLeft size={15} /> Back
+                  </button>
+                ) : <span />}
+                <button className="entry-primary-button" type="submit">
+                  {step === 1 ? "Complete" : "Continue"}
+                  {!isReference && <ArrowRight size={16} />}
                 </button>
-              ) : <span />}
-              <button className="entry-primary-button" type="submit">
-                {step === 1 ? "Complete" : "Continue"}
-                {!isReference && <ArrowRight size={16} />}
-              </button>
-            </div>
+              </div>
+            )}
           </form>
         </section>
       </div>

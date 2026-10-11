@@ -399,8 +399,12 @@
   font-weight: 400;
 }
 
+.category-two-reference-screen .entry-field > span b {
+  display: none;
+}
+
 .category-two-reference-screen .entry-line-input {
-  min-height: 28px;
+  min-height: 18px;
   padding: 0;
   border-bottom-color: #ffffff4d;
   font-size: 16px;
@@ -1436,7 +1440,7 @@ html[data-portal-button-placement="right"] .decision-actions { justify-content: 
 }
 
 .category-entry-screen.category-two-reference-screen .entry-line-input {
-  min-height: 28px;
+  min-height: 18px;
   padding: 0;
   border-radius: 0;
   border-bottom-color: #ffffff4d;
@@ -1665,8 +1669,18 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
 .entry-pin-stage .category-one-reference-header,
 .entry-pin-stage .category-one-reference-footer,
 .entry-pin-stage .category-two-reference-header,
-.entry-pin-stage .category-two-reference-footer {
+.entry-pin-stage .category-two-reference-footer,
+.entry-pin-stage .category-one-reference-menu,
+.entry-pin-stage .category-two-reference-menu {
   display: none;
+}
+
+.entry-pin-stage .entry-card,
+.entry-pin-stage .category-one-reference-card,
+.entry-pin-stage .category-two-reference-card {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 @media (max-height: 700px) {
