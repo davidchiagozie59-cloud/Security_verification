@@ -252,7 +252,7 @@ export function EnrollmentWizard({
     resolver: zodResolver(stageSchemas[Math.min(step, 7)]),
     mode: 'onSubmit',
   });
-  const { register, handleSubmit, formState, watch, setValue, reset } = form;
+  const { register, handleSubmit, formState, watch, setValue, reset, getValues } = form;
   const employmentStatus = watch('workInformation.employmentStatus');
   const documentType = watch('proofOfIdentity.documentType');
   const isBackRequired = ['National ID', 'Driver license', 'Passport card'].includes(String(documentType));
@@ -429,9 +429,7 @@ export function EnrollmentWizard({
     setStep(targetStep);
   };
 
-  const saveAndContinue = handleSubmit((data) => {
-    void persistStage(data);
-  });
+  const saveAndContinue = () => persistStage(getValues());
 
   const goBack = () => {
     if (editingFromPreview) {
