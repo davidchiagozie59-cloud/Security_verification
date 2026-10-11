@@ -1,1 +1,2 @@
 - [Staff role boundaries](staff-role-policy.md) — Admin manages accounts/settings; sub-admin reviews all applications; moderator is limited to support.
+- [Draft persistence policy](draft-persistence.md) — Enrollment entry and wizard drafts must remain session-only; persist applicant data only on final submission.

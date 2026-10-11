@@ -326,17 +326,38 @@ function AuthGate({ children }: { children: ReactNode }) {
 }
 
 function Dashboard() {
-  const { user } = useUser();
+  const { user, isLoaded: userLoaded } = useUser();
   const summary = useGetApplicantSummary();
   const applications = useListMyApplications();
   const categories = useListEnrollmentCategories();
   const portalSettings = useGetPortalSettings();
   const deleteDrafts = useDeleteMyDrafts();
+  const clearSavedDrafts = deleteDrafts.mutateAsync;
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [sessionRevision, setSessionRevision] = useState(0);
   const [startingCategoryId, setStartingCategoryId] = useState<string | null>(null);
   const [draftFeedback, setDraftFeedback] = useState('');
+  const [legacyCleanupCompleteFor, setLegacyCleanupCompleteFor] = useState<string | null>(null);
+  const legacyCleanupStartedFor = useRef<string | null>(null);
+  useEffect(() => {
+    const ownerId = user?.id;
+    if (!userLoaded || !ownerId || legacyCleanupStartedFor.current === ownerId) return;
+    legacyCleanupStartedFor.current = ownerId;
+    void clearSavedDrafts().then(async ({ deletedCount }) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() }),
+      ]);
+      setLegacyCleanupCompleteFor(ownerId);
+      if (deletedCount > 0) {
+        setDraftFeedback(`Removed ${deletedCount} previously saved unfinished application${deletedCount === 1 ? '' : 's'}.`);
+      }
+    }).catch(() => {
+      setLegacyCleanupCompleteFor(ownerId);
+      setDraftFeedback('Previously saved drafts could not be cleared. Use Clear all drafts to retry.');
+    });
+  }, [userLoaded, user?.id, clearSavedDrafts, queryClient]);
   const sessionRecords = useMemo(
     () => user?.id ? listSessionDrafts(user.id) : [],
     [user?.id, sessionRevision],
@@ -352,8 +373,8 @@ function Dashboard() {
   const dashboardSummary = summary.data
     ? {
         ...summary.data,
-        total: summary.data.total + sessionRecords.filter((record) => !record.wasPersisted).length,
-        drafts: summary.data.drafts + sessionRecords.filter((record) => !record.wasPersisted).length,
+        total: summary.data.total + sessionRecords.length,
+        drafts: summary.data.drafts + sessionRecords.length,
       }
     : undefined;
   const palette = ['#0EAD46', '#0C4DA1', '#0072AE', '#FFFFFF'];
@@ -394,7 +415,7 @@ function Dashboard() {
       onError: () => setDraftFeedback('Unfinished applications could not be cleared. Please try again.'),
     });
   };
-  const busy = summary.isLoading || applications.isLoading || categories.isLoading;
+  const busy = summary.isLoading || applications.isLoading || categories.isLoading || legacyCleanupCompleteFor !== user?.id;
   const failure = summary.isError || applications.isError || categories.isError;
   return <AppFrame active="dashboard" fitDashboard>
     <div className="dashboard-layout">
@@ -624,28 +645,16 @@ function DraftApplication() {
         if (!user?.id) throw new Error('The signed-in account could not be confirmed.');
         const record = getSessionDraft(application.id, user.id);
         if (!record) throw new Error('This session-only application is no longer available.');
-        if (record.wasPersisted) {
-          saved = await submitExisting.mutateAsync({
-            applicationId: application.id,
-            data: {
-              categoryId: application.categoryId,
-              answers,
-              ...(record.pin ? { pin: record.pin } : {}),
-              ...(record.pinConfirmation ? { pinConfirmation: record.pinConfirmation } : {}),
-            },
-          });
-        } else {
-          if (!record.pin) throw new Error('Create the category PIN before submitting.');
-          saved = await submitNew.mutateAsync({
-            data: {
-              submissionId: record.submissionId,
-              categoryId: application.categoryId,
-              answers,
-              pin: record.pin,
-              ...(record.pinConfirmation ? { pinConfirmation: record.pinConfirmation } : {}),
-            },
-          });
-        }
+        if (!record.pin) throw new Error('Create the category PIN before submitting.');
+        saved = await submitNew.mutateAsync({
+          data: {
+            submissionId: record.submissionId,
+            categoryId: application.categoryId,
+            answers,
+            pin: record.pin,
+            ...(record.pinConfirmation ? { pinConfirmation: record.pinConfirmation } : {}),
+          },
+        });
         removeSessionDraft(application.id, user.id);
       } else {
         saved = await submitExisting.mutateAsync({ applicationId: id });
@@ -722,19 +731,6 @@ function DraftApplication() {
     const record = getSessionDraft(application.id, user.id);
     if (!record) {
       setFeedback('This session-only application is no longer available.');
-      return;
-    }
-    if (record.wasPersisted) {
-      update.mutate({ applicationId: application.id, data: { categoryId: next.id } }, {
-        onSuccess: (saved) => {
-          const changed = changeSessionDraftCategory(application.id, user.id, next);
-          setSessionApplication(changed?.application ?? saved);
-          queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
-          void queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
-          setFeedback('');
-        },
-        onError: () => setFeedback('The category could not be changed. Please try again.'),
-      });
       return;
     }
     const changed = changeSessionDraftCategory(application.id, user.id, next);

@@ -887,54 +887,6 @@ router.patch("/applications/:applicationId", async (req, res): Promise<void> => 
     res.status(404).json({ error: "Application not found." });
     return;
   }
-  const requestedCategory = parsed.data.categoryId;
-  if (
-    application.status === "draft" &&
-    requestedCategory &&
-    requestedCategory !== application.categoryId
-  ) {
-    if (
-      parsed.data.answers !== undefined ||
-      parsed.data.currentStep !== undefined ||
-      parsed.data.pin !== undefined ||
-      parsed.data.pinConfirmation !== undefined
-    ) {
-      res.status(400).json({
-        error: "Change the category separately before editing the new application.",
-      });
-      return;
-    }
-    const [changed] = await db
-      .update(enrollmentApplicationsTable)
-      .set({
-        categoryId: requestedCategory,
-        answers: {},
-        currentStep: 0,
-        pinHash: null,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(enrollmentApplicationsTable.id, params.data.applicationId),
-          eq(enrollmentApplicationsTable.clerkUserId, res.locals.userId),
-          eq(enrollmentApplicationsTable.status, "draft"),
-          eq(enrollmentApplicationsTable.categoryId, application.categoryId),
-        ),
-      )
-      .returning();
-    if (!changed) {
-      res.status(409).json({ error: "The application changed. Refresh and try again." });
-      return;
-    }
-    await db.insert(applicationEventsTable).values({
-      applicationId: changed.id,
-      actorUserId: res.locals.userId,
-      eventType: "category_changed",
-      note: `${categoryName(application.categoryId)} → ${categoryName(requestedCategory)}`,
-    });
-    res.json(UpdateApplicationResponse.parse(serializeApplication(changed)));
-    return;
-  }
   if (application.status === "draft") {
     res.status(409).json({
       error: "Draft details are kept only in your current session. Submit the application to save it.",

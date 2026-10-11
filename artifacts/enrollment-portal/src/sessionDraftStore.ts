@@ -6,7 +6,6 @@ export type SessionEnrollmentDraft = {
   submissionId: string;
   pin?: string;
   pinConfirmation?: string;
-  wasPersisted: boolean;
 };
 
 const sessionDrafts = new Map<string, SessionEnrollmentDraft>();
@@ -41,7 +40,6 @@ export function createSessionDraft(
     ownerId,
     application,
     submissionId: crypto.randomUUID(),
-    wasPersisted: false,
   };
   sessionDrafts.set(application.id, draft);
   return draft;
@@ -66,7 +64,6 @@ export function adoptSavedDraft(
     ownerId,
     application,
     submissionId: crypto.randomUUID(),
-    wasPersisted: true,
   };
   sessionDrafts.set(application.id, draft);
   return draft;
@@ -105,7 +102,6 @@ export function changeSessionDraftCategory(
   const updated: SessionEnrollmentDraft = {
     ownerId,
     submissionId: draft.submissionId,
-    wasPersisted: draft.wasPersisted,
     application: {
       ...draft.application,
       categoryId: category.id,
