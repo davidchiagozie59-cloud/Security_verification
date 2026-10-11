@@ -483,7 +483,10 @@ export function CategoryEntryForm({
                 </h1>
                 {isCategoryTwo && (
                   <>
-                    <div className="category-two-pin-brand" aria-label="CivicEnroll">{categoryName}</div>
+                    <div className="category-two-pin-brand" aria-label={`CivicEnroll, ${categoryName}`}>
+                      <strong>CIVICENROLL</strong>
+                      <span>{categoryName}</span>
+                    </div>
                     <div className="category-two-pin-actions">
                       <Link href="/support" data-testid="link-category-two-pin-help">Need help?</Link>
                       <button type="button" onClick={moveBack} data-testid="button-category-two-pin-cancel">Cancel</button>
@@ -562,6 +565,12 @@ export function CategoryEntryForm({
               <p className="entry-error" role="alert" data-testid="text-entry-error">{validationError || error}</p>
             )}
 
+            {isCategoryTwo && !isPinStep && step === 1 && (
+              <div className="category-two-reference-step-links">
+                <button type="button" onClick={moveBack} data-testid="button-category-two-back-to-name">Back to name</button>
+                <Link href="/support" data-testid="link-category-two-step-help">Need help?</Link>
+              </div>
+            )}
             {!isPinStep && (
               <div className="entry-actions">
                 {step > 0 && !isCategoryOne && !isCategoryTwo ? (
@@ -583,12 +592,6 @@ export function CategoryEntryForm({
               <Link className="category-two-reference-help" href="/support" data-testid="link-category-two-help">
                 Need help?
               </Link>
-            )}
-            {isCategoryTwo && !isPinStep && step === 1 && (
-              <div className="category-two-reference-step-links">
-                <button type="button" onClick={moveBack} data-testid="button-category-two-back-to-name">Back to name</button>
-                <Link href="/support" data-testid="link-category-two-step-help">Need help?</Link>
-              </div>
             )}
             {isCategoryOne && !isPinStep && (
               <Link className="category-one-reference-help" href="/support" data-testid="link-category-one-help">

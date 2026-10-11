@@ -2099,11 +2099,24 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
   top: 15%;
   right: 20px;
   left: 20px;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
   color: #fff;
+  text-align: center;
+}
+
+.category-entry-screen.category-two-reference-screen.entry-pin-stage .category-two-pin-brand strong {
   font-size: clamp(20px, 5vw, 26px);
   font-weight: 700;
   letter-spacing: .16em;
-  text-align: center;
+  text-transform: uppercase;
+}
+
+.category-entry-screen.category-two-reference-screen.entry-pin-stage .category-two-pin-brand span {
+  color: #ffffffd9;
+  font-size: 10px;
+  letter-spacing: .1em;
   text-transform: uppercase;
 }
 
