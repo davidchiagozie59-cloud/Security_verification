@@ -952,6 +952,8 @@ function AccessError({ retry }: { retry: () => void }) {
 
 function AdminOverview() {
   const overview = useGetAdminOverview();
+  const { user } = useUser();
+  const canEditPortal = user?.publicMetadata?.role === 'admin';
   if (overview.isError) return <AdminShell><AccessError retry={() => void overview.refetch()} /></AdminShell>;
   const metrics = [
     ['Total registered users', overview.data?.totalUsers, 'users'],
@@ -964,7 +966,10 @@ function AdminOverview() {
     ['Unresolved support requests', overview.data?.unresolvedSupportRequests, 'support'],
   ] as const;
   return <AdminShell active="overview"><div className="admin-page">
-    <PageHeading eyebrow="SECURE STAFF WORKSPACE" title="Overview" detail="Live enrollment and support totals from the service." action={<Link href="/admin/review" className="button button-primary" data-testid="link-overview-review">Open review queue <ArrowRight size={15} /></Link>} />
+    <PageHeading eyebrow="SECURE STAFF WORKSPACE" title="Overview" detail="Live enrollment and support totals from the service." action={<div className="admin-overview-heading-actions">
+      {canEditPortal && <Link href="/admin/settings" className="button button-primary" data-testid="link-overview-edit-modifications"><Settings size={16} /> Edit &amp; modifications</Link>}
+      <Link href="/admin/review" className={`button ${canEditPortal ? 'button-quiet' : 'button-primary'}`} data-testid="link-overview-review">Open review queue <ArrowRight size={15} /></Link>
+    </div>} />
     {overview.isLoading ? <LoadingPanel label="Loading administrator totals" /> : <section className="admin-metric-grid" aria-label="Enrollment overview totals">
       {metrics.map(([label, value, key]) => <article className="admin-metric-card" key={key} data-testid={`metric-${key}`}><span>{label}</span><strong>{value ?? '—'}</strong></article>)}
     </section>}

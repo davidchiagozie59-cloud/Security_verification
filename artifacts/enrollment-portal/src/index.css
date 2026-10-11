@@ -1086,6 +1086,7 @@ html[data-portal-button-placement="right"] .decision-actions { justify-content: 
 .admin-metric-card { display: grid; gap: 10px; min-height: 98px; padding: 16px; border: 1px solid #e5ebee; border-radius: 12px; background: #fff; box-shadow: 0 5px 15px #18344b0b; }
 .admin-metric-card span { color: #728594; font-size: 10px; line-height: 1.4; }
 .admin-metric-card strong { color: #153a58; font: 600 24px var(--app-font-sans); }
+.admin-overview-heading-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .admin-overview-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
 .admin-overview-link { display: grid; grid-template-columns: 1fr auto; gap: 8px; text-decoration: none; }
 .admin-overview-link b { color: #193f5b; font-size: 12px; }
