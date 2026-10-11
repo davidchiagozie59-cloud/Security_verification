@@ -372,6 +372,15 @@ function Dashboard() {
                   const activeApplication = categoryApplications.find((application) => activeStatuses.includes(application.status));
                   const selected = Boolean(activeApplication);
                   const completedApplication = categoryApplications[0];
+                  const selectionAction = create.isPending
+                    ? 'Starting…'
+                    : selected
+                      ? ['draft', 'needs_information'].includes(activeApplication!.status)
+                        ? 'Continue application'
+                        : 'View current status'
+                      : completedApplication
+                        ? 'Start another application'
+                        : copyText(portalSettings.data, 'dashboard', 'buttonLabel', cardSettings?.buttonLabel ?? 'Select category');
                   return <button type="button" key={category.id} disabled={create.isPending} onClick={() => {
                     if (activeApplication) {
                       setLocation(['draft', 'needs_information'].includes(activeApplication.status) ? `/apply/${activeApplication.id}` : `/applications/${activeApplication.id}`);
@@ -380,6 +389,7 @@ function Dashboard() {
                     begin(category);
                   }}
                     className={`category-card category-${categoryIndex + 1}`} style={{ '--category-tone': cardSettings?.backgroundColor ?? palette[categoryIndex] } as CSSProperties & { '--category-tone': string }}
+                    aria-label={`${cardSettings?.title ?? category.name}: ${selectionAction}`}
                     data-testid={`card-category-${category.id}`}>
                     <span className="category-number">0{index + 1}</span>
                     {cardSettings?.logoDataUrl
@@ -393,9 +403,7 @@ function Dashboard() {
                           : category.id === 'category-4'
                             ? <img src={categoryFourLogo} alt="BSP" className="category-logo category-four-default-logo" />
                             : <span className="category-symbol" style={{ color: iconColors[categoryIndex] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>}
-                    <span className="category-title">{cardSettings?.title ?? category.name}</span>
-                    <span className="category-description">{cardSettings?.description ?? category.description}</span>
-                    <span className="category-select">{create.isPending ? 'Starting…' : selected ? ['draft', 'needs_information'].includes(activeApplication!.status) ? 'Continue application' : 'View current status' : completedApplication ? 'Start another application' : copyText(portalSettings.data, 'dashboard', 'buttonLabel', cardSettings?.buttonLabel ?? 'Select category')} <ArrowUpRight size={15} /></span>
+                    <span className="category-select">{selectionAction} <ArrowUpRight size={15} /></span>
                   </button>;
                 })}
               </div>
