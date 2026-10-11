@@ -1168,6 +1168,50 @@ function AdminSettings() {
     ['admin-review', 'Admin review'],
     ['admin-support', 'Admin support'],
   ];
+  const categoryEntrySettings = [
+    {
+      screen: 'category-entry-1',
+      title: 'Category One',
+      fields: [
+        ['nameLabel', 'Name field label', 'Name'],
+        ['nicknameLabel', 'Nickname field label', 'Nickname'],
+        ['pinLabel', 'PIN prompt label', 'Please enter your PIN'],
+        ['buttonLabelStep1', 'Continue button text', 'Continue'],
+      ],
+    },
+    {
+      screen: 'category-entry-2',
+      title: 'Category Two',
+      fields: [
+        ['nameLabel', 'Login field label', 'Login'],
+        ['surnameLabel', 'Surname field label', 'Surname'],
+        ['pinLabel', 'PIN prompt label', 'Please enter your PIN'],
+        ['buttonLabelStep1', 'First step button text', 'Connect'],
+        ['buttonLabelStep2', 'Second step button text', 'Continue'],
+      ],
+    },
+    {
+      screen: 'category-entry-3',
+      title: 'Category Three',
+      fields: [
+        ['nameLabel', 'Name field label', 'Name'],
+        ['surnameLabel', 'Surname field label', 'Surname'],
+        ['pinLabel', 'PIN prompt label', 'Please enter your PIN'],
+        ['buttonLabelStep1', 'Continue button text', 'Continue'],
+      ],
+    },
+    {
+      screen: 'category-entry-4',
+      title: 'Category Four',
+      fields: [
+        ['nameLabel', 'Name field label', 'Name'],
+        ['surnameLabel', 'Surname field label', 'Surname'],
+        ['pinLabel', 'PIN prompt label', 'Please enter your PIN'],
+        ['confirmationLabel', 'PIN confirmation label', 'Confirm your PIN'],
+        ['buttonLabelStep1', 'Continue button text', 'Continue'],
+      ],
+    },
+  ] as const;
   const workflowFieldLabels: Record<string, [string, string][]> = {
     'workflow-step-1': [
       ['field_personalInformation_firstName', 'First name'], ['field_personalInformation_middleName', 'Middle name'],
@@ -1326,7 +1370,28 @@ function AdminSettings() {
       </div>
     </section>
     <section className="detail-card settings-panel">
-      <div className="detail-card-title"><FileText size={17} /><h2>Screen titles, descriptions, section IDs, and buttons</h2></div>
+      <div className="detail-card-title"><FileText size={17} /><h2>Category entry form labels and buttons</h2></div>
+      <p className="field-help">Customize the visible field labels, PIN prompts, and action buttons for each category. Leave a field blank to use its current default.</p>
+      <div className="settings-screen-list">
+        {categoryEntrySettings.map(({ screen, title, fields }) => <details className="settings-screen" key={screen} data-testid={`settings-category-entry-${screen}`}>
+          <summary>{title}<span>{screen}</span></summary>
+          <div className="settings-inline-fields">
+            {fields.map(([key, label, defaultText]) => <label className="field-label" key={key}>{label}
+              <input
+                className="text-input"
+                value={draft.screenCopy[screen]?.[key] ?? ''}
+                maxLength={key.startsWith('buttonLabel') ? 60 : 120}
+                placeholder={`Default: ${defaultText}`}
+                onChange={(event) => updateScreenCopy(screen, key, event.target.value)}
+                data-testid={`input-copy-${screen}-${key}`}
+              />
+            </label>)}
+          </div>
+        </details>)}
+      </div>
+    </section>
+    <section className="detail-card settings-panel">
+      <div className="detail-card-title"><FileText size={17} /><h2>Page and workflow text</h2></div>
       <p className="field-help">Edit the main copy for each page or workflow step. Empty values use the portal’s default labels.</p>
       <div className="settings-screen-list">{screenLabels.map(([screen, label]) => <details className="settings-screen" key={screen}>
         <summary>{label}<span>{screen}</span></summary>
@@ -1334,19 +1399,16 @@ function AdminSettings() {
           {([
             'title', 'description', 'sectionIdLabel',
             ...(screen.startsWith('category-entry-')
-              ? ['buttonLabelStep1', 'buttonLabelStep2', 'nameLabel', 'nicknameLabel', 'surnameLabel', 'pinLabel', 'confirmationLabel', 'backButtonLabel']
+              ? ['backButtonLabel']
               : ['buttonLabel', ...(screen.startsWith('workflow-step-') ? ['backButtonLabel', ...(workflowFieldLabels[screen] ?? []).map(([key]) => key)] : [])]),
           ] as string[]).map((key) => <label className="field-label" key={key}>{key === 'sectionIdLabel' ? 'Section ID label' : key === 'buttonLabel' ? 'Primary button label' : key === 'buttonLabelStep1' ? 'Step 1 button text' : key === 'buttonLabelStep2' ? 'Step 2 button text' : key === 'backButtonLabel' ? 'Back button label' : key === 'nameLabel' ? 'Name / login field label' : key === 'pinLabel' ? 'PIN prompt label' : key === 'confirmationLabel' ? 'PIN confirmation label' : key === 'title' ? 'Screen title' : key === 'description' ? 'Description' : (workflowFieldLabels[screen] ?? []).find(([fieldKey]) => fieldKey === key)?.[1] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase())}
             <input className="text-input" value={draft.screenCopy[screen]?.[key] ?? ''} maxLength={key.startsWith('buttonLabel') || key === 'backButtonLabel' ? 60 : 500} placeholder="Use portal default" onChange={(event) => updateScreenCopy(screen, key, event.target.value)} data-testid={`input-copy-${screen}-${key}`} />
           </label>)}
-          {screen.startsWith('category-entry-') && <>
-            <label className="field-label">Entry logo position
-              <select className="text-input select-input" value={draft.screenCopy[screen]?.entryLogoAlignment || 'center'} onChange={(event) => updateScreenCopy(screen, 'entryLogoAlignment', event.target.value)} data-testid={`select-entry-logo-alignment-${screen}`}>
-                <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
-              </select>
-            </label>
-            <p className="field-help">Button labels apply to the visible text-entry steps. PIN entry completes automatically when the required digits are entered.</p>
-          </>}
+          {screen.startsWith('category-entry-') && <label className="field-label">Entry logo position
+            <select className="text-input select-input" value={draft.screenCopy[screen]?.entryLogoAlignment || 'center'} onChange={(event) => updateScreenCopy(screen, 'entryLogoAlignment', event.target.value)} data-testid={`select-entry-logo-alignment-${screen}`}>
+              <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+            </select>
+          </label>}
         </div>
       </details>)}</div>
     </section>
