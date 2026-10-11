@@ -28,15 +28,17 @@ import type {
   ApplicantSummary,
   ApplicationDecision,
   ApplicationEvent,
-  ApplicationInput,
   ApplicationNoteInput,
   ApplicationUpdate,
+  DeleteMyApplicationDraftsResponse,
   EnrollmentApplication,
   EnrollmentCategory,
+  ExistingApplicationSubmissionInput,
   HealthStatus,
   ListAdminUsersParams,
   ListApplicationsForReviewParams,
   ListSupportTicketsForAdminParams,
+  NewApplicationSubmissionInput,
   PortalSettings,
   SupportAssignmentInput,
   SupportMessageInput,
@@ -304,18 +306,92 @@ export function useListMyApplications<TData = Awaited<ReturnType<typeof listMyAp
 
 
 
-export const getCreateApplicationUrl = () => {
+export const getDeleteMyDraftsUrl = () => {
 
 
 
 
-  return `/api/applications`
+  return `/api/me/drafts`
 }
 
 /**
- * @summary Create an application draft
+ * @summary Delete unfinished applications belonging to the signed-in applicant
  */
-export const createApplication = async (applicationInput: ApplicationInput, options?: Parameters<typeof customFetch>[1]): Promise<EnrollmentApplication> => {
+export const deleteMyDrafts = async ( options?: Parameters<typeof customFetch>[1]): Promise<DeleteMyApplicationDraftsResponse> => {
+
+  return customFetch<DeleteMyApplicationDraftsResponse>(getDeleteMyDraftsUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteMyDraftsMutationKey = () => ['deleteMyDrafts'] as const;
+
+export const getDeleteMyDraftsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyDrafts>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMyDrafts>>, TError,void, TContext> => {
+
+const mutationKey = getDeleteMyDraftsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMyDrafts>>, void> = () => {
+
+
+          return  deleteMyDrafts(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMyDraftsMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMyDrafts>>>
+
+    export type DeleteMyDraftsMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Delete unfinished applications belonging to the signed-in applicant
+ */
+export const useDeleteMyDrafts = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyDrafts>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMyDrafts>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDeleteMyDraftsMutationOptions(options));
+    }
+
+export const getSubmitNewApplicationUrl = () => {
+
+
+
+
+  return `/api/applications/submit`
+}
+
+/**
+ * @summary Validate and submit a completed application without storing a draft
+ */
+export const submitNewApplication = async (newApplicationSubmissionInput: NewApplicationSubmissionInput, options?: Parameters<typeof customFetch>[1]): Promise<EnrollmentApplication> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -331,12 +407,12 @@ export const createApplication = async (applicationInput: ApplicationInput, opti
     }
     return headers;
   };
-return customFetch<EnrollmentApplication>(getCreateApplicationUrl(),
+return customFetch<EnrollmentApplication>(getSubmitNewApplicationUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(applicationInput)
+    body: JSON.stringify(newApplicationSubmissionInput)
   }
 );}
 
@@ -344,13 +420,13 @@ return customFetch<EnrollmentApplication>(getCreateApplicationUrl(),
 
 
 
-export const getCreateApplicationMutationKey = () => ['createApplication'] as const;
+export const getSubmitNewApplicationMutationKey = () => ['submitNewApplication'] as const;
 
-export const getCreateApplicationMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createApplication>>, TError,CreateApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createApplication>>, TError,CreateApplicationMutationVariables, TContext> => {
+export const getSubmitNewApplicationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitNewApplication>>, TError,SubmitNewApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitNewApplication>>, TError,SubmitNewApplicationMutationVariables, TContext> => {
 
-const mutationKey = getCreateApplicationMutationKey();
+const mutationKey = getSubmitNewApplicationMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -360,10 +436,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createApplication>>, CreateApplicationMutationVariables> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitNewApplication>>, SubmitNewApplicationMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  createApplication(data,requestOptions)
+          return  submitNewApplication(data,requestOptions)
         }
 
 
@@ -373,23 +449,23 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type CreateApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof createApplication>>>
-    export type CreateApplicationMutationBody = BodyType<ApplicationInput>
-    export type CreateApplicationMutationError = ErrorType<unknown>
-    export type CreateApplicationMutationVariables = {data: BodyType<ApplicationInput>}
+    export type SubmitNewApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof submitNewApplication>>>
+    export type SubmitNewApplicationMutationBody = BodyType<NewApplicationSubmissionInput>
+    export type SubmitNewApplicationMutationError = ErrorType<unknown>
+    export type SubmitNewApplicationMutationVariables = {data: BodyType<NewApplicationSubmissionInput>}
 
     /**
- * @summary Create an application draft
+ * @summary Validate and submit a completed application without storing a draft
  */
-export const useCreateApplication = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createApplication>>, TError,CreateApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useSubmitNewApplication = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitNewApplication>>, TError,SubmitNewApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof createApplication>>,
+        Awaited<ReturnType<typeof submitNewApplication>>,
         TError,
-        CreateApplicationMutationVariables,
+        SubmitNewApplicationMutationVariables,
         TContext
       > => {
-      return useMutation(getCreateApplicationMutationOptions(options));
+      return useMutation(getSubmitNewApplicationMutationOptions(options));
     }
 
 export const getGetApplicationUrl = (applicationId: string,) => {
@@ -569,14 +645,29 @@ export const getSubmitApplicationUrl = (applicationId: string,) => {
 /**
  * @summary Submit a completed application for review
  */
-export const submitApplication = async (applicationId: string, options?: Parameters<typeof customFetch>[1]): Promise<EnrollmentApplication> => {
+export const submitApplication = async (applicationId: string,
+    existingApplicationSubmissionInput?: ExistingApplicationSubmissionInput, options?: Parameters<typeof customFetch>[1]): Promise<EnrollmentApplication> => {
 
-  return customFetch<EnrollmentApplication>(getSubmitApplicationUrl(applicationId),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EnrollmentApplication>(getSubmitApplicationUrl(applicationId),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(existingApplicationSubmissionInput)
   }
 );}
 
@@ -601,9 +692,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitApplication>>, SubmitApplicationMutationVariables> = (props) => {
-          const {applicationId} = props ?? {};
+          const {applicationId,data} = props ?? {};
 
-          return  submitApplication(applicationId,requestOptions)
+          return  submitApplication(applicationId,data,requestOptions)
         }
 
 
@@ -614,9 +705,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type SubmitApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof submitApplication>>>
-
+    export type SubmitApplicationMutationBody = BodyType<ExistingApplicationSubmissionInput> | undefined
     export type SubmitApplicationMutationError = ErrorType<unknown>
-    export type SubmitApplicationMutationVariables = {applicationId: string}
+    export type SubmitApplicationMutationVariables = {applicationId: string;data?: BodyType<ExistingApplicationSubmissionInput>}
 
     /**
  * @summary Submit a completed application for review

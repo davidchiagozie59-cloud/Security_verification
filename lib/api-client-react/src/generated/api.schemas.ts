@@ -85,6 +85,54 @@ export interface ApplicationInput {
   categoryId: ApplicationInputCategoryId;
 }
 
+export type NewApplicationSubmissionInputCategoryId = typeof NewApplicationSubmissionInputCategoryId[keyof typeof NewApplicationSubmissionInputCategoryId];
+
+
+export const NewApplicationSubmissionInputCategoryId = {
+  'category-1': 'category-1',
+  'category-2': 'category-2',
+  'category-3': 'category-3',
+  'category-4': 'category-4',
+} as const;
+
+export type NewApplicationSubmissionInputAnswers = { [key: string]: unknown };
+
+export interface NewApplicationSubmissionInput {
+  submissionId: string;
+  categoryId: NewApplicationSubmissionInputCategoryId;
+  answers: NewApplicationSubmissionInputAnswers;
+  /** @pattern ^[0-9]{4,6}$ */
+  pin: string;
+  /** @pattern ^[0-9]{4,6}$ */
+  pinConfirmation?: string;
+}
+
+export type ExistingApplicationSubmissionInputCategoryId = typeof ExistingApplicationSubmissionInputCategoryId[keyof typeof ExistingApplicationSubmissionInputCategoryId];
+
+
+export const ExistingApplicationSubmissionInputCategoryId = {
+  'category-1': 'category-1',
+  'category-2': 'category-2',
+  'category-3': 'category-3',
+  'category-4': 'category-4',
+} as const;
+
+export type ExistingApplicationSubmissionInputAnswers = { [key: string]: unknown };
+
+export interface ExistingApplicationSubmissionInput {
+  categoryId?: ExistingApplicationSubmissionInputCategoryId;
+  answers?: ExistingApplicationSubmissionInputAnswers;
+  /** @pattern ^[0-9]{4,6}$ */
+  pin?: string;
+  /** @pattern ^[0-9]{4,6}$ */
+  pinConfirmation?: string;
+}
+
+export interface DeleteMyApplicationDraftsResponse {
+  /** @minimum 0 */
+  deletedCount: number;
+}
+
 export type ApplicationUpdateCategoryId = typeof ApplicationUpdateCategoryId[keyof typeof ApplicationUpdateCategoryId];
 
 

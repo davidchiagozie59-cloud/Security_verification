@@ -52,13 +52,33 @@ export const ListMyApplicationsResponse = zod.array(ListMyApplicationsResponseIt
 
 
 /**
- * @summary Create an application draft
+ * @summary Delete unfinished applications belonging to the signed-in applicant
  */
-export const CreateApplicationBody = zod.object({
-  "categoryId": zod.enum(['category-1', 'category-2', 'category-3', 'category-4'])
+export const deleteMyDraftsResponseDeletedCountMin = 0;
+
+
+
+export const DeleteMyDraftsResponse = zod.object({
+  "deletedCount": zod.number().int().min(deleteMyDraftsResponseDeletedCountMin)
 })
 
-export const CreateApplicationResponse = zod.object({
+
+/**
+ * @summary Validate and submit a completed application without storing a draft
+ */
+export const submitNewApplicationBodyPinRegExp = new RegExp('^[0-9]{4,6}$');
+export const submitNewApplicationBodyPinConfirmationRegExp = new RegExp('^[0-9]{4,6}$');
+
+
+export const SubmitNewApplicationBody = zod.object({
+  "submissionId": zod.string().uuid(),
+  "categoryId": zod.enum(['category-1', 'category-2', 'category-3', 'category-4']),
+  "answers": zod.record(zod.string(), zod.unknown()),
+  "pin": zod.string().regex(submitNewApplicationBodyPinRegExp),
+  "pinConfirmation": zod.string().regex(submitNewApplicationBodyPinConfirmationRegExp).optional()
+})
+
+export const SubmitNewApplicationResponse = zod.object({
   "id": zod.string(),
   "reference": zod.string(),
   "categoryId": zod.enum(['category-1', 'category-2', 'category-3', 'category-4']),
@@ -146,6 +166,17 @@ export const UpdateApplicationResponse = zod.object({
  */
 export const SubmitApplicationParams = zod.object({
   "applicationId": zod.coerce.string()
+})
+
+export const submitApplicationBodyPinRegExp = new RegExp('^[0-9]{4,6}$');
+export const submitApplicationBodyPinConfirmationRegExp = new RegExp('^[0-9]{4,6}$');
+
+
+export const SubmitApplicationBody = zod.object({
+  "categoryId": zod.enum(['category-1', 'category-2', 'category-3', 'category-4']).optional(),
+  "answers": zod.record(zod.string(), zod.unknown()).optional(),
+  "pin": zod.string().regex(submitApplicationBodyPinRegExp).optional(),
+  "pinConfirmation": zod.string().regex(submitApplicationBodyPinConfirmationRegExp).optional()
 })
 
 export const SubmitApplicationResponse = zod.object({

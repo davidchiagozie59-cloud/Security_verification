@@ -23,8 +23,6 @@ import {
   type IRouter,
 } from "express";
 import {
-  CreateApplicationBody,
-  CreateApplicationResponse,
   CreateSupportTicketBody,
   CreateSupportTicketResponse,
   AddAdminApplicationNoteBody,
@@ -48,6 +46,7 @@ import {
   GetApplicationResponse,
   GetApplicantSummaryResponse,
   GetPortalSettingsResponse,
+  DeleteMyDraftsResponse,
   ListAdminUsersQueryParams,
   ListAdminUsersResponse,
   ListApplicationsForReviewQueryParams,
@@ -61,6 +60,9 @@ import {
   ReplyToSupportTicketResponse,
   SubmitApplicationParams,
   SubmitApplicationResponse,
+  SubmitApplicationBody,
+  SubmitNewApplicationBody,
+  SubmitNewApplicationResponse,
   UpdateApplicationBody,
   UpdateApplicationParams,
   UpdateApplicationResponse,
@@ -90,7 +92,6 @@ type ApplicationStatus =
   | "rejected";
 
 const router: IRouter = Router();
-const activeStatuses = ["draft", "submitted", "under_review", "needs_information"] as const;
 
 const categories = [
   {
@@ -692,51 +693,147 @@ router.get("/me/applications", async (req, res): Promise<void> => {
   res.json(ListMyApplicationsResponse.parse(applications.map((application) => serializeApplication(application))));
 });
 
-router.post("/applications", async (req, res): Promise<void> => {
-  const parsed = CreateApplicationBody.safeParse(req.body);
+router.delete("/me/drafts", async (_req, res): Promise<void> => {
+  const deleted = await db
+    .delete(enrollmentApplicationsTable)
+    .where(
+      and(
+        eq(enrollmentApplicationsTable.clerkUserId, res.locals.userId),
+        eq(enrollmentApplicationsTable.status, "draft"),
+      ),
+    )
+    .returning({ id: enrollmentApplicationsTable.id });
+  res.json(DeleteMyDraftsResponse.parse({ deletedCount: deleted.length }));
+});
+
+router.post("/applications/submit", async (req, res): Promise<void> => {
+  const parsed = SubmitNewApplicationBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
   const categoryId = parsed.data.categoryId as CategoryId;
-
+  const reference = `ENR-${parsed.data.submissionId.toUpperCase()}`;
   const [existing] = await db
     .select()
     .from(enrollmentApplicationsTable)
-    .where(
-      and(
-        eq(enrollmentApplicationsTable.clerkUserId, res.locals.userId),
-        eq(enrollmentApplicationsTable.categoryId, categoryId),
-        inArray(enrollmentApplicationsTable.status, [...activeStatuses]),
-      ),
-    )
-    .orderBy(desc(enrollmentApplicationsTable.updatedAt))
+    .where(eq(enrollmentApplicationsTable.reference, reference))
     .limit(1);
-
   if (existing) {
-    res.status(201).json(CreateApplicationResponse.parse(serializeApplication(existing)));
+    if (existing.clerkUserId !== res.locals.userId || existing.status !== "submitted") {
+      res.status(409).json({ error: "This submission request has already been used." });
+      return;
+    }
+    res.json(SubmitNewApplicationResponse.parse(serializeApplication(existing)));
     return;
   }
 
-  const [created] = await db
-    .insert(enrollmentApplicationsTable)
-    .values({
-      clerkUserId: res.locals.userId,
-      categoryId,
-      reference: `ENR-${randomUUID().slice(0, 8).toUpperCase()}`,
-    })
-    .returning();
-
-  if (!created) {
-    res.status(500).json({ error: "The application could not be created." });
+  const forbiddenAnswerKeys = new Set([
+    "pin",
+    "pinconfirmation",
+    "pinhash",
+    "pincode",
+    "pinvalue",
+  ]);
+  if (
+    Object.keys(parsed.data.answers).some((key) =>
+      forbiddenAnswerKeys.has(key.toLowerCase()),
+    )
+  ) {
+    res.status(400).json({
+      error: "PIN values must be sent separately and cannot be saved with application answers.",
+    });
     return;
   }
-  await db.insert(applicationEventsTable).values({
-    applicationId: created.id,
-    actorUserId: res.locals.userId,
-    eventType: "draft_created",
+  if (parsed.data.pin.length !== categoryPinLength(categoryId)) {
+    res.status(400).json({
+      error: `This category requires an exactly ${categoryPinLength(categoryId)}-digit PIN.`,
+    });
+    return;
+  }
+  if (
+    (categoryId === "category-4" &&
+      parsed.data.pinConfirmation !== parsed.data.pin) ||
+    (parsed.data.pinConfirmation !== undefined &&
+      (categoryId !== "category-4" ||
+        parsed.data.pinConfirmation !== parsed.data.pin))
+  ) {
+    res.status(400).json({ error: "The PIN confirmation does not match." });
+    return;
+  }
+
+  const prepared = prepareApplicantAnswers({}, parsed.data.answers);
+  if (prepared.error) {
+    res.status(400).json({ error: prepared.error });
+    return;
+  }
+  const answers = { ...prepared.answers, __requestedSections: [] };
+  const validationError = validateFinalApplication(categoryId, answers);
+  if (validationError) {
+    res.status(400).json({ error: validationError });
+    return;
+  }
+  if (!isPrivateStorageConfigured()) {
+    res.status(503).json({
+      error: "Secure document and video storage is unavailable. The application was not submitted.",
+      code: "PRIVATE_UPLOAD_STORAGE_UNAVAILABLE",
+    });
+    return;
+  }
+
+  const now = new Date();
+  const salt = randomBytes(16).toString("hex");
+  const pinHash = `scrypt$${salt}$${scryptSync(parsed.data.pin, salt, 64).toString("hex")}`;
+  const outcome = await db.transaction(async (transaction) => {
+    const [duplicate] = await transaction
+      .select()
+      .from(enrollmentApplicationsTable)
+      .where(eq(enrollmentApplicationsTable.reference, reference))
+      .limit(1);
+    if (duplicate) return { application: duplicate, created: false };
+
+    const [created] = await transaction
+      .insert(enrollmentApplicationsTable)
+      .values({
+        clerkUserId: res.locals.userId,
+        categoryId,
+        reference,
+        status: "submitted",
+        currentStep: 7,
+        pinHash,
+        answers,
+        submittedAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoNothing({ target: enrollmentApplicationsTable.reference })
+      .returning();
+    if (!created) {
+      const [conflict] = await transaction
+        .select()
+        .from(enrollmentApplicationsTable)
+        .where(eq(enrollmentApplicationsTable.reference, reference))
+        .limit(1);
+      return { application: conflict ?? null, created: false };
+    }
+    await transaction.insert(applicationEventsTable).values({
+      applicationId: created.id,
+      actorUserId: res.locals.userId,
+      eventType: "application_submitted",
+      note: "Submitted for review.",
+    });
+    return { application: created, created: true };
   });
-  res.status(201).json(CreateApplicationResponse.parse(serializeApplication(created)));
+  if (
+    !outcome.application ||
+    outcome.application.clerkUserId !== res.locals.userId ||
+    outcome.application.status !== "submitted"
+  ) {
+    res.status(409).json({ error: "This submission request could not be completed." });
+    return;
+  }
+  res
+    .status(outcome.created ? 201 : 200)
+    .json(SubmitNewApplicationResponse.parse(serializeApplication(outcome.application)));
 });
 
 router.get("/applications/:applicationId", async (req, res): Promise<void> => {
@@ -790,7 +887,61 @@ router.patch("/applications/:applicationId", async (req, res): Promise<void> => 
     res.status(404).json({ error: "Application not found." });
     return;
   }
-  if (!["draft", "needs_information"].includes(application.status)) {
+  const requestedCategory = parsed.data.categoryId;
+  if (
+    application.status === "draft" &&
+    requestedCategory &&
+    requestedCategory !== application.categoryId
+  ) {
+    if (
+      parsed.data.answers !== undefined ||
+      parsed.data.currentStep !== undefined ||
+      parsed.data.pin !== undefined ||
+      parsed.data.pinConfirmation !== undefined
+    ) {
+      res.status(400).json({
+        error: "Change the category separately before editing the new application.",
+      });
+      return;
+    }
+    const [changed] = await db
+      .update(enrollmentApplicationsTable)
+      .set({
+        categoryId: requestedCategory,
+        answers: {},
+        currentStep: 0,
+        pinHash: null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(enrollmentApplicationsTable.id, params.data.applicationId),
+          eq(enrollmentApplicationsTable.clerkUserId, res.locals.userId),
+          eq(enrollmentApplicationsTable.status, "draft"),
+          eq(enrollmentApplicationsTable.categoryId, application.categoryId),
+        ),
+      )
+      .returning();
+    if (!changed) {
+      res.status(409).json({ error: "The application changed. Refresh and try again." });
+      return;
+    }
+    await db.insert(applicationEventsTable).values({
+      applicationId: changed.id,
+      actorUserId: res.locals.userId,
+      eventType: "category_changed",
+      note: `${categoryName(application.categoryId)} → ${categoryName(requestedCategory)}`,
+    });
+    res.json(UpdateApplicationResponse.parse(serializeApplication(changed)));
+    return;
+  }
+  if (application.status === "draft") {
+    res.status(409).json({
+      error: "Draft details are kept only in your current session. Submit the application to save it.",
+    });
+    return;
+  }
+  if (application.status !== "needs_information") {
     res.status(409).json({ error: "This application is locked against ordinary edits." });
     return;
   }
@@ -981,8 +1132,11 @@ router.patch("/applications/:applicationId", async (req, res): Promise<void> => 
 
 router.post("/applications/:applicationId/submit", async (req, res): Promise<void> => {
   const params = SubmitApplicationParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
+  const body = SubmitApplicationBody.safeParse(req.body ?? {});
+  if (!params.success || !body.success) {
+    res.status(400).json({
+      error: !params.success ? params.error.message : body.success ? "Invalid request." : body.error.message,
+    });
     return;
   }
   const [application] = await db
@@ -999,16 +1153,75 @@ router.post("/applications/:applicationId/submit", async (req, res): Promise<voi
     res.status(404).json({ error: "Application not found." });
     return;
   }
+  if (application.status === "submitted") {
+    res.json(SubmitApplicationResponse.parse(serializeApplication(application)));
+    return;
+  }
   if (!["draft", "needs_information"].includes(application.status)) {
     res.status(409).json({ error: "This application has already been submitted." });
     return;
   }
-  const answers = application.answers ?? {};
-  if (!application.pinHash) {
+
+  let answers = application.answers ?? {};
+  let pinHash = application.pinHash;
+  if (application.status === "draft") {
+    if (body.data.categoryId && body.data.categoryId !== application.categoryId) {
+      res.status(409).json({
+        error: "The selected category changed. Refresh the application before submitting.",
+      });
+      return;
+    }
+    if (body.data.answers) {
+      const forbiddenAnswerKeys = new Set([
+        "pin",
+        "pinconfirmation",
+        "pinhash",
+        "pincode",
+        "pinvalue",
+      ]);
+      if (
+        Object.keys(body.data.answers).some((key) =>
+          forbiddenAnswerKeys.has(key.toLowerCase()),
+        )
+      ) {
+        res.status(400).json({
+          error: "PIN values must be sent separately and cannot be saved with application answers.",
+        });
+        return;
+      }
+      const prepared = prepareApplicantAnswers(application.answers ?? {}, body.data.answers);
+      if (prepared.error) {
+        res.status(400).json({ error: prepared.error });
+        return;
+      }
+      answers = prepared.answers;
+    }
+    if (body.data.pin) {
+      if (body.data.pin.length !== categoryPinLength(application.categoryId)) {
+        res.status(400).json({
+          error: `This category requires an exactly ${categoryPinLength(application.categoryId)}-digit PIN.`,
+        });
+        return;
+      }
+      if (
+        (application.categoryId === "category-4" &&
+          body.data.pinConfirmation !== body.data.pin) ||
+        (body.data.pinConfirmation !== undefined &&
+          (application.categoryId !== "category-4" ||
+            body.data.pinConfirmation !== body.data.pin))
+      ) {
+        res.status(400).json({ error: "The PIN confirmation does not match." });
+        return;
+      }
+      const salt = randomBytes(16).toString("hex");
+      pinHash = `scrypt$${salt}$${scryptSync(body.data.pin, salt, 64).toString("hex")}`;
+    }
+  }
+  if (!pinHash) {
     res.status(400).json({ error: "Create an enrollment PIN before submitting." });
     return;
   }
-  if (application.currentStep < 7) {
+  if (application.status === "needs_information" && application.currentStep < 7) {
     res.status(400).json({ error: "Complete all eight enrollment stages first." });
     return;
   }
@@ -1033,6 +1246,8 @@ router.post("/applications/:applicationId/submit", async (req, res): Promise<voi
       .set({
         status: "submitted",
         answers: { ...answers, __requestedSections: [] },
+        currentStep: 7,
+        pinHash,
         submittedAt: now,
         updatedAt: now,
       })
@@ -1042,7 +1257,6 @@ router.post("/applications/:applicationId/submit", async (req, res): Promise<voi
           eq(enrollmentApplicationsTable.clerkUserId, res.locals.userId),
           eq(enrollmentApplicationsTable.categoryId, application.categoryId),
           eq(enrollmentApplicationsTable.status, application.status),
-          eq(enrollmentApplicationsTable.currentStep, 7),
         ),
       )
       .returning();

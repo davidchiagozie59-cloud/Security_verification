@@ -769,6 +769,8 @@ html[data-portal-button-placement="right"] .category-one-reference-screen .entry
 .section-line { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 14px; }
 .section-line h2 { margin: 0 0 4px; color: #1c3852; font-size: 14px; font-weight: 700; letter-spacing: -.02em; }
 .section-line p { margin: 0; color: #7b8c99; font-size: 10px; }
+.section-line-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.inline-success { margin: 7px 0; color: #167646; font-size: 11px; }
 .step-indicator { color: #5a788e; font: 9px var(--app-font-mono); letter-spacing: .06em; white-space: nowrap; }
 .step-indicator i { color: #a0adb6; font-style: normal; }
 .category-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -1253,6 +1255,8 @@ html[data-portal-button-placement="right"] .decision-actions { justify-content: 
   .category-select { font-size: 9px; }
   .step-indicator { font-size: 8px; }
   .section-line { align-items: center; }
+  .section-line-actions { align-items: flex-end; flex-direction: column; gap: 2px; }
+  .section-line-actions .text-action { font-size: 9px; }
   .section-line h2 { font-size: 12px; }
   .section-line p { max-width: 240px; font-size: 9px; }
   .dashboard-aside { grid-template-columns: 1fr; }

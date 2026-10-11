@@ -17,11 +17,11 @@ import {
   getListApplicationsForReviewQueryKey, getListMyApplicationsQueryKey,
   getListAdminUsersQueryKey, getListMySupportTicketsQueryKey, getListSupportTicketsForAdminQueryKey,
   useAddAdminApplicationNote, useAddApplicantSupportMessage, useAssignSupportTicket,
-  useCreateApplication, useCreateSupportTicket, useDecideApplication,
+  useCreateSupportTicket, useDecideApplication, useDeleteMyDrafts,
   useGetAdminApplication, useGetAdminApplicationHistory, useGetAdminOverview,
   useGetApplication, useGetApplicantSummary, useListApplicationsForReview,
   useListAdminUsers, useListEnrollmentCategories, useListMyApplications, useListMySupportTickets,
-  useListSupportTicketsForAdmin, useReplyToSupportTicket, useSubmitApplication,
+  useListSupportTicketsForAdmin, useReplyToSupportTicket, useSubmitApplication, useSubmitNewApplication,
   useUpdateAdminUserStatus, useUpdateApplication,
   useUpdateAdminUserRole, useGetPortalSettings, useUpdatePortalSettings,
 } from '@workspace/api-client-react';
@@ -34,6 +34,11 @@ import categoryOneLogo from './assets/category-one-national-bank-logo-updated.pn
 import categoryTwoLogo from './assets/category-two-bred-bank-logo.jpg';
 import categoryThreeLogo from './assets/category-three-anz-logo.jpg';
 import categoryFourLogo from './assets/category-four-bsp-logo.jpg';
+import {
+  adoptSavedDraft, changeSessionDraftCategory, clearSessionDrafts,
+  createSessionDraft, getSessionDraft, isSessionDraftId, listSessionDrafts,
+  removeSessionDraft, updateSessionDraft,
+} from './sessionDraftStore';
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
 
 const queryClient = new QueryClient({
@@ -259,7 +264,7 @@ function PublicLanding() {
           <div className="journey-title">Clear steps.<br />Considered decisions.</div>
           <div className="journey-timeline">
             <div className="journey-step done"><span className="timeline-point"><Check size={13} /></span><div><b>Choose your path</b><small>Start with the right enrollment</small></div></div>
-            <div className="journey-step active"><span className="timeline-point"><span /></span><div><b>Complete your application</b><small>Save progress as you go</small></div></div>
+            <div className="journey-step active"><span className="timeline-point"><span /></span><div><b>Complete your application</b><small>Keep this session open while you work</small></div></div>
             <div className="journey-step"><span className="timeline-point" /><div><b>Receive a decision</b><small>Follow updates in your portal</small></div></div>
           </div>
           <div className="journey-card-foot"><ShieldCheck size={16} /> A secure space for important details</div>
@@ -326,15 +331,36 @@ function Dashboard() {
   const applications = useListMyApplications();
   const categories = useListEnrollmentCategories();
   const portalSettings = useGetPortalSettings();
-  const create = useCreateApplication();
+  const deleteDrafts = useDeleteMyDrafts();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  const [createError, setCreateError] = useState('');
+  const [sessionRevision, setSessionRevision] = useState(0);
+  const [startingCategoryId, setStartingCategoryId] = useState<string | null>(null);
+  const [draftFeedback, setDraftFeedback] = useState('');
+  const sessionRecords = useMemo(
+    () => user?.id ? listSessionDrafts(user.id) : [],
+    [user?.id, sessionRevision],
+  );
+  const sessionApplications = sessionRecords.map((record) => record.application);
+  const allApplications = useMemo(() => {
+    const records = new Map<string, EnrollmentApplication>();
+    for (const application of applications.data ?? []) records.set(application.id, application);
+    for (const application of sessionApplications) records.set(application.id, application);
+    return [...records.values()].sort((left, right) =>
+      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
+  }, [applications.data, sessionApplications]);
+  const dashboardSummary = summary.data
+    ? {
+        ...summary.data,
+        total: summary.data.total + sessionRecords.filter((record) => !record.wasPersisted).length,
+        drafts: summary.data.drafts + sessionRecords.filter((record) => !record.wasPersisted).length,
+      }
+    : undefined;
   const palette = ['#0EAD46', '#0C4DA1', '#0072AE', '#FFFFFF'];
   const iconColors = ['#168341', '#244fc7', '#087eaf', '#174d80'];
   const activeStatuses = ['draft', 'submitted', 'under_review', 'needs_information'];
   const applicationsForCategory = (categoryId: string) =>
-    (applications.data ?? []).filter((application) => application.categoryId === categoryId);
+    allApplications.filter((application) => application.categoryId === categoryId);
   const orderedCategories = useMemo(() => {
     const items = (categories.data ?? []).slice(0, 4);
     const order = portalSettings.data?.cards;
@@ -348,14 +374,24 @@ function Dashboard() {
   }, [categories.data, portalSettings.data?.cards]);
 
   const begin = (category: EnrollmentCategory) => {
-    setCreateError('');
-    create.mutate({ data: { categoryId: category.id } }, {
-      onSuccess: (application) => {
-        queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
-        setLocation(`/apply/${application.id}`);
+    if (!user?.id || startingCategoryId) return;
+    setStartingCategoryId(category.id);
+    const draft = createSessionDraft(user.id, category);
+    setLocation(`/apply/${draft.application.id}`);
+  };
+  const clearDrafts = () => {
+    if (!user?.id || deleteDrafts.isPending || !window.confirm(
+      'Permanently delete all unfinished applications on this account? Submitted applications will remain.',
+    )) return;
+    deleteDrafts.mutate(undefined, {
+      onSuccess: () => {
+        clearSessionDrafts(user.id);
+        setSessionRevision((revision) => revision + 1);
+        setDraftFeedback('All unfinished applications on this account were removed.');
+        void queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
+        void queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
       },
-      onError: () => setCreateError('We could not start a draft just now. Please try again.'),
+      onError: () => setDraftFeedback('Unfinished applications could not be cleared. Please try again.'),
     });
   };
   const busy = summary.isLoading || applications.isLoading || categories.isLoading;
@@ -376,8 +412,8 @@ function Dashboard() {
                   const activeApplication = categoryApplications.find((application) => activeStatuses.includes(application.status));
                   const selected = Boolean(activeApplication);
                   const completedApplication = categoryApplications[0];
-                  const selectionAction = create.isPending
-                    ? 'Starting…'
+                  const selectionAction = startingCategoryId === category.id
+                    ? 'Opening…'
                     : selected
                       ? ['draft', 'needs_information'].includes(activeApplication!.status)
                         ? 'Continue application'
@@ -385,7 +421,7 @@ function Dashboard() {
                       : completedApplication
                         ? 'Start another application'
                         : copyText(portalSettings.data, 'dashboard', 'buttonLabel', cardSettings?.buttonLabel ?? 'Select category');
-                  return <button type="button" key={category.id} disabled={create.isPending} onClick={() => {
+                  return <button type="button" key={category.id} disabled={startingCategoryId !== null} onClick={() => {
                     if (activeApplication) {
                       setLocation(['draft', 'needs_information'].includes(activeApplication.status) ? `/apply/${activeApplication.id}` : `/applications/${activeApplication.id}`);
                       return;
@@ -412,25 +448,31 @@ function Dashboard() {
                 })}
               </div>
               {categories.data?.length === 0 && <EmptyPanel title="Enrollment paths are unavailable" message="Please return later or contact support for help." />}
-              {createError && <p className="inline-error" role="alert" data-testid="text-create-error">{createError}</p>}
             </section>
             <section className="recent-section">
-              <div className="section-line"><div><h2>Your applications</h2><p>Each application has one enrollment category and its own status.</p></div><span className="step-indicator">{(applications.data ?? []).length} total</span></div>
-              {(applications.data ?? []).length === 0 ? <EmptyPanel title="Your application list is clear" message="Choose an enrollment path above to create your first draft." /> :
-                 <div className="application-list">{(applications.data ?? []).map((app) => <ApplicationRow key={app.id} application={app} />)}</div>}
+              <div className="section-line">
+                <div><h2>Your applications</h2><p>Unsubmitted details stay in this browser session only and are lost if you leave or refresh.</p></div>
+                <div className="section-line-actions">
+                  <span className="step-indicator">{allApplications.length} total</span>
+                  {allApplications.some((application) => application.status === 'draft') && <button type="button" className="text-action" onClick={clearDrafts} disabled={deleteDrafts.isPending} data-testid="button-clear-drafts">{deleteDrafts.isPending ? 'Clearing…' : 'Clear all drafts'}</button>}
+                </div>
+              </div>
+              {draftFeedback && <p className={deleteDrafts.isError ? 'inline-error' : 'inline-success'} role="status" data-testid="text-draft-feedback">{draftFeedback}</p>}
+              {allApplications.length === 0 ? <EmptyPanel title="Your application list is clear" message="Choose an enrollment path above to begin an application." /> :
+                 <div className="application-list">{allApplications.map((app) => <ApplicationRow key={app.id} application={app} />)}</div>}
             </section>
           </>}
       </div>
       <aside className="dashboard-aside">
         <div className="summary-card">
           <div className="summary-head"><span className="summary-label">YOUR OVERVIEW</span><Activity size={17} /></div>
-          {summary.isLoading ? <div className="summary-skeleton"><div /><div /><div /></div> : summary.data ? <>
-            <div className="summary-total" data-testid="text-summary-total">{summary.data.total}<span> applications</span></div>
+          {summary.isLoading ? <div className="summary-skeleton"><div /><div /><div /></div> : dashboardSummary ? <>
+            <div className="summary-total" data-testid="text-summary-total">{dashboardSummary.total}<span> applications</span></div>
             <div className="summary-list">
-              <SummaryLine label="Draft / in progress" value={summary.data.drafts} tone="slate" />
-              <SummaryLine label="In review" value={summary.data.inReview} tone="blue" />
-              <SummaryLine label="Approved" value={summary.data.approved} tone="green" />
-              <SummaryLine label="Needs attention" value={summary.data.needsAttention} tone="amber" />
+              <SummaryLine label="Draft / in progress" value={dashboardSummary.drafts} tone="slate" />
+              <SummaryLine label="In review" value={dashboardSummary.inReview} tone="blue" />
+              <SummaryLine label="Approved" value={dashboardSummary.approved} tone="green" />
+              <SummaryLine label="Needs attention" value={dashboardSummary.needsAttention} tone="amber" />
             </div>
           </> : <p className="summary-note">Summary is not available right now.</p>}
           <div className="summary-foot">Updated when your application changes</div>
@@ -475,23 +517,50 @@ function getCategoryEntryFields(answers: Record<string, unknown>, categoryId: st
 function DraftApplication() {
   const params = useParams<{ applicationId?: string }>();
   const id = params.applicationId ?? '';
-  const app = useGetApplication(id, { query: { enabled: !!id, queryKey: getGetApplicationQueryKey(id) } });
+  const { user, isLoaded: userLoaded } = useUser();
+  const sessionOnlyRoute = isSessionDraftId(id);
+  const app = useGetApplication(id, { query: { enabled: !!id && !sessionOnlyRoute, queryKey: getGetApplicationQueryKey(id) } });
   const categories = useListEnrollmentCategories();
   const portalSettings = useGetPortalSettings();
   const update = useUpdateApplication();
-  const submit = useSubmitApplication();
+  const submitExisting = useSubmitApplication();
+  const submitNew = useSubmitNewApplication();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [feedback, setFeedback] = useState('');
-  const [showSuccess, setShowSuccess] = useState(false);
-  const application = app.data;
-  if (app.isLoading) return <AppFrame><LoadingPanel /></AppFrame>;
-  if (app.isError || !application) return <AppFrame><ErrorPanel message="This application could not be found or opened." retry={() => void app.refetch()} /></AppFrame>;
+  const [showSuccess, setShowSuccess] = useState(() => new URLSearchParams(window.location.search).get('submitted') === '1');
+  const [sessionState, setSessionState] = useState<{ routeId: string; application: EnrollmentApplication | null }>(() => ({
+    routeId: id,
+    application: user?.id ? getSessionDraft(id, user.id)?.application ?? null : null,
+  }));
+  useEffect(() => {
+    setSessionState({
+      routeId: id,
+      application: user?.id ? getSessionDraft(id, user.id)?.application ?? null : null,
+    });
+    setShowSuccess(new URLSearchParams(window.location.search).get('submitted') === '1');
+  }, [id, user?.id]);
+  const sessionApplication = sessionState.routeId === id ? sessionState.application : null;
+  const savedDraft = app.data?.status === 'draft' && user?.id
+    ? adoptSavedDraft(app.data, user.id)
+    : undefined;
+  const application = sessionApplication ?? savedDraft?.application ?? app.data;
+  const showLoading = !userLoaded || (!application && !sessionOnlyRoute && app.isLoading);
+  const setSessionApplication = (next: EnrollmentApplication | null) =>
+    setSessionState({ routeId: id, application: next });
+  if (showLoading) return <AppFrame><LoadingPanel /></AppFrame>;
+  if (!application && sessionOnlyRoute) return <AppFrame><section className="state-card">
+    <span className="state-icon"><FileText size={20} /></span><h2>This unfinished application has expired</h2>
+    <p>Unsubmitted details are held only for the current browser session. Start a new application from your dashboard.</p>
+    <button className="button button-primary" onClick={() => setLocation('/dashboard')}>Return to dashboard <ArrowRight size={15} /></button>
+  </section></AppFrame>;
+  if (!application && app.isError) return <AppFrame><ErrorPanel message="This application could not be found or opened." retry={() => void app.refetch()} /></AppFrame>;
+  if (!application) return <AppFrame><LoadingPanel /></AppFrame>;
   if (!['draft', 'needs_information'].includes(application.status)) return <AppFrame>
     <section className="state-card"><span className="state-icon"><FileCheck2 size={20} /></span><h2>This application has already been submitted</h2><p>Its current status and any updates are available in the application detail view.</p><Link href={`/applications/${id}`} className="button button-primary" data-testid="link-open-submitted">View application <ArrowRight size={15} /></Link></section>
     {showSuccess && <div className="success-overlay">
       <section className="success-dialog" role="dialog" aria-modal="true" aria-labelledby="submission-success-title" data-testid="modal-submission-success">
-        <button className="modal-close" onClick={() => setShowSuccess(false)} aria-label="Close submission confirmation" data-testid="button-close-success"><span aria-hidden="true">×</span></button>
+        <button className="modal-close" onClick={() => { setShowSuccess(false); setLocation(`/apply/${application.id}`); }} aria-label="Close submission confirmation" data-testid="button-close-success"><span aria-hidden="true">×</span></button>
         <span className="success-seal"><CheckCircle2 size={25} /></span>
         <div className="eyebrow">APPLICATION RECEIVED</div>
         <h2 id="submission-success-title">Enrollment Submitted Successfully!</h2>
@@ -500,13 +569,23 @@ function DraftApplication() {
         <div className="review-field"><span>Selected category</span><b>{application.categoryName}</b></div>
         <div className="review-field"><span>Submission date</span><b>{formatDate(application.submittedAt)}</b></div>
         <div className="review-field"><span>Current status</span><b>Pending Review</b></div>
-        <button className="button button-primary" onClick={() => setLocation(`/applications/${id}`)} data-testid="button-view-submitted-status">View Application Status <ArrowRight size={15} /></button>
+        <button className="button button-primary" onClick={() => setLocation(`/applications/${application.id}`)} data-testid="button-view-submitted-status">View Application Status <ArrowRight size={15} /></button>
         <button className="button button-quiet" onClick={() => setLocation('/dashboard')} data-testid="button-return-dashboard">Return to Dashboard</button>
       </section>
     </div>}
   </AppFrame>;
   const saveStep = async (answers: Record<string, unknown>, currentStep: number) => {
     setFeedback('');
+    if (application.status === 'draft') {
+      if (!user?.id) return false;
+      const saved = updateSessionDraft(application.id, user.id, { answers, currentStep });
+      if (!saved) {
+        setFeedback('This session-only application is no longer available. Start a new application.');
+        return false;
+      }
+      setSessionApplication(saved.application);
+      return true;
+    }
     try {
       const saved = await update.mutateAsync({
         applicationId: id,
@@ -526,29 +605,59 @@ function DraftApplication() {
       setLocation('/dashboard');
       return true;
     }
-    try {
-      const saved = await update.mutateAsync({
-        applicationId: id,
-        data: { answers: { ...answers, categoryEntryComplete: false }, currentStep: 0 },
-      });
-      queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
-      queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
-      return true;
-    } catch {
-      setFeedback('We could not return to the category details. Please try again.');
+    if (!user?.id) return false;
+    const saved = updateSessionDraft(application.id, user.id, {
+      answers: { ...answers, categoryEntryComplete: false },
+      currentStep: 0,
+    });
+    if (!saved) {
+      setFeedback('This session-only application is no longer available. Start a new application.');
       return false;
     }
+    setSessionApplication(saved.application);
+    return true;
   };
-  const submitDraft = async () => {
+  const submitDraft = async (answers: Record<string, unknown>) => {
     try {
-      const saved = await submit.mutateAsync({ applicationId: id });
-        queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
-        queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
-        setShowSuccess(true);
+      let saved: EnrollmentApplication;
+      if (application.status === 'draft') {
+        if (!user?.id) throw new Error('The signed-in account could not be confirmed.');
+        const record = getSessionDraft(application.id, user.id);
+        if (!record) throw new Error('This session-only application is no longer available.');
+        if (record.wasPersisted) {
+          saved = await submitExisting.mutateAsync({
+            applicationId: application.id,
+            data: {
+              categoryId: application.categoryId,
+              answers,
+              ...(record.pin ? { pin: record.pin } : {}),
+              ...(record.pinConfirmation ? { pinConfirmation: record.pinConfirmation } : {}),
+            },
+          });
+        } else {
+          if (!record.pin) throw new Error('Create the category PIN before submitting.');
+          saved = await submitNew.mutateAsync({
+            data: {
+              submissionId: record.submissionId,
+              categoryId: application.categoryId,
+              answers,
+              pin: record.pin,
+              ...(record.pinConfirmation ? { pinConfirmation: record.pinConfirmation } : {}),
+            },
+          });
+        }
+        removeSessionDraft(application.id, user.id);
+      } else {
+        saved = await submitExisting.mutateAsync({ applicationId: id });
+      }
+      queryClient.setQueryData(getGetApplicationQueryKey(saved.id), saved);
+      void queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
+      void queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
+      setShowSuccess(true);
+      setLocation(`/apply/${saved.id}?submitted=1`);
       return true;
     } catch {
-      setFeedback('Your application was not submitted. Please try again.');
+      setFeedback('Your application was not submitted. Check the required information and try again.');
       return false;
     }
   };
@@ -558,13 +667,30 @@ function DraftApplication() {
       categoryId={application.categoryId}
       reference={application.reference}
       savedAnswers={application.answers ?? {}}
-      isSaving={update.isPending}
+      isSaving={application.status !== 'draft' && update.isPending}
       error={feedback}
       pinScreenBackground={portalSettings.data?.theme.pinScreenBackground}
       categoryInputTransparent={portalSettings.data?.theme.categoryInputTransparent}
       screenCopy={portalSettings.data?.screenCopy[`category-entry-${application.categoryId}`]}
       onComplete={(entryAnswers: CategoryEntryAnswers, entryPin: string, entryPinConfirmation?: string) => {
         setFeedback('');
+        if (application.status === 'draft') {
+          if (!user?.id) {
+            setFeedback('The signed-in account could not be confirmed.');
+            return;
+          }
+          const saved = updateSessionDraft(application.id, user.id, {
+            currentStep: 0,
+            answers: { ...application.answers, ...entryAnswers, categoryEntryComplete: true },
+            hasPin: true,
+          }, entryPin, entryPinConfirmation);
+          if (!saved) {
+            setFeedback('This session-only application is no longer available. Start a new application.');
+            return;
+          }
+          setSessionApplication(saved.application);
+          return;
+        }
         update.mutate({
           applicationId: id,
           data: {
@@ -591,15 +717,28 @@ function DraftApplication() {
   const changeCategoryFromWizard = (categoryId: string) => {
     const next = categories.data?.find((category) => category.id === categoryId);
     if (!next || next.id === application.categoryId || application.status !== 'draft') return;
-    if (!window.confirm(`Change to ${next.name}? This resets the saved details and PIN. The change will be recorded.`)) return;
-    update.mutate({ applicationId: id, data: { categoryId: next.id } }, {
-      onSuccess: (saved) => {
-        queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
-        queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
-        setFeedback('');
-      },
-      onError: () => setFeedback('The category could not be changed. Please try again.'),
-    });
+    if (!window.confirm(`Change to ${next.name}? This resets the current details and PIN.`)) return;
+    if (!user?.id) return;
+    const record = getSessionDraft(application.id, user.id);
+    if (!record) {
+      setFeedback('This session-only application is no longer available.');
+      return;
+    }
+    if (record.wasPersisted) {
+      update.mutate({ applicationId: application.id, data: { categoryId: next.id } }, {
+        onSuccess: (saved) => {
+          const changed = changeSessionDraftCategory(application.id, user.id, next);
+          setSessionApplication(changed?.application ?? saved);
+          queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
+          void queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
+          setFeedback('');
+        },
+        onError: () => setFeedback('The category could not be changed. Please try again.'),
+      });
+      return;
+    }
+    const changed = changeSessionDraftCategory(application.id, user.id, next);
+    if (changed) setSessionApplication(changed.application);
   };
   return <EnrollmentWizard
     application={application}
@@ -607,8 +746,8 @@ function DraftApplication() {
     status={application.status}
     storageAvailable={false}
     maxUploadBytes={10 * 1024 * 1024}
-    isSaving={update.isPending}
-    isSubmitting={submit.isPending}
+    isSaving={application.status !== 'draft' && update.isPending}
+    isSubmitting={submitExisting.isPending || submitNew.isPending}
     error={feedback}
     reopenedSections={reopenedSections}
     saveStep={saveStep}
@@ -1389,12 +1528,29 @@ function RoutedPages() {
 
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
+  const { isLoaded, isSignedIn, userId } = useAuth();
   const client = useQueryClient();
   const previousUser = useRef<string | null | undefined>(undefined);
+  const activeUserId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (isSignedIn && userId) {
+      if (activeUserId.current && activeUserId.current !== userId) {
+        clearSessionDrafts(activeUserId.current);
+      }
+      activeUserId.current = userId;
+      return;
+    }
+    if (activeUserId.current) clearSessionDrafts(activeUserId.current);
+    activeUserId.current = null;
+  }, [isLoaded, isSignedIn, userId]);
   useEffect(() => {
     const unsubscribe = addListener(({ user }) => {
       const userId = user?.id ?? null;
-      if (previousUser.current !== undefined && previousUser.current !== userId) client.clear();
+      if (previousUser.current !== undefined && previousUser.current !== userId) {
+        if (previousUser.current) clearSessionDrafts(previousUser.current);
+        client.clear();
+      }
       previousUser.current = userId;
     });
     return unsubscribe;

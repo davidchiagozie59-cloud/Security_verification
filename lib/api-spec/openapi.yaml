@@ -56,20 +56,32 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/EnrollmentApplication"
-  /applications:
-    post:
-      operationId: createApplication
+  /me/drafts:
+    delete:
+      operationId: deleteMyDrafts
       tags: [enrollment]
-      summary: Create an application draft
+      summary: Delete unfinished applications belonging to the signed-in applicant
+      responses:
+        "200":
+          description: Number of unfinished applications deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteMyApplicationDraftsResponse"
+  /applications/submit:
+    post:
+      operationId: submitNewApplication
+      tags: [enrollment]
+      summary: Validate and submit a completed application without storing a draft
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApplicationInput"
+              $ref: "#/components/schemas/NewApplicationSubmissionInput"
       responses:
         "201":
-          description: Draft created
+          description: Submitted application
           content:
             application/json:
               schema:
@@ -114,6 +126,12 @@ paths:
       operationId: submitApplication
       tags: [enrollment]
       summary: Submit a completed application for review
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExistingApplicationSubmissionInput"
       parameters:
         - name: applicationId
           in: path
@@ -549,6 +567,47 @@ components:
         categoryId:
           type: string
           enum: [category-1, category-2, category-3, category-4]
+    NewApplicationSubmissionInput:
+      type: object
+      required: [submissionId, categoryId, answers, pin]
+      properties:
+        submissionId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          enum: [category-1, category-2, category-3, category-4]
+        answers:
+          type: object
+          additionalProperties: true
+        pin:
+          type: string
+          pattern: "^[0-9]{4,6}$"
+        pinConfirmation:
+          type: string
+          pattern: "^[0-9]{4,6}$"
+    ExistingApplicationSubmissionInput:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          enum: [category-1, category-2, category-3, category-4]
+        answers:
+          type: object
+          additionalProperties: true
+        pin:
+          type: string
+          pattern: "^[0-9]{4,6}$"
+        pinConfirmation:
+          type: string
+          pattern: "^[0-9]{4,6}$"
+    DeleteMyApplicationDraftsResponse:
+      type: object
+      required: [deletedCount]
+      properties:
+        deletedCount:
+          type: integer
+          minimum: 0
     ApplicationUpdate:
       type: object
       properties:
