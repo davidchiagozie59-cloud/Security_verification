@@ -202,11 +202,19 @@ export function CategoryEntryForm({
     : isCategoryTwo && step === 0
       ? "Next"
       : "Continue");
-  const formBackgroundStyle = isPinStep && isCategoryTwo
-    ? ({ backgroundColor: "#ffffff", "--entry-background": "#ffffff" } as CSSProperties)
-    : isPinStep && pinScreenBackground
-      ? ({ backgroundColor: pinScreenBackground, "--entry-background": pinScreenBackground } as CSSProperties)
-      : undefined;
+  const categoryPinBackground = isCategoryOne
+    ? "#0d7b43"
+    : isCategoryTwo || isCategoryFour
+      ? "#ffffff"
+      : isCategoryThree
+        ? "#0369a1"
+        : pinScreenBackground;
+  const formBackgroundStyle = isPinStep && categoryPinBackground
+    ? ({
+        backgroundColor: categoryPinBackground,
+        "--entry-background": categoryPinBackground,
+      } as CSSProperties)
+    : undefined;
 
   return (
     <main className={`category-entry-screen category-entry-screen-${categoryId} ${isCategoryOne || isCategoryThree ? "category-one-reference-screen" : ""} ${isCategoryOne && isPinStep ? "category-one-reference-pin-stage" : ""} ${isCategoryThree ? `category-three-reference-screen ${isPinStep ? "category-one-reference-pin-stage" : ""}` : ""} ${isCategoryTwo ? `category-two-reference-screen category-two-step-${step}` : ""} ${isCategoryFour ? "category-four-reference-screen" : ""} ${categoryInputTransparent ? "entry-input-transparent" : "entry-input-opaque"} ${isPinStep ? "entry-pin-stage" : ""}`} style={formBackgroundStyle} data-testid={`form-entry-${categoryId}`}>

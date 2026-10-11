@@ -2291,21 +2291,21 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
   outline-color: #123b72;
 }
 
-/* Category Three uses Category One's centered form composition in Azure Blue. */
+/* Category Three uses Category One's centered form composition in sky blue. */
 .category-entry-screen.category-entry-screen-category-3.category-three-reference-screen {
-  --entry-background: #0072ae;
+  --entry-background: #0369a1;
   overflow: hidden;
   padding: 0;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, #0072ae 96%, #fff 4%) 0%,
-    #0072ae 58%,
-    color-mix(in srgb, #0072ae 88%, #000 12%) 100%
+    color-mix(in srgb, #0369a1 96%, #fff 4%) 0%,
+    #0369a1 58%,
+    color-mix(in srgb, #0369a1 88%, #000 12%) 100%
   );
 }
 
-.category-entry-screen.category-three-reference-screen .entry-primary-button {
-  color: #0072ae;
+.category-entry-screen.category-entry-screen-category-3.category-three-reference-screen .entry-primary-button {
+  color: #0369a1;
 }
 
 .category-three-reference-menu {
@@ -2319,4 +2319,47 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
 
 .category-three-reference-menu .entry-switch-button {
   border-color: #ffffff80;
+}
+
+.category-entry-screen.category-four-reference-screen.entry-pin-stage {
+  color: #0b5147;
+  background-color: #fff;
+}
+
+.category-entry-screen.category-four-reference-screen.entry-pin-stage .pin-entry-back {
+  color: #0b5147;
+  background: #0b514710;
+}
+
+.category-entry-screen.category-four-reference-screen.entry-pin-stage .pin-entry-back:focus-visible {
+  outline-color: #0b5147;
+}
+
+.category-entry-screen.category-four-reference-screen.entry-pin-stage .pin-entry-title {
+  color: #0b5147;
+}
+
+.category-entry-screen.category-four-reference-screen.entry-pin-stage .pin-entry-indicator {
+  border-color: #0b514780;
+}
+
+.category-entry-screen.category-four-reference-screen.entry-pin-stage .pin-entry-indicator-filled {
+  border-color: #0b5147;
+  background: #0b5147;
+}
+
+.category-entry-screen.category-four-reference-screen.entry-pin-stage .pin-entry-key {
+  color: #0b5147;
+  background: #0b514708;
+}
+
+.category-entry-screen.category-four-reference-screen.entry-pin-stage .pin-entry-key:hover,
+.category-entry-screen.category-four-reference-screen.entry-pin-stage .pin-entry-key:focus-visible {
+  background: #0b514715;
+}
+
+.category-entry-screen.category-four-reference-screen.entry-pin-stage .pin-entry-error {
+  border-color: #b4231840;
+  color: #8a1c14;
+  background: #fff;
 }
