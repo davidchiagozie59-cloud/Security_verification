@@ -457,7 +457,7 @@ body {
 
 .pin-entry-key {
   display: grid;
-  width: clamp(68px, 24vw, 112px);
+  width: clamp(56px, 19vw, 88px);
   aspect-ratio: 1;
   place-items: center;
   padding: 0;
@@ -465,14 +465,19 @@ body {
   border-radius: 50%;
   color: #fff;
   background: #ffffff03;
-  font-size: clamp(31px, 8.5vw, 42px);
-  font-weight: 700;
+  font-size: clamp(25px, 6.5vw, 34px);
+  font-weight: 500;
   cursor: pointer;
   touch-action: manipulation;
 }
 
 .pin-entry-key-zero {
   grid-column: 2;
+}
+
+.pin-entry-keypad {
+  width: min(84vw, 380px);
+  height: 58%;
 }
 
 .pin-entry-back {

@@ -333,18 +333,30 @@ body {
 
 .category-one-reference-screen .entry-field > span {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: auto;
+  height: auto;
   padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  clip-path: inset(50%);
+  overflow: visible;
+  color: #ffffffbd;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 14px;
+  white-space: normal;
+  clip: auto;
+  clip-path: none;
+  pointer-events: none;
+}
+
+.category-one-reference-screen .entry-field {
+  position: relative;
 }
 
 .category-one-reference-screen .entry-line-input {
   min-height: 47px;
-  padding: 12px 0;
+  padding: 20px 0 3px;
   border-bottom-color: #ffffffc4;
   font-size: 15px;
 }
@@ -357,6 +369,16 @@ body {
   color: #ffffff99;
 }
 
+.category-one-reference-screen .entry-field:focus-within > span {
+  color: #fff;
+}
+
+.category-one-reference-screen .entry-line-input:focus,
+.category-one-reference-screen .entry-line-input:focus-visible {
+  border-bottom: 1px solid #ffffffc4;
+  outline: none;
+  box-shadow: none;
+}
 .category-one-pin-visibility {
   position: absolute;
   right: 14px;
@@ -539,6 +561,17 @@ body {
 .category-one-reference-pin-stage .category-one-reference-header,
 .category-one-reference-pin-stage .category-one-reference-footer {
   display: none;
+}
+
+.pin-entry-keypad {
+  width: min(84vw, 380px);
+  height: 58%;
+}
+
+.pin-entry-key {
+  width: clamp(56px, 19vw, 88px);
+  font-size: clamp(25px, 6.5vw, 34px);
+  font-weight: 500;
 }
 
 @media (max-width: 560px) {
