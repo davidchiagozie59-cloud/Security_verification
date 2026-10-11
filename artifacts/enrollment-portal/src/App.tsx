@@ -30,6 +30,7 @@ import type {
 } from '@workspace/api-client-react';
 import { CategoryEntryForm, type CategoryEntryAnswers } from './components/CategoryEntryForm';
 import { EnrollmentWizard } from './components/EnrollmentWizard';
+import categoryTwoLogo from './assets/category-two-bred-bank-logo.jpg';
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
 
 const queryClient = new QueryClient({
@@ -369,7 +370,11 @@ function Dashboard() {
                     className={`category-card category-${categoryIndex + 1}`} style={{ '--category-tone': cardSettings?.backgroundColor ?? palette[categoryIndex] } as CSSProperties & { '--category-tone': string }}
                     data-testid={`card-category-${category.id}`}>
                     <span className="category-number">0{index + 1}</span>
-                    {cardSettings?.logoDataUrl ? <img src={cardSettings.logoDataUrl} alt="" className="category-logo" /> : <span className="category-symbol" style={{ color: iconColors[categoryIndex] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>}
+                    {cardSettings?.logoDataUrl
+                      ? <img src={cardSettings.logoDataUrl} alt="" className="category-logo" />
+                      : category.id === 'category-2'
+                        ? <img src={categoryTwoLogo} alt="BRED Bank Vanuatu" className="category-logo category-two-default-logo" />
+                        : <span className="category-symbol" style={{ color: iconColors[categoryIndex] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>}
                     <span className="category-title">{cardSettings?.title ?? category.name}</span>
                     <span className="category-description">{cardSettings?.description ?? category.description}</span>
                     <span className="category-select">{create.isPending ? 'Starting…' : selected ? ['draft', 'needs_information'].includes(activeApplication!.status) ? 'Continue application' : 'View current status' : completedApplication ? 'Start another application' : copyText(portalSettings.data, 'dashboard', 'buttonLabel', cardSettings?.buttonLabel ?? 'Select category')} <ArrowUpRight size={15} /></span>

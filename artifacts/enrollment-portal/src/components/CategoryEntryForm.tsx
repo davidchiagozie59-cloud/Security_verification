@@ -3,6 +3,7 @@ import type { CSSProperties, FormEvent } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown, MapPin, Menu, Phone, ShieldCheck, X } from "lucide-react";
 import type { EnrollmentCategory } from "@workspace/api-client-react";
 import { Link } from "wouter";
+import categoryTwoLogo from "../assets/category-two-bred-bank-logo.jpg";
 
 export type CategoryEntryAnswers = {
   name: string;
@@ -327,8 +328,8 @@ export function CategoryEntryForm({
             </button>
           </header>
           {!isPinStep && (
-            <div className={`category-two-reference-brand category-two-reference-brand-step-${step}`} aria-label={`CivicEnroll, ${categoryName}`}>
-              <strong>CIVICENROLL</strong>
+            <div className={`category-two-reference-brand category-two-reference-brand-step-${step}`}>
+              <img className="category-two-reference-logo" src={categoryTwoLogo} alt="BRED Bank Vanuatu" />
               <span>{categoryName}</span>
             </div>
           )}
@@ -504,8 +505,8 @@ export function CategoryEntryForm({
                 </h1>
                 {isCategoryTwo && (
                   <>
-                    <div className="category-two-pin-brand" aria-label={`CivicEnroll, ${categoryName}`}>
-                      <strong>CIVICENROLL</strong>
+                    <div className="category-two-pin-brand">
+                      <img className="category-two-pin-logo" src={categoryTwoLogo} alt="BRED Bank Vanuatu" />
                       <span>{categoryName}</span>
                     </div>
                     <div className="category-two-pin-actions">

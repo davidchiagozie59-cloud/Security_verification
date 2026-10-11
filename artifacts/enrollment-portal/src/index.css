@@ -1968,19 +1968,17 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
   transform: translateX(-50%);
 }
 
-.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .category-two-reference-brand strong {
-  font-size: clamp(23px, 6.2vw, 31px);
-  font-weight: 700;
-  letter-spacing: .16em;
-  line-height: 1;
+.category-two-reference-logo {
+  display: block;
+  width: clamp(78px, 22vw, 104px);
+  height: auto;
+  object-fit: contain;
 }
 
 .category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .category-two-reference-brand span {
-  padding-top: 4px;
-  border-top: 1px solid #ffffffbd;
   color: #ffffffec;
-  font-size: 11px;
-  letter-spacing: .12em;
+  font-size: 10px;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 
@@ -2111,27 +2109,27 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
 
 .category-entry-screen.category-two-reference-screen.entry-pin-stage .category-two-pin-brand {
   position: absolute;
-  top: 15%;
+  top: 11%;
   right: 20px;
   left: 20px;
   display: grid;
   justify-items: center;
-  gap: 4px;
+  gap: 3px;
   color: #fff;
   text-align: center;
 }
 
-.category-entry-screen.category-two-reference-screen.entry-pin-stage .category-two-pin-brand strong {
-  font-size: clamp(20px, 5vw, 26px);
-  font-weight: 700;
-  letter-spacing: .16em;
-  text-transform: uppercase;
+.category-two-pin-logo {
+  display: block;
+  width: clamp(64px, 19vw, 78px);
+  height: auto;
+  object-fit: contain;
 }
 
 .category-entry-screen.category-two-reference-screen.entry-pin-stage .category-two-pin-brand span {
   color: #ffffffd9;
-  font-size: 10px;
-  letter-spacing: .1em;
+  font-size: 9px;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 
@@ -2214,21 +2212,30 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
   }
 
   .category-entry-screen.category-two-reference-screen.entry-pin-stage .category-two-pin-brand {
-    top: 10%;
+    top: 8%;
   }
 
   .category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-title {
-    top: 22%;
+    top: 25%;
   }
 
   .category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-indicators {
-    top: 29%;
+    top: 32%;
   }
 
   .category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-keypad {
-    top: 36%;
-    height: 54%;
+    top: 39%;
+    height: 51%;
   }
+}
+
+.category-two-default-logo {
+  width: 44px;
+  height: 53px;
+  margin-bottom: 10px;
+  padding: 2px;
+  border-radius: 3px;
+  background: #fff;
 }
 
 .category-entry-screen.category-two-reference-screen.entry-pin-stage {
