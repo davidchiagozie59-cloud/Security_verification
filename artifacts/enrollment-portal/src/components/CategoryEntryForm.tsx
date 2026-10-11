@@ -373,7 +373,7 @@ export function CategoryEntryForm({
               <div className="entry-fields">
                 {(isCategoryOne || step === 0) && (
                   <label className="entry-field" htmlFor="entry-name">
-                    <span>{screenCopy.nameLabel || (isCategoryTwo ? "Login" : "Name")} <b aria-hidden="true">*</b></span>
+                    <span>{screenCopy.nameLabel || (isCategoryTwo ? "Login" : "Name")}</span>
                     <input
                       id="entry-name"
                       className="entry-line-input"
@@ -389,7 +389,7 @@ export function CategoryEntryForm({
                 )}
                 {isCategoryOne && (
                   <label className="entry-field" htmlFor="entry-nickname">
-                    <span>{screenCopy.nicknameLabel || "Nickname"} <b aria-hidden="true">*</b></span>
+                    <span>{screenCopy.nicknameLabel || "Nickname"}</span>
                     <input
                       id="entry-nickname"
                       className="entry-line-input"
@@ -405,7 +405,7 @@ export function CategoryEntryForm({
                 )}
                 {(!isCategoryOne && !isCategoryTwo && step === 0) || (isCategoryTwo && step === 1) ? (
                   <label className="entry-field" htmlFor="entry-surname">
-                    <span>{screenCopy.surnameLabel || "Surname"} <b aria-hidden="true">*</b></span>
+                    <span>{screenCopy.surnameLabel || "Surname"}</span>
                     <input
                       id="entry-surname"
                       className="entry-line-input"
