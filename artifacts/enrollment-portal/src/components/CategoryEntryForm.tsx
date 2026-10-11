@@ -193,7 +193,7 @@ export function CategoryEntryForm({
   const primaryLabel = screenCopy.buttonLabel || (isPinStep
     ? "Complete"
     : isCategoryTwo && step === 0
-      ? "Next"
+      ? "Connect"
       : "Continue");
   const categoryPinBackground = isCategoryOne
     ? "#0EAD46"
@@ -354,7 +354,7 @@ export function CategoryEntryForm({
               <div className="entry-fields">
                 {(isCategoryOne || step === 0) && (
                   <label className="entry-field" htmlFor="entry-name">
-                    <span>{screenCopy.nameLabel || "Name"} <b aria-hidden="true">*</b></span>
+                    <span>{screenCopy.nameLabel || (isCategoryTwo ? "Login" : "Name")} <b aria-hidden="true">*</b></span>
                     <input
                       id="entry-name"
                       className="entry-line-input"
@@ -363,7 +363,7 @@ export function CategoryEntryForm({
                       required
                       value={name}
                       onChange={(event) => setName(event.target.value)}
-                      placeholder="Enter your name"
+                      placeholder={isCategoryTwo ? "Enter your login" : "Enter your name"}
                       data-testid="input-entry-name"
                     />
                   </label>
