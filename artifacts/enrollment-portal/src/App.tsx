@@ -7,7 +7,7 @@ import { shadcn } from '@clerk/themes';
 import {
   Activity, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, BadgeCheck, Check, CheckCircle2,
   ChevronDown, CircleHelp, FileCheck2, FileText, Headphones, Home, LifeBuoy,
-  GripVertical, LockKeyhole, LogOut, Menu, MessageCircle, Search, Settings, ShieldCheck,
+  GripVertical, LockKeyhole, LogOut, Menu, MessageCircle, Search, Settings, ShieldCheck, X,
 } from 'lucide-react';
 import {
   getGetApplicationQueryKey, getGetApplicantSummaryQueryKey,
@@ -852,19 +852,43 @@ function TicketCard({ ticket }: { ticket: SupportTicket }) {
 function AdminShell({ children, active = 'overview' }: { children: ReactNode; active?: string }) {
   const { signOut } = useClerk();
   const { user } = useUser();
+  const [menuOpen, setMenuOpen] = useState(false);
   const role = user?.publicMetadata?.role;
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [menuOpen]);
+  const canReview = ['admin', 'sub_admin'].includes(String(role));
+  const navLinks = [
+    ...(canReview ? [
+      { href: '/admin', key: 'overview', label: 'Overview', icon: Activity, testId: 'link-admin-overview' },
+      { href: '/admin/review', key: 'review', label: 'Review queue', icon: FileCheck2, testId: 'link-admin-review' },
+    ] : []),
+    ...(role === 'admin' ? [
+      { href: '/admin/users', key: 'users', label: 'Users and roles', icon: CheckCircle2, testId: 'link-admin-users' },
+      { href: '/admin/settings', key: 'settings', label: 'Portal settings', icon: Settings, testId: 'link-admin-settings' },
+    ] : []),
+    { href: '/admin/support', key: 'support', label: 'Support inbox', icon: Headphones, testId: 'link-admin-support' },
+  ];
   return <div className="admin-shell portal-frame">
-    <aside className="admin-sidebar"><div className="sidebar-brand"><PortalWordmark inverse /></div><div className="workspace-label">STAFF WORKSPACE</div>
+    <div className="admin-mobile-bar">
+      <button type="button" className="admin-menu-trigger" aria-label={menuOpen ? 'Close staff navigation' : 'Open staff navigation'} aria-expanded={menuOpen} aria-controls="admin-staff-navigation" onClick={() => setMenuOpen((open) => !open)} data-testid="button-admin-menu">
+        {menuOpen ? <X size={19} /> : <Menu size={19} />}
+      </button>
+      <PortalWordmark className="portal-wordmark-compact" />
+      <span className="admin-mobile-role">{role === 'admin' ? 'ADMIN' : role === 'sub_admin' ? 'REVIEW STAFF' : 'SUPPORT STAFF'}</span>
+    </div>
+    {menuOpen && <button className="admin-mobile-scrim" type="button" aria-label="Close staff navigation" onClick={() => setMenuOpen(false)} data-testid="button-admin-close-menu" />}
+    <aside className={`admin-sidebar ${menuOpen ? 'admin-sidebar-open' : ''}`} id="admin-staff-navigation">
+      <div className="sidebar-brand"><PortalWordmark inverse /></div><div className="workspace-label">STAFF WORKSPACE</div>
       <nav className="side-nav" aria-label="Staff navigation">
-        {['admin', 'sub_admin'].includes(String(role)) && <>
-          <Link href="/admin" className={`nav-link ${active === 'overview' ? 'nav-link-active' : ''}`} data-testid="link-admin-overview"><Activity size={18} /><span>Overview</span></Link>
-          <Link href="/admin/review" className={`nav-link ${active === 'review' ? 'nav-link-active' : ''}`} data-testid="link-admin-review"><FileCheck2 size={18} /><span>Review queue</span></Link>
-        </>}
-        {role === 'admin' && <>
-          <Link href="/admin/users" className={`nav-link ${active === 'users' ? 'nav-link-active' : ''}`} data-testid="link-admin-users"><CheckCircle2 size={18} /><span>Users and roles</span></Link>
-          <Link href="/admin/settings" className={`nav-link ${active === 'settings' ? 'nav-link-active' : ''}`} data-testid="link-admin-settings"><Settings size={18} /><span>Portal settings</span></Link>
-        </>}
-        <Link href="/admin/support" className={`nav-link ${active === 'support' ? 'nav-link-active' : ''}`} data-testid="link-admin-support"><Headphones size={18} /><span>Support inbox</span></Link>
+        {navLinks.map(({ href, key, label, icon: Icon, testId }) => <Link key={key} href={href} onClick={() => setMenuOpen(false)} aria-current={active === key ? 'page' : undefined} className={`nav-link ${active === key ? 'nav-link-active' : ''}`} data-testid={testId}>
+          <Icon size={18} /><span>{label}</span>
+        </Link>)}
       </nav>
       <div className="sidebar-bottom"><div className="privacy-note"><LockKeyhole size={17} /><div><b>Restricted workspace</b><span>Access verified by service</span></div></div>
         <button className="nav-link signout-link" onClick={() => signOut({ redirectUrl: basePath || '/' })} data-testid="button-admin-signout"><LogOut size={18} /><span>Sign out</span></button>
@@ -923,7 +947,10 @@ function AccessError({ retry }: { retry: () => void }) {
 
 function AdminOverview() {
   const overview = useGetAdminOverview();
+  const recentQuery = useListApplicationsForReview();
   const { user } = useUser();
+  const role = user?.publicMetadata?.role;
+  const canReview = ['admin', 'sub_admin'].includes(String(role));
   const canEditPortal = user?.publicMetadata?.role === 'admin';
   if (overview.isError) return <AdminShell><AccessError retry={() => void overview.refetch()} /></AdminShell>;
   const metrics = [
@@ -939,15 +966,31 @@ function AdminOverview() {
   return <AdminShell active="overview"><div className="admin-page">
     <PageHeading eyebrow="SECURE STAFF WORKSPACE" title="Overview" detail="Live enrollment and support totals from the service." action={<div className="admin-overview-heading-actions">
       {canEditPortal && <Link href="/admin/settings" className="button button-primary" data-testid="link-overview-edit-modifications"><Settings size={16} /> Edit &amp; modifications</Link>}
-      <Link href="/admin/review" className={`button ${canEditPortal ? 'button-quiet' : 'button-primary'}`} data-testid="link-overview-review">Open review queue <ArrowRight size={15} /></Link>
+      {canReview && <Link href="/admin/review" className={`button ${canEditPortal ? 'button-quiet' : 'button-primary'}`} data-testid="link-overview-review">Open review queue <ArrowRight size={15} /></Link>}
     </div>} />
     {overview.isLoading ? <LoadingPanel label="Loading administrator totals" /> : <section className="admin-metric-grid" aria-label="Enrollment overview totals">
       {metrics.map(([label, value, key]) => <article className="admin-metric-card" key={key} data-testid={`metric-${key}`}><span>{label}</span><strong>{value ?? '—'}</strong></article>)}
     </section>}
-    <div className="admin-overview-actions">
-      <Link href="/admin/users" className="detail-card admin-overview-link"><b>User and account management</b><span>Search users, manage access roles, and review linked enrollment activity.</span><ArrowRight size={16} /></Link>
-      <Link href="/admin/support" className="detail-card admin-overview-link"><b>Support requests</b><span>Open conversations, assign staff, and track resolution.</span><ArrowRight size={16} /></Link>
-    </div>
+    <section className="admin-action-center" aria-label="Workspace actions">
+      <div className="admin-section-heading"><div><span className="eyebrow">WORK QUEUE</span><h2>Next actions</h2></div><span className="admin-live-mark"><span className="server-dot" /> Live service data</span></div>
+      <div className="admin-overview-actions">
+        {canReview && <Link href="/admin/review" className="detail-card admin-overview-link" data-testid="link-overview-review-action"><span className="admin-action-icon"><FileCheck2 size={18} /></span><b>Review applications</b><span>Open submitted records and continue decisions.</span><strong>{overview.data?.pendingApplications ?? '—'} pending</strong><ArrowRight size={16} /></Link>}
+        <Link href="/admin/support" className="detail-card admin-overview-link" data-testid="link-overview-support-action"><span className="admin-action-icon"><Headphones size={18} /></span><b>Support inbox</b><span>Respond to applicant conversations and track resolution.</span><strong>{overview.data?.unresolvedSupportRequests ?? '—'} unresolved</strong><ArrowRight size={16} /></Link>
+        {canEditPortal && <Link href="/admin/users" className="detail-card admin-overview-link" data-testid="link-overview-users-action"><span className="admin-action-icon"><CheckCircle2 size={18} /></span><b>Users and roles</b><span>Manage staff access and account status.</span><strong>Admin only</strong><ArrowRight size={16} /></Link>}
+        {canEditPortal && <Link href="/admin/settings" className="detail-card admin-overview-link" data-testid="link-overview-settings-action"><span className="admin-action-icon"><Settings size={18} /></span><b>Portal settings</b><span>Update enrollment content and presentation.</span><strong>Admin only</strong><ArrowRight size={16} /></Link>}
+      </div>
+    </section>
+    {canReview && <section className="admin-recent-section">
+      <div className="admin-section-heading"><div><span className="eyebrow">RECENT ACTIVITY</span><h2>Applications to review</h2></div><Link href="/admin/review" className="text-action" data-testid="link-overview-all-applications">View queue <ArrowRight size={14} /></Link></div>
+      <div className="admin-recent-card">
+        {recentQuery.isError ? <div className="admin-recent-error" role="alert"><span>Recent applications could not be loaded.</span><button type="button" className="text-action" onClick={() => void recentQuery.refetch()}>Try again</button></div>
+          : recentQuery.isLoading ? <div className="admin-recent-skeleton" aria-label="Loading recent applications">{[0, 1, 2].map((item) => <span className="skeleton" key={item} />)}</div>
+          : (recentQuery.data ?? []).length === 0 ? <EmptyPanel title="No applications to show" message="New applications will appear here when they are submitted." />
+          : <div className="admin-recent-list">{(recentQuery.data ?? []).slice(0, 5).map((application) => <Link href={`/admin/applications/${application.id}`} className="admin-recent-row" key={application.id} data-testid={`row-admin-recent-${application.id}`}>
+            <span className="admin-recent-file"><FileText size={17} /></span><span className="admin-recent-main"><b>{application.categoryName}</b><small>{application.applicantName || 'Applicant'} · {application.reference}</small></span><span className="admin-recent-date">{formatDate(application.submittedAt)}</span><StatusPill status={application.status} testId={`status-admin-recent-${application.id}`} /><ArrowRight size={15} className="admin-recent-arrow" />
+          </Link>)}</div>}
+      </div>
+    </section>}
   </div></AdminShell>;
 }
 
@@ -1228,16 +1271,27 @@ function AdminSettings() {
     <PageHeading eyebrow="PORTAL CONFIGURATION" title="Portal settings" detail="Edit the home page, enrollment cards, screen copy, and visual settings." action={<button className="button button-primary" onClick={save} disabled={saveSettings.isPending} data-testid="button-save-portal-settings">{saveSettings.isPending ? 'Saving…' : 'Save changes'} <Check size={15} /></button>} />
     {message && <p className="success-message" role="status" data-testid="text-settings-success">{message}</p>}
     {error && <p className="inline-error" role="alert" data-testid="text-settings-error">{error}</p>}
-    <section className="detail-card settings-panel">
-      <div className="detail-card-title"><Home size={17} /><h2>Landing page</h2></div>
+    <nav className="settings-jump-nav" aria-label="Settings sections">
+      <span>JUMP TO</span>
+      <a href="#settings-landing">Landing</a>
+      <a href="#settings-categories">Categories</a>
+      <a href="#settings-appearance">Controls</a>
+      <a href="#settings-backgrounds">Backgrounds</a>
+      <a href="#settings-category-copy">Category forms</a>
+      <a href="#settings-workflow-copy">Workflow text</a>
+    </nav>
+    <section className="detail-card settings-panel" id="settings-landing" aria-labelledby="settings-landing-title">
+      <div className="detail-card-title"><Home size={17} /><h2 id="settings-landing-title">Landing page</h2></div>
       <label className="field-label">Hero heading<input className="text-input" value={draft.hero.title} maxLength={160} onChange={(event) => updateHero('title', event.target.value)} data-testid="input-settings-hero-title" /></label>
       <label className="field-label">Hero description<textarea className="text-input form-textarea" value={draft.hero.description} maxLength={500} rows={3} onChange={(event) => updateHero('description', event.target.value)} data-testid="input-settings-hero-description" /></label>
       <div className="settings-inline-fields">
         <label className="field-label">Primary button label<input className="text-input" value={draft.hero.getStartedLabel} maxLength={60} onChange={(event) => updateHero('getStartedLabel', event.target.value)} /></label>
       </div>
     </section>
-    <section className="detail-card settings-panel">
-      <div className="detail-card-title"><GripVertical size={17} /><h2>Dashboard card order</h2></div>
+    <section className="detail-card settings-panel" id="settings-categories" aria-labelledby="settings-categories-title">
+      <div className="detail-card-title"><GripVertical size={17} /><h2 id="settings-categories-title">Enrollment categories</h2></div>
+      <p className="field-help">Manage category presentation and the order shown on the applicant dashboard.</p>
+      <h3 className="settings-subheading">Dashboard card order</h3>
       <p className="field-help">Drag the cards into the order applicants should see, or use the arrow buttons. Save changes to publish the new order.</p>
       <ol className="settings-card-order" aria-label="Enrollment card display order">
         {draft.cards.map((card, index) => <li
@@ -1286,8 +1340,8 @@ function AdminSettings() {
         {card.logoDataUrl && <div className="settings-logo-preview"><img src={card.logoDataUrl} alt={`${card.title} logo preview`} /><button type="button" className="text-action" onClick={() => updateCard(card.id, 'logoDataUrl', null)}>Remove logo</button></div>}
       </article>)}
     </section>
-    <section className="detail-card settings-panel">
-      <div className="detail-card-title"><Settings size={17} /><h2>Form and button appearance</h2></div>
+    <section className="detail-card settings-panel" id="settings-appearance" aria-labelledby="settings-appearance-title">
+      <div className="detail-card-title"><Settings size={17} /><h2 id="settings-appearance-title">Form and button appearance</h2></div>
       <div className="settings-inline-fields">
         <label className="field-label settings-color-field">PIN screen background<input type="color" value={draft.theme.pinScreenBackground} onChange={(event) => updateTheme('pinScreenBackground', event.target.value.toUpperCase())} /></label>
         <label className="field-label">Primary button size<select className="text-input select-input" value={draft.theme.buttonSize} onChange={(event) => updateTheme('buttonSize', event.target.value)}><option value="compact">Compact</option><option value="standard">Standard</option><option value="large">Large</option></select></label>
@@ -1295,8 +1349,8 @@ function AdminSettings() {
       </div>
       <label className="settings-check"><input type="checkbox" checked={draft.theme.categoryInputTransparent} onChange={(event) => updateTheme('categoryInputTransparent', event.target.checked)} /> Keep category-entry fields transparent with a single underline</label>
     </section>
-    <section className="detail-card settings-panel">
-      <div className="detail-card-title"><Settings size={17} /><h2>Page backgrounds</h2></div>
+    <section className="detail-card settings-panel" id="settings-backgrounds" aria-labelledby="settings-backgrounds-title">
+      <div className="detail-card-title"><Settings size={17} /><h2 id="settings-backgrounds-title">Page backgrounds</h2></div>
       <p className="field-help">Set an individual solid color or a two-color gradient for every page and enrollment stage. Background-image uploads will be added when private App Storage is available.</p>
       <div className="settings-page-theme-grid">
         {PAGE_THEME_SCREENS.map(([screen, label]) => {
@@ -1329,8 +1383,8 @@ function AdminSettings() {
         })}
       </div>
     </section>
-    <section className="detail-card settings-panel">
-      <div className="detail-card-title"><FileText size={17} /><h2>Category entry form labels and buttons</h2></div>
+    <section className="detail-card settings-panel" id="settings-category-copy" aria-labelledby="settings-category-copy-title">
+      <div className="detail-card-title"><FileText size={17} /><h2 id="settings-category-copy-title">Category entry form labels and buttons</h2></div>
       <p className="field-help">Customize the visible field labels, PIN prompts, and action buttons for each category. Leave a field blank to use its current default.</p>
       <div className="settings-screen-list">
         {categoryEntrySettings.map(({ screen, title, fields }) => {
@@ -1396,8 +1450,8 @@ function AdminSettings() {
         })}
       </div>
     </section>
-    <section className="detail-card settings-panel">
-      <div className="detail-card-title"><FileText size={17} /><h2>Page and workflow text</h2></div>
+    <section className="detail-card settings-panel" id="settings-workflow-copy" aria-labelledby="settings-workflow-copy-title">
+      <div className="detail-card-title"><FileText size={17} /><h2 id="settings-workflow-copy-title">Page and workflow text</h2></div>
       <p className="field-help">Edit the main copy for each page or workflow step. Empty values use the portal’s default labels.</p>
       <div className="settings-screen-list">{screenLabels.map(([screen, label]) => <details className="settings-screen" key={screen}>
         <summary>{label}<span>{screen}</span></summary>
