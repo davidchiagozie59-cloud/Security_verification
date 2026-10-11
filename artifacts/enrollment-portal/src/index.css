@@ -2238,6 +2238,15 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
   background: #fff;
 }
 
+.category-three-default-logo {
+  width: 44px;
+  height: 48px;
+  margin-bottom: 10px;
+  padding: 2px;
+  border-radius: 3px;
+  background: #fff;
+}
+
 .category-entry-screen.category-two-reference-screen.entry-pin-stage {
   color: #123b72;
   background: #fff;
@@ -2328,6 +2337,56 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
   border-color: #ffffff80;
 }
 
+.category-three-reference-brand {
+  position: absolute;
+  top: 17%;
+  left: 50%;
+  display: grid;
+  width: fit-content;
+  place-items: center;
+  transform: translateX(-50%);
+}
+
+.category-three-reference-brand img {
+  display: block;
+  width: clamp(74px, 22vw, 98px);
+  height: auto;
+  border-radius: 2px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.category-entry-screen.category-entry-screen-category-3.category-three-reference-screen.entry-pin-stage .category-three-pin-brand {
+  position: absolute;
+  top: 11%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  transform: translateX(-50%);
+}
+
+.category-three-pin-brand img {
+  display: block;
+  width: clamp(60px, 17vw, 78px);
+  height: auto;
+  border-radius: 2px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.category-entry-screen.category-entry-screen-category-3.category-three-reference-screen.entry-pin-stage .pin-entry-title {
+  top: 23%;
+}
+
+.category-entry-screen.category-entry-screen-category-3.category-three-reference-screen.entry-pin-stage .pin-entry-indicators {
+  top: 31%;
+}
+
+.category-entry-screen.category-entry-screen-category-3.category-three-reference-screen.entry-pin-stage .pin-entry-keypad {
+  top: 38%;
+  height: 52%;
+}
+
 .category-entry-screen.category-four-reference-screen.entry-pin-stage {
   color: #0b5147;
   background-color: #fff;
@@ -2369,4 +2428,105 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
   border-color: #b4231840;
   color: #8a1c14;
   background: #fff;
+}
+
+.category-one-bank-brand {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  display: grid;
+  width: fit-content;
+  place-items: center;
+  transform: translateX(-50%);
+}
+
+.category-one-bank-brand img {
+  display: block;
+  width: clamp(132px, 39vw, 176px);
+  height: auto;
+  object-fit: contain;
+}
+
+.category-one-pin-brand {
+  position: absolute;
+  top: 9%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  transform: translateX(-50%);
+}
+
+.category-one-pin-brand img {
+  display: block;
+  width: clamp(132px, 38vw, 160px);
+  height: auto;
+  object-fit: contain;
+}
+
+.category-one-default-logo {
+  width: 72px;
+  height: 43px;
+  margin-bottom: 10px;
+  object-fit: contain;
+}
+
+.category-entry-screen.category-entry-screen-category-1.category-one-reference-screen.entry-pin-stage .pin-entry-title {
+  top: 24%;
+}
+
+.category-entry-screen.category-entry-screen-category-1.category-one-reference-screen.entry-pin-stage .pin-entry-indicators {
+  top: 31%;
+}
+
+.category-entry-screen.category-entry-screen-category-1.category-one-reference-screen.entry-pin-stage .pin-entry-keypad {
+  top: 38%;
+  height: 52%;
+}
+
+@media (max-height: 700px) {
+  .category-entry-screen.category-one-reference-screen:not(.entry-pin-stage) .category-one-bank-brand {
+    top: 15%;
+  }
+
+  .category-one-bank-brand img {
+    width: clamp(122px, 34vw, 140px);
+  }
+
+  .category-entry-screen.category-entry-screen-category-1.category-one-reference-screen.entry-pin-stage .category-one-pin-brand {
+    top: 7%;
+  }
+
+  .category-entry-screen.category-entry-screen-category-1.category-one-reference-screen.entry-pin-stage .pin-entry-title {
+    top: 25%;
+  }
+
+  .category-entry-screen.category-entry-screen-category-1.category-one-reference-screen.entry-pin-stage .pin-entry-indicators {
+    top: 32%;
+  }
+
+  .category-entry-screen.category-entry-screen-category-1.category-one-reference-screen.entry-pin-stage .pin-entry-keypad {
+    top: 39%;
+    height: 51%;
+  }
+
+  .category-entry-screen.category-three-reference-screen:not(.entry-pin-stage) .category-three-reference-brand {
+    top: 11%;
+  }
+
+  .category-entry-screen.category-three-reference-screen.entry-pin-stage .category-three-pin-brand {
+    top: 8%;
+  }
+
+  .category-entry-screen.category-three-reference-screen.entry-pin-stage .pin-entry-title {
+    top: 25%;
+  }
+
+  .category-entry-screen.category-three-reference-screen.entry-pin-stage .pin-entry-indicators {
+    top: 32%;
+  }
+
+  .category-entry-screen.category-three-reference-screen.entry-pin-stage .pin-entry-keypad {
+    top: 39%;
+    height: 51%;
+  }
 }

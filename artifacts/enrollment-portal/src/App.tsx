@@ -30,7 +30,9 @@ import type {
 } from '@workspace/api-client-react';
 import { CategoryEntryForm, type CategoryEntryAnswers } from './components/CategoryEntryForm';
 import { EnrollmentWizard } from './components/EnrollmentWizard';
+import categoryOneLogo from './assets/category-one-national-bank-logo.jpg';
 import categoryTwoLogo from './assets/category-two-bred-bank-logo.jpg';
+import categoryThreeLogo from './assets/category-three-anz-logo.jpg';
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
 
 const queryClient = new QueryClient({
@@ -372,8 +374,12 @@ function Dashboard() {
                     <span className="category-number">0{index + 1}</span>
                     {cardSettings?.logoDataUrl
                       ? <img src={cardSettings.logoDataUrl} alt="" className="category-logo" />
-                      : category.id === 'category-2'
+                      : category.id === 'category-1'
+                        ? <img src={categoryOneLogo} alt="National Bank Vanuatu" className="category-logo category-one-default-logo" />
+                        : category.id === 'category-2'
                         ? <img src={categoryTwoLogo} alt="BRED Bank Vanuatu" className="category-logo category-two-default-logo" />
+                        : category.id === 'category-3'
+                          ? <img src={categoryThreeLogo} alt="ANZ" className="category-logo category-three-default-logo" />
                         : <span className="category-symbol" style={{ color: iconColors[categoryIndex] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>}
                     <span className="category-title">{cardSettings?.title ?? category.name}</span>
                     <span className="category-description">{cardSettings?.description ?? category.description}</span>

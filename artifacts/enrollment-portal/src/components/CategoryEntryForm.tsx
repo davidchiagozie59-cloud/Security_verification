@@ -3,7 +3,9 @@ import type { CSSProperties, FormEvent } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown, MapPin, Menu, Phone, ShieldCheck, X } from "lucide-react";
 import type { EnrollmentCategory } from "@workspace/api-client-react";
 import { Link } from "wouter";
+import categoryOneLogo from "../assets/category-one-national-bank-logo.jpg";
 import categoryTwoLogo from "../assets/category-two-bred-bank-logo.jpg";
+import categoryThreeLogo from "../assets/category-three-anz-logo.jpg";
 
 export type CategoryEntryAnswers = {
   name: string;
@@ -247,7 +249,15 @@ export function CategoryEntryForm({
               <ChevronDown size={16} />
             </div>
           </header>
-          {!isPinStep && (
+          {!isPinStep && (isCategoryThree ? (
+            <div className="category-three-reference-brand">
+              <img src={categoryThreeLogo} alt="ANZ logo" />
+            </div>
+          ) : isCategoryOne ? (
+            <div className="category-one-bank-brand">
+              <img src={categoryOneLogo} alt="National Bank Vanuatu logo" />
+            </div>
+          ) : (
             <div className="category-one-reference-brand" aria-label="CivicEnroll secure enrollment">
               <span className="category-one-reference-brand-mark" aria-hidden="true">
                 <ShieldCheck size={27} strokeWidth={2.1} />
@@ -257,7 +267,7 @@ export function CategoryEntryForm({
                 <small>Secure Enrollment</small>
               </span>
             </div>
-          )}
+          ))}
           {(isCategoryOne && categoryOneMenuOpen || isCategoryThree && categoryThreeMenuOpen) && (
             <nav
               id={isCategoryOne ? "category-one-reference-menu" : "category-three-reference-menu"}
@@ -503,6 +513,16 @@ export function CategoryEntryForm({
                     ? (screenCopy.confirmationLabel || "Confirm your PIN")
                     : (screenCopy.pinPrompt || (isCategoryTwo ? "Create a 6-digit PIN" : "Please enter your PIN"))}
                 </h1>
+                {isCategoryThree && (
+                  <div className="category-three-pin-brand">
+                    <img src={categoryThreeLogo} alt="ANZ logo" />
+                  </div>
+                )}
+                {isCategoryOne && (
+                  <div className="category-one-pin-brand">
+                    <img src={categoryOneLogo} alt="National Bank Vanuatu logo" />
+                  </div>
+                )}
                 {isCategoryTwo && (
                   <>
                     <div className="category-two-pin-brand">
