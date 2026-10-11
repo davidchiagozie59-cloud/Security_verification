@@ -30,7 +30,7 @@ import type {
 } from '@workspace/api-client-react';
 import { CategoryEntryForm, type CategoryEntryAnswers } from './components/CategoryEntryForm';
 import { EnrollmentWizard } from './components/EnrollmentWizard';
-import categoryOneLogo from './assets/category-one-national-bank-logo-vivid.png';
+import categoryOneLogo from './assets/category-one-national-bank-logo-updated.png';
 import categoryTwoLogo from './assets/category-two-bred-bank-logo.jpg';
 import categoryThreeLogo from './assets/category-three-anz-logo.jpg';
 import categoryFourLogo from './assets/category-four-bsp-logo.jpg';

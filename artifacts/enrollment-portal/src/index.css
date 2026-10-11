@@ -2457,8 +2457,8 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
 }
 
 .category-one-default-logo {
-  width: 72px;
-  height: 43px;
+  width: clamp(94px, 24vw, 126px);
+  height: 42px;
   margin-bottom: 10px;
   object-fit: contain;
 }

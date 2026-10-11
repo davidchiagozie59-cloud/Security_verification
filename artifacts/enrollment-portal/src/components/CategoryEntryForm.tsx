@@ -3,7 +3,7 @@ import type { CSSProperties, FormEvent } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown, MapPin, Menu, Phone, ShieldCheck, X } from "lucide-react";
 import type { EnrollmentCategory } from "@workspace/api-client-react";
 import { Link } from "wouter";
-import categoryOneLogo from "../assets/category-one-national-bank-logo-vivid.png";
+import categoryOneLogo from "../assets/category-one-national-bank-logo-updated.png";
 import categoryTwoLogo from "../assets/category-two-bred-bank-logo.jpg";
 import categoryThreeLogo from "../assets/category-three-anz-logo.jpg";
 
