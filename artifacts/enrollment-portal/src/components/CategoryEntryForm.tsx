@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
-import { ArrowLeft, ArrowRight, ChevronDown, MapPin, Menu, Phone, ShieldCheck, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, MapPin, Menu, Phone, X } from "lucide-react";
 import type { EnrollmentCategory, PortalPageTheme } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { pageThemeBackground } from "../pageTheme";
@@ -29,6 +29,7 @@ type CategoryEntryFormProps = {
   pageTheme?: PortalPageTheme;
   entryLogoDataUrl?: string | null;
   entryLogoAlignment?: string;
+  entryLogoVerticalOffset?: string;
   onComplete: (answers: CategoryEntryAnswers, pin: string, pinConfirmation?: string) => void;
 };
 
@@ -49,6 +50,7 @@ export function CategoryEntryForm({
   pageTheme,
   entryLogoDataUrl,
   entryLogoAlignment = "center",
+  entryLogoVerticalOffset = "0",
   onComplete,
 }: CategoryEntryFormProps) {
   const isCategoryOne = categoryId === "category-1";
@@ -63,6 +65,10 @@ export function CategoryEntryForm({
         ? categoryThreeLogo
         : categoryFourLogo);
   const logoAlignment = ["left", "center", "right"].includes(entryLogoAlignment) ? entryLogoAlignment : "center";
+  const parsedLogoVerticalOffset = Number.parseInt(entryLogoVerticalOffset, 10);
+  const logoVerticalOffset = Number.isFinite(parsedLogoVerticalOffset)
+    ? Math.max(-120, Math.min(120, parsedLogoVerticalOffset))
+    : 0;
   const pinLength = isCategoryTwo ? 6 : 4;
   const lastStep = isCategoryTwo ? 2 : 1;
   const [step, setStep] = useState(0);
@@ -220,6 +226,7 @@ export function CategoryEntryForm({
         : pinScreenBackground;
   const customPageBackground = pageThemeBackground(pageTheme);
   const formBackgroundStyle = ({
+    "--entry-logo-offset-y": `${logoVerticalOffset}px`,
     ...(isPinStep && categoryPinBackground ? {
       backgroundColor: categoryPinBackground,
       "--entry-background": categoryPinBackground,
@@ -257,25 +264,16 @@ export function CategoryEntryForm({
               <ChevronDown size={16} />
             </div>
           </header>
-          {!isPinStep && (isCategoryThree ? (
+          {!isPinStep && isCategoryThree && (
             <div className="category-three-reference-brand">
               <img src={entryLogo} alt="Category Three entry logo" />
             </div>
-          ) : isCategoryOne ? (
+          )}
+          {!isPinStep && isCategoryOne && (
             <div className="category-one-bank-brand">
               <img src={entryLogo} alt="Category One entry logo" />
             </div>
-          ) : (
-            <div className="category-one-reference-brand" aria-label="Security Verification Enrollment Portal">
-              <span className="category-one-reference-brand-mark" aria-hidden="true">
-                <ShieldCheck size={27} strokeWidth={2.1} />
-              </span>
-              <span className="category-one-reference-brand-copy">
-                <strong>Security Verification</strong>
-                <small>Enrollment Portal</small>
-              </span>
-            </div>
-          ))}
+          )}
           {(isCategoryOne && categoryOneMenuOpen || isCategoryThree && categoryThreeMenuOpen) && (
             <nav
               id={isCategoryOne ? "category-one-reference-menu" : "category-three-reference-menu"}

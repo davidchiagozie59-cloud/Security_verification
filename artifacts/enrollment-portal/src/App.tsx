@@ -30,6 +30,7 @@ import type {
 } from '@workspace/api-client-react';
 import { CategoryEntryForm, type CategoryEntryAnswers } from './components/CategoryEntryForm';
 import { EnrollmentWizard } from './components/EnrollmentWizard';
+import { PortalWordmark } from './components/PortalWordmark';
 import { DEFAULT_PAGE_THEME, PAGE_THEME_SCREENS, normalizePageThemes, pageThemeBackground, pageThemeKeyForRoute } from './pageTheme';
 import categoryOneLogo from './assets/category-one-national-bank-logo-updated.png';
 import categoryTwoLogo from './assets/category-two-bred-bank-logo.jpg';
@@ -59,11 +60,6 @@ function stripBase(path: string) {
 const clerkAppearance = {
   theme: shadcn,
   cssLayerName: 'clerk',
-  options: {
-    logoPlacement: 'inside' as const,
-    logoLinkUrl: basePath || '/',
-    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
-  },
   variables: {
     colorPrimary: '#174d80',
     colorForeground: '#19324d',
@@ -81,6 +77,8 @@ const clerkAppearance = {
     cardBox: 'bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-xl',
     card: '!shadow-none !border-0 !bg-transparent !rounded-none',
     footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    logoBox: { display: 'none' },
+    logoImage: { display: 'none' },
     headerTitle: 'font-semibold tracking-tight text-[#19324d]',
     headerSubtitle: 'text-[#68798b]',
     formFieldLabel: 'font-medium text-[#29435c]',
@@ -89,24 +87,6 @@ const clerkAppearance = {
     footerActionLink: 'font-semibold text-[#174d80]',
   },
 };
-
-function PortalName() {
-  return (
-    <span className="brand-name">
-      <span className="brand-name-primary">Security Verification</span>
-      <span className="brand-name-secondary">Enrollment Portal</span>
-    </span>
-  );
-}
-
-function Brand({ inverse = false }: { inverse?: boolean }) {
-  return (
-    <div className={`brand-lockup ${inverse ? 'brand-inverse' : ''}`} data-testid="brand-lockup">
-      <span className="brand-mark"><ShieldCheck size={20} strokeWidth={2.2} /></span>
-      <PortalName />
-    </div>
-  );
-}
 
 function PrimaryButton({ children, onClick, disabled, kind = 'button', testId, quiet = false }: {
   children: ReactNode; onClick?: () => void; disabled?: boolean; kind?: 'button' | 'submit';
@@ -186,7 +166,7 @@ function AppFrame({ children, active = 'dashboard', fitDashboard = false }: {
   return (
     <div className="app-shell portal-frame">
       <aside className={`sidebar ${menuOpen ? 'sidebar-open' : ''}`}>
-        <div className="sidebar-brand"><Brand inverse /></div>
+        <div className="sidebar-brand"><PortalWordmark inverse /></div>
         <div className="workspace-label">APPLICANT PORTAL</div>
         <nav className="side-nav" aria-label="Applicant navigation">
           {links.map(({ label, href, key, icon: Icon }) => (
@@ -213,7 +193,7 @@ function AppFrame({ children, active = 'dashboard', fitDashboard = false }: {
       <div className="main-column">
         <div className="compact-bar">
           <button className="menu-trigger" aria-label="Open menu" onClick={() => setMenuOpen(true)} data-testid="button-open-menu"><Menu size={20} /></button>
-          <Brand />
+          <PortalWordmark className="portal-wordmark-compact" />
           <Link href="/support" className="compact-help" data-testid="link-compact-support"><CircleHelp size={18} /></Link>
         </div>
         <main className={`page-content portal-scroll ${fitDashboard ? 'dashboard-page-content' : ''}`}>{children}</main>
@@ -235,9 +215,7 @@ function PublicLanding() {
   return (
     <main className="landing portal-frame">
       <section className="landing-copy">
-        <div className="brand-lockup landing-brand-wordmark" data-testid="landing-brand-wordmark">
-          <PortalName />
-        </div>
+        <PortalWordmark className="portal-wordmark-landing" />
         <div className="landing-content rise">
           <div className="eyebrow"><span className="eyebrow-rule" />SECURE ENROLLMENT</div>
           <h1>{copyText(portalSettings.data, 'landing', 'title', hero?.title ?? 'Welcome to Our Enrollment Portal')}</h1>
@@ -245,9 +223,6 @@ function PublicLanding() {
           <div className="landing-actions">
             <Link href="/dashboard" className="button button-primary" data-testid="link-get-started">
               {copyText(portalSettings.data, 'landing', 'buttonLabel', primaryLabel)} <ArrowRight size={17} />
-            </Link>
-            <Link href="/sign-in" className="text-action" data-testid="link-sign-in">
-              {copyText(portalSettings.data, 'landing', 'secondaryButtonLabel', hero?.loginLabel ?? 'Log In')}
             </Link>
           </div>
           <div className="landing-assurances">
@@ -284,7 +259,7 @@ function AuthPage({ mode }: { mode: 'in' | 'up' }) {
   }, [isLoaded, isSignedIn, setLocation]);
   if (isLoaded && isSignedIn) return <main className="portal-frame auth-loading"><LoadingPanel label="Opening your secure workspace" /></main>;
   return <main className="auth-page portal-frame">
-    <div className="auth-brand"><Brand /><span>SECURE ACCESS</span></div>
+    <div className="auth-brand"><PortalWordmark /><span>SECURE ACCESS</span></div>
     <div className="auth-canvas">
       <div className="auth-intro"><div className="eyebrow">A thoughtful process starts here</div><h1>{mode === 'in' ? 'Welcome back.' : 'Let’s get started.'}</h1>
         <p>{mode === 'in' ? 'Your application and its latest updates are waiting in your secure workspace.' : 'Create a secure account to begin and return to your application whenever you need.'}</p>
@@ -313,7 +288,7 @@ function AuthComplete() {
 }
 
 function SignedOutNotice() {
-  return <main className="signedout-page portal-frame"><Brand /><div className="signedout-card">
+  return <main className="signedout-page portal-frame"><PortalWordmark /><div className="signedout-card">
     <span className="state-icon"><LockKeyhole size={21} /></span><div className="eyebrow">SECURE ACCESS</div>
     <h1>Sign in to continue</h1><p>Your application workspace is private. Sign in to view or manage your enrollment.</p>
     <Link href="/sign-in" className="button button-primary" data-testid="link-auth-sign-in">Continue to sign in <ArrowRight size={16} /></Link>
@@ -689,6 +664,7 @@ function DraftApplication() {
       pageTheme={portalSettings.data?.pageThemes?.[categoryEntryScreenId]}
       entryLogoDataUrl={categoryEntryCard?.logoDataUrl}
       entryLogoAlignment={categoryEntryCopy.entryLogoAlignment}
+      entryLogoVerticalOffset={categoryEntryCopy.entryLogoVerticalOffset}
       onComplete={(entryAnswers: CategoryEntryAnswers, entryPin: string, entryPinConfirmation?: string) => {
         setFeedback('');
         if (application.status === 'draft') {
@@ -892,7 +868,7 @@ function AdminShell({ children, active = 'overview' }: { children: ReactNode; ac
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
   return <div className="admin-shell portal-frame">
-    <aside className="admin-sidebar"><div className="sidebar-brand"><Brand inverse /></div><div className="workspace-label">STAFF WORKSPACE</div>
+    <aside className="admin-sidebar"><div className="sidebar-brand"><PortalWordmark inverse /></div><div className="workspace-label">STAFF WORKSPACE</div>
       <nav className="side-nav" aria-label="Staff navigation">
         {['admin', 'sub_admin'].includes(String(role)) && <>
           <Link href="/admin" className={`nav-link ${active === 'overview' ? 'nav-link-active' : ''}`} data-testid="link-admin-overview"><Activity size={18} /><span>Overview</span></Link>
@@ -919,9 +895,9 @@ function AdminGate({ children }: { children: ReactNode }) {
   if (!isLoaded || (isSignedIn && !userLoaded)) return <main className="portal-frame auth-loading"><LoadingPanel label="Checking staff access" /></main>;
   if (!isSignedIn) return <SignedOutNotice />;
   const role = user?.publicMetadata?.role;
-  if (!['admin', 'sub_admin', 'moderator'].includes(String(role))) return <main className="signedout-page portal-frame"><Brand /><div className="signedout-card"><span className="state-icon"><LockKeyhole size={21} /></span><div className="eyebrow">RESTRICTED WORKSPACE</div><h1>Administrator access required</h1><p>This console is available only to authorized administrators.</p><Link href="/dashboard" className="button button-primary" data-testid="link-admin-denied-dashboard">Return to your dashboard <ArrowRight size={15} /></Link></div></main>;
-  if (role === 'moderator' && location !== '/admin/support') return <main className="signedout-page portal-frame"><Brand /><div className="signedout-card"><span className="state-icon"><Headphones size={21} /></span><div className="eyebrow">SUPPORT STAFF</div><h1>Support workspace</h1><p>Moderator access is limited to support requests.</p><Link href="/admin/support" className="button button-primary" data-testid="link-moderator-support">Open support inbox <ArrowRight size={15} /></Link></div></main>;
-  if (role === 'sub_admin' && (location === '/admin/users' || location === '/admin/settings')) return <main className="signedout-page portal-frame"><Brand /><div className="signedout-card"><span className="state-icon"><LockKeyhole size={21} /></span><div className="eyebrow">RESTRICTED WORKSPACE</div><h1>Administrator access required</h1><p>Your staff role does not include user or portal settings management.</p><Link href="/admin/review" className="button button-primary" data-testid="link-subadmin-review">Open review queue <ArrowRight size={15} /></Link></div></main>;
+  if (!['admin', 'sub_admin', 'moderator'].includes(String(role))) return <main className="signedout-page portal-frame"><PortalWordmark /><div className="signedout-card"><span className="state-icon"><LockKeyhole size={21} /></span><div className="eyebrow">RESTRICTED WORKSPACE</div><h1>Administrator access required</h1><p>This console is available only to authorized administrators.</p><Link href="/dashboard" className="button button-primary" data-testid="link-admin-denied-dashboard">Return to your dashboard <ArrowRight size={15} /></Link></div></main>;
+  if (role === 'moderator' && location !== '/admin/support') return <main className="signedout-page portal-frame"><PortalWordmark /><div className="signedout-card"><span className="state-icon"><Headphones size={21} /></span><div className="eyebrow">SUPPORT STAFF</div><h1>Support workspace</h1><p>Moderator access is limited to support requests.</p><Link href="/admin/support" className="button button-primary" data-testid="link-moderator-support">Open support inbox <ArrowRight size={15} /></Link></div></main>;
+  if (role === 'sub_admin' && (location === '/admin/users' || location === '/admin/settings')) return <main className="signedout-page portal-frame"><PortalWordmark /><div className="signedout-card"><span className="state-icon"><LockKeyhole size={21} /></span><div className="eyebrow">RESTRICTED WORKSPACE</div><h1>Administrator access required</h1><p>Your staff role does not include user or portal settings management.</p><Link href="/admin/review" className="button button-primary" data-testid="link-subadmin-review">Open review queue <ArrowRight size={15} /></Link></div></main>;
   return <>{children}</>;
 }
 
@@ -1273,7 +1249,6 @@ function AdminSettings() {
       <label className="field-label">Hero description<textarea className="text-input form-textarea" value={draft.hero.description} maxLength={500} rows={3} onChange={(event) => updateHero('description', event.target.value)} data-testid="input-settings-hero-description" /></label>
       <div className="settings-inline-fields">
         <label className="field-label">Primary button label<input className="text-input" value={draft.hero.getStartedLabel} maxLength={60} onChange={(event) => updateHero('getStartedLabel', event.target.value)} /></label>
-        <label className="field-label">Log-in button label<input className="text-input" value={draft.hero.loginLabel} maxLength={60} onChange={(event) => updateHero('loginLabel', event.target.value)} /></label>
       </div>
     </section>
     <section className="detail-card settings-panel">
@@ -1376,6 +1351,8 @@ function AdminSettings() {
         {categoryEntrySettings.map(({ screen, title, fields }) => {
           const copy = draft.screenCopy[screen] ?? {};
           const resolvedText = (key: string, fallback: string) => copy[key]?.trim() || fallback;
+          const offsetValue = Number.parseInt(copy.entryLogoVerticalOffset ?? '0', 10);
+          const logoVerticalOffset = Number.isFinite(offsetValue) ? Math.max(-120, Math.min(120, offsetValue)) : 0;
           const previewFields = fields.filter(([key]) => ['nameLabel', 'nicknameLabel', 'surnameLabel'].includes(key));
           const previewButtons = fields.filter(([key]) => key.startsWith('buttonLabel'));
           const pinPrompt = fields.find(([key]) => key === 'pinLabel');
@@ -1393,6 +1370,25 @@ function AdminSettings() {
                   data-testid={`input-copy-${screen}-${key}`}
                 />
               </label>)}
+              <label className="field-label">Entry and PIN logo horizontal position
+                <select className="text-input select-input" value={copy.entryLogoAlignment || 'center'} onChange={(event) => updateScreenCopy(screen, 'entryLogoAlignment', event.target.value)} data-testid={`select-entry-logo-alignment-${screen}`}>
+                  <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+                </select>
+              </label>
+              <label className="field-label settings-logo-offset-field">
+                <span>Entry and PIN logo vertical position <b>{logoVerticalOffset > 0 ? `${logoVerticalOffset}px down` : logoVerticalOffset < 0 ? `${Math.abs(logoVerticalOffset)}px up` : 'Centered'}</b></span>
+                <input
+                  type="range"
+                  min="-120"
+                  max="120"
+                  step="2"
+                  value={logoVerticalOffset}
+                  onChange={(event) => updateScreenCopy(screen, 'entryLogoVerticalOffset', event.target.value)}
+                  aria-label={`${title} entry and PIN logo vertical position`}
+                  data-testid={`input-entry-logo-offset-${screen}`}
+                />
+                <small>Negative values move the logo up; positive values move it down.</small>
+              </label>
             </div>
             <section className={`settings-category-preview category-preview-${screen}`} aria-label={`${title} live preview`} data-testid={`preview-${screen}`}>
               <span className="settings-category-preview-caption">Live preview · updates as you edit</span>
@@ -1431,11 +1427,6 @@ function AdminSettings() {
           ] as string[]).map((key) => <label className="field-label" key={key}>{key === 'sectionIdLabel' ? 'Section ID label' : key === 'buttonLabel' ? 'Primary button label' : key === 'buttonLabelStep1' ? 'Step 1 button text' : key === 'buttonLabelStep2' ? 'Step 2 button text' : key === 'backButtonLabel' ? 'Back button label' : key === 'nameLabel' ? 'Name / login field label' : key === 'pinLabel' ? 'PIN prompt label' : key === 'confirmationLabel' ? 'PIN confirmation label' : key === 'title' ? 'Screen title' : key === 'description' ? 'Description' : (workflowFieldLabels[screen] ?? []).find(([fieldKey]) => fieldKey === key)?.[1] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase())}
             <input className="text-input" value={draft.screenCopy[screen]?.[key] ?? ''} maxLength={key.startsWith('buttonLabel') || key === 'backButtonLabel' ? 60 : 500} placeholder="Use portal default" onChange={(event) => updateScreenCopy(screen, key, event.target.value)} data-testid={`input-copy-${screen}-${key}`} />
           </label>)}
-          {screen.startsWith('category-entry-') && <label className="field-label">Entry logo position
-            <select className="text-input select-input" value={draft.screenCopy[screen]?.entryLogoAlignment || 'center'} onChange={(event) => updateScreenCopy(screen, 'entryLogoAlignment', event.target.value)} data-testid={`select-entry-logo-alignment-${screen}`}>
-              <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
-            </select>
-          </label>}
         </div>
       </details>)}</div>
     </section>
@@ -1662,7 +1653,7 @@ function AdminSupport() {
 }
 
 function NotFound() {
-  return <main className="not-found portal-frame"><div className="not-found-card"><Brand /><span className="not-found-code">404</span><h1>This page isn’t here.</h1><p>The address may have changed. Return to the enrollment portal to continue.</p><Link href="/" className="button button-primary" data-testid="link-not-found-home">Return to portal <ArrowRight size={15} /></Link></div></main>;
+  return <main className="not-found portal-frame"><div className="not-found-card"><PortalWordmark /><span className="not-found-code">404</span><h1>This page isn’t here.</h1><p>The address may have changed. Return to the enrollment portal to continue.</p><Link href="/" className="button button-primary" data-testid="link-not-found-home">Return to portal <ArrowRight size={15} /></Link></div></main>;
 }
 
 function RoutedPages() {

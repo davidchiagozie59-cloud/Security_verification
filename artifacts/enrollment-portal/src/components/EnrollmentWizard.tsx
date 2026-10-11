@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import './EnrollmentWizard.css';
 import { pageThemeBackground } from '../pageTheme';
+import { PortalWordmark } from './PortalWordmark';
 
 type WizardAnswers = Record<string, unknown>;
 
@@ -594,7 +595,7 @@ export function EnrollmentWizard({
 
   return <main className="ew-shell" style={stageBackground ? { background: stageBackground } : undefined} data-testid="enrollment-wizard">
     <header className="ew-topbar">
-      <div className="ew-topbrand"><span><ShieldCheck size={18} /></span><b>Security Verification<small>Enrollment Portal</small></b></div>
+      <PortalWordmark />
       <div className="ew-top-meta"><span className={`ew-draft-status ${status === 'draft' ? '' : 'submitted'}`} data-testid="status-application">{status.replaceAll('_', ' ')}</span>
         <span className="ew-reference" data-testid="text-application-reference">{application.reference}</span></div>
     </header>

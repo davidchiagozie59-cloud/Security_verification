@@ -26,10 +26,6 @@
   border-bottom: 1px solid #dce7e7;
   background: #fcfdfc;
 }
-.ew-topbrand { display: inline-flex; align-items: center; gap: 10px; color: #19364d; }
-.ew-topbrand > span { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 10px; color: #fff; background: #174d80; }
-.ew-topbrand b { display: grid; gap: 2px; font-size: 13px; letter-spacing: -.035em; }
-.ew-topbrand b small { color: #6d8792; font-size: 8px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; }
 .ew-top-meta { display: flex; align-items: center; gap: 15px; }
 .ew-draft-status { padding: 5px 9px; border: 1px solid #e8dcbf; border-radius: 99px; color: #8a692d; background: #fff9ed; font: 9px var(--app-font-mono, monospace); text-transform: capitalize; }
 .ew-draft-status.submitted { border-color: #cfe3dc; color: #32745e; background: #eff8f3; }
@@ -212,6 +208,8 @@
 @media (max-width: 640px) {
   .ew-shell { height: 100dvh; min-height: 100dvh; }
   .ew-topbar { min-height: 55px; padding-inline: 15px; }
+  .ew-topbar .portal-wordmark-primary { font-size: 12px; }
+  .ew-topbar .portal-wordmark-secondary { font-size: 7px; }
   .ew-top-meta { gap: 8px; }
   .ew-reference { font-size: 8px; }
   .ew-layout { display: flex; flex-direction: column; }
