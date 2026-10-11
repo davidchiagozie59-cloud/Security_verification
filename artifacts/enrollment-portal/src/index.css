@@ -1933,3 +1933,272 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
 .category-entry-screen.category-four-reference-screen:not(.entry-pin-stage) .entry-error {
   color: #b42318;
 }
+
+/* Category Two: three compact enrollment screens inspired by the blue references. */
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) {
+  background: linear-gradient(180deg, #0c4da1 0%, #0c4da1 76%, #0b4998 100%);
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .category-two-reference-brand {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  width: max-content;
+  max-width: 90vw;
+  color: #fff;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .category-two-reference-brand strong {
+  font-size: clamp(23px, 6.2vw, 31px);
+  font-weight: 700;
+  letter-spacing: .16em;
+  line-height: 1;
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .category-two-reference-brand span {
+  padding-top: 4px;
+  border-top: 1px solid #ffffffbd;
+  color: #ffffffec;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.category-entry-screen.category-two-reference-screen.category-two-step-0:not(.entry-pin-stage) .category-two-reference-brand {
+  top: 29%;
+}
+
+.category-entry-screen.category-two-reference-screen.category-two-step-1:not(.entry-pin-stage) .category-two-reference-brand {
+  top: 17%;
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .category-two-reference-content {
+  right: 0;
+  left: 0;
+  width: min(80vw, 460px);
+  margin-inline: auto;
+}
+
+.category-entry-screen.category-two-reference-screen.category-two-step-0:not(.entry-pin-stage) .category-two-reference-content {
+  top: 48%;
+}
+
+.category-entry-screen.category-two-reference-screen.category-two-step-1:not(.entry-pin-stage) .category-two-reference-content {
+  top: 44%;
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .entry-fields {
+  gap: 0;
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .entry-field {
+  gap: 0;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .entry-field > span {
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .entry-line-input {
+  min-height: 27px;
+  padding: 0 0 5px;
+  border: 0;
+  border-bottom: 1px solid #ffffff4d;
+  border-radius: 0;
+  color: #fff;
+  background: transparent;
+  font-size: 16px;
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .entry-line-input:focus,
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .entry-line-input:focus-visible {
+  border-bottom-color: #ffffffa8;
+  outline: none;
+  box-shadow: none;
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .entry-actions {
+  justify-content: center;
+  margin-top: 51px;
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .entry-primary-button {
+  width: min(225px, 100%);
+  min-height: 54px;
+  border-radius: 999px;
+  color: #174f96;
+  background: #a9c8f2;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .category-two-reference-help {
+  display: block;
+  width: fit-content;
+  margin: 19px auto 0;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.category-two-reference-help:focus-visible,
+.category-two-reference-step-links a:focus-visible,
+.category-two-reference-step-links button:focus-visible,
+.category-two-pin-actions a:focus-visible,
+.category-two-pin-actions button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.category-entry-screen.category-two-reference-screen:not(.entry-pin-stage) .category-two-reference-step-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 19px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.category-two-reference-step-links a,
+.category-two-reference-step-links button {
+  padding: 0;
+  border: 0;
+  color: #fff;
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.category-entry-screen.category-two-reference-screen.category-two-step-1:not(.entry-pin-stage) .entry-actions {
+  margin-top: 39px;
+}
+
+.category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-back {
+  display: none;
+}
+
+.category-entry-screen.category-two-reference-screen.entry-pin-stage .category-two-pin-brand {
+  position: absolute;
+  top: 15%;
+  right: 20px;
+  left: 20px;
+  color: #fff;
+  font-size: clamp(20px, 5vw, 26px);
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-title {
+  top: 28%;
+  font-size: clamp(17px, 4.5vw, 21px);
+  font-weight: 500;
+}
+
+.category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-indicators {
+  top: 35%;
+}
+
+.category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-keypad {
+  top: 42%;
+  height: 47%;
+}
+
+.category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-key {
+  color: #fff;
+  background: #ffffff0c;
+  border-color: transparent;
+  font-size: clamp(24px, 6vw, 31px);
+  font-weight: 500;
+}
+
+.category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-key:hover,
+.category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-key:focus-visible {
+  background: #ffffff18;
+}
+
+.category-entry-screen.category-two-reference-screen.entry-pin-stage .category-two-pin-actions {
+  position: absolute;
+  right: 13%;
+  bottom: max(25px, env(safe-area-inset-bottom));
+  left: 13%;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.category-two-pin-actions a {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.category-two-pin-actions button {
+  min-width: 96px;
+  min-height: 42px;
+  padding: 0 20px;
+  border: 1px solid #ffffff8c;
+  border-radius: 999px;
+  color: #fff;
+  background: #ffffff0b;
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (max-height: 700px) {
+  .category-entry-screen.category-two-reference-screen.category-two-step-0:not(.entry-pin-stage) .category-two-reference-brand {
+    top: 22%;
+  }
+
+  .category-entry-screen.category-two-reference-screen.category-two-step-1:not(.entry-pin-stage) .category-two-reference-brand {
+    top: 13%;
+  }
+
+  .category-entry-screen.category-two-reference-screen.category-two-step-0:not(.entry-pin-stage) .category-two-reference-content {
+    top: 40%;
+  }
+
+  .category-entry-screen.category-two-reference-screen.category-two-step-1:not(.entry-pin-stage) .category-two-reference-content {
+    top: 35%;
+  }
+
+  .category-entry-screen.category-two-reference-screen.entry-pin-stage .category-two-pin-brand {
+    top: 10%;
+  }
+
+  .category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-title {
+    top: 22%;
+  }
+
+  .category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-indicators {
+    top: 29%;
+  }
+
+  .category-entry-screen.category-two-reference-screen.entry-pin-stage .pin-entry-keypad {
+    top: 36%;
+    height: 54%;
+  }
+}

@@ -203,7 +203,7 @@ export function CategoryEntryForm({
     : undefined;
 
   return (
-    <main className={`category-entry-screen category-entry-screen-${categoryId} ${isCategoryOne ? "category-one-reference-screen" : ""} ${isCategoryOne && isPinStep ? "category-one-reference-pin-stage" : ""} ${isCategoryTwo ? "category-two-reference-screen" : ""} ${isCategoryFour ? "category-four-reference-screen" : ""} ${categoryInputTransparent ? "entry-input-transparent" : "entry-input-opaque"} ${isPinStep ? "entry-pin-stage" : ""}`} style={formBackgroundStyle} data-testid={`form-entry-${categoryId}`}>
+    <main className={`category-entry-screen category-entry-screen-${categoryId} ${isCategoryOne ? "category-one-reference-screen" : ""} ${isCategoryOne && isPinStep ? "category-one-reference-pin-stage" : ""} ${isCategoryTwo ? `category-two-reference-screen category-two-step-${step}` : ""} ${isCategoryFour ? "category-four-reference-screen" : ""} ${categoryInputTransparent ? "entry-input-transparent" : "entry-input-opaque"} ${isPinStep ? "entry-pin-stage" : ""}`} style={formBackgroundStyle} data-testid={`form-entry-${categoryId}`}>
       {isCategoryOne ? (
         <>
           <header className="category-one-reference-header">
@@ -305,6 +305,12 @@ export function CategoryEntryForm({
               <span>EN</span><ChevronDown size={16} />
             </button>
           </header>
+          {!isPinStep && (
+            <div className={`category-two-reference-brand category-two-reference-brand-step-${step}`} aria-label={`CivicEnroll, ${categoryName}`}>
+              <strong>CIVICENROLL</strong>
+              <span>{categoryName}</span>
+            </div>
+          )}
           {categoryTwoMenuOpen && (
             <nav id="category-two-reference-menu" className="category-two-reference-menu" aria-label="Language and enrollment navigation">
               <span className="category-two-menu-language">English · Current language</span>
@@ -473,8 +479,17 @@ export function CategoryEntryForm({
                 <h1 id="pin-entry-heading" className="pin-entry-title" aria-live="polite">
                   {isCategoryFour && pinTarget === "confirmation"
                     ? (screenCopy.confirmationLabel || "Confirm your PIN")
-                    : (screenCopy.pinPrompt || "Please enter your PIN")}
+                    : (screenCopy.pinPrompt || (isCategoryTwo ? "Create a 6-digit PIN" : "Please enter your PIN"))}
                 </h1>
+                {isCategoryTwo && (
+                  <>
+                    <div className="category-two-pin-brand" aria-label="CivicEnroll">{categoryName}</div>
+                    <div className="category-two-pin-actions">
+                      <Link href="/support" data-testid="link-category-two-pin-help">Need help?</Link>
+                      <button type="button" onClick={moveBack} data-testid="button-category-two-pin-cancel">Cancel</button>
+                    </div>
+                  </>
+                )}
                 <p className="sr-only" id="pin-entry-help">
                   Enter {pinLength} digits. This screen continues automatically when complete.
                 </p>
@@ -562,6 +577,17 @@ export function CategoryEntryForm({
                 >
                   {primaryLabel} {isCategoryOne || isCategoryTwo ? null : <ArrowRight size={16} />}
                 </button>
+              </div>
+            )}
+            {isCategoryTwo && !isPinStep && step === 0 && (
+              <Link className="category-two-reference-help" href="/support" data-testid="link-category-two-help">
+                Need help?
+              </Link>
+            )}
+            {isCategoryTwo && !isPinStep && step === 1 && (
+              <div className="category-two-reference-step-links">
+                <button type="button" onClick={moveBack} data-testid="button-category-two-back-to-name">Back to name</button>
+                <Link href="/support" data-testid="link-category-two-step-help">Need help?</Link>
               </div>
             )}
             {isCategoryOne && !isPinStep && (
