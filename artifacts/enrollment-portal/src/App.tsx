@@ -337,7 +337,7 @@ function Dashboard() {
         {failure ? <ErrorPanel message="Your enrollment information is temporarily unavailable." retry={() => { void summary.refetch(); void applications.refetch(); void categories.refetch(); }} /> :
           busy ? <LoadingPanel /> : <>
             <section className="selection-section rise-delay">
-              <div className="section-line"><div><h2>{copyText(portalSettings.data, 'dashboard', 'sectionIdLabel', 'Select an enrollment path')}</h2><p>{copyText(portalSettings.data, 'dashboard', 'buttonLabel', 'Choose the option that best matches your application.')}</p></div><span className="step-indicator">STEP 01 <i>/ 03</i></span></div>
+              <div className="section-line"><div><h2>{copyText(portalSettings.data, 'dashboard', 'title', 'Select an enrollment path')}</h2><p>{copyText(portalSettings.data, 'dashboard', 'description', 'Choose the option that best matches your application.')}</p></div><span className="step-indicator">{copyText(portalSettings.data, 'dashboard', 'sectionIdLabel', 'STEP 01 / 03')}</span></div>
               <div className="category-grid">
                 {(categories.data ?? []).slice(0, 4).map((category, index) => {
                   const cardSettings = portalSettings.data?.cards.find((card) => card.id === category.id);
@@ -358,7 +358,7 @@ function Dashboard() {
                     {cardSettings?.logoDataUrl ? <img src={cardSettings.logoDataUrl} alt="" className="category-logo" /> : <span className="category-symbol" style={{ color: iconColors[index] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>}
                     <span className="category-title">{cardSettings?.title ?? category.name}</span>
                     <span className="category-description">{cardSettings?.description ?? category.description}</span>
-                    <span className="category-select">{create.isPending ? 'Starting…' : selected ? ['draft', 'needs_information'].includes(activeApplication!.status) ? 'Continue application' : 'View current status' : completedApplication ? 'Start another application' : cardSettings?.buttonLabel ?? 'Select category'} <ArrowUpRight size={15} /></span>
+                    <span className="category-select">{create.isPending ? 'Starting…' : selected ? ['draft', 'needs_information'].includes(activeApplication!.status) ? 'Continue application' : 'View current status' : completedApplication ? 'Start another application' : copyText(portalSettings.data, 'dashboard', 'buttonLabel', cardSettings?.buttonLabel ?? 'Select category')} <ArrowUpRight size={15} /></span>
                   </button>;
                 })}
               </div>
@@ -491,6 +491,24 @@ function DraftApplication() {
       return false;
     }
   };
+  const backToCategoryEntry = async (answers: Record<string, unknown>) => {
+    if (application.status !== 'draft') {
+      setLocation('/dashboard');
+      return true;
+    }
+    try {
+      const saved = await update.mutateAsync({
+        applicationId: id,
+        data: { answers: { ...answers, categoryEntryComplete: false }, currentStep: 0 },
+      });
+      queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
+      queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
+      return true;
+    } catch {
+      setFeedback('We could not return to the category details. Please try again.');
+      return false;
+    }
+  };
   const submitDraft = async () => {
     try {
       const saved = await submit.mutateAsync({ applicationId: id });
@@ -571,6 +589,7 @@ function DraftApplication() {
     saveStep={saveStep}
     submit={submitDraft}
     onChangeCategory={changeCategoryFromWizard}
+    onBackToCategoryEntry={backToCategoryEntry}
     screenCopy={portalSettings.data?.screenCopy}
   />;
 }
@@ -926,6 +945,42 @@ function AdminSettings() {
     ['admin-review', 'Admin review'],
     ['admin-support', 'Admin support'],
   ];
+  const workflowFieldLabels: Record<string, [string, string][]> = {
+    'workflow-step-1': [
+      ['field_personalInformation_firstName', 'First name'], ['field_personalInformation_middleName', 'Middle name'],
+      ['field_personalInformation_surname', 'Surname'], ['field_personalInformation_dateOfBirth', 'Date of birth'],
+      ['field_personalInformation_nationality', 'Nationality'], ['field_personalInformation_phone', 'Phone number'],
+      ['field_personalInformation_email', 'Email address'], ['field_personalInformation_residentialAddress', 'Residential address'],
+      ['field_personalInformation_stateRegion', 'State / region'], ['field_personalInformation_city', 'City / local government area'],
+      ['field_personalInformation_postalCode', 'Postal code'],
+    ],
+    'workflow-step-2': [
+      ['field_nextOfKin_fullName', 'Full name'], ['field_nextOfKin_relationship', 'Relationship'],
+      ['field_nextOfKin_phone', 'Phone number'], ['field_nextOfKin_email', 'Email address'],
+      ['field_nextOfKin_residentialAddress', 'Residential address'], ['field_nextOfKin_city', 'City'],
+      ['field_nextOfKin_stateRegion', 'State / region'],
+    ],
+    'workflow-step-3': [
+      ['field_education_highestQualification', 'Highest qualification'], ['field_education_institution', 'Institution'],
+      ['field_education_courseField', 'Course / field'], ['field_education_startYear', 'Start year'],
+      ['field_education_completionYear', 'Completion year'], ['field_education_certificationStatus', 'Certification status'],
+      ['field_education_additionalQualifications', 'Additional qualifications'], ['field_education_certificateObjectPath', 'Certificate upload label'],
+    ],
+    'workflow-step-4': [
+      ['field_workInformation_employmentStatus', 'Employment status'], ['field_workInformation_occupation', 'Occupation'],
+      ['field_workInformation_employer', 'Employer'], ['field_workInformation_businessName', 'Business name'],
+      ['field_workInformation_workAddress', 'Business / work address'], ['field_workInformation_workPhone', 'Work phone'],
+      ['field_workInformation_yearsExperience', 'Years of experience'],
+    ],
+    'workflow-step-5': [
+      ['field_proofOfIdentity_documentType', 'Document type'], ['field_proofOfIdentity_documentNumber', 'Document number'],
+      ['field_proofOfIdentity_frontObjectPath', 'Front image upload label'], ['field_proofOfIdentity_backObjectPath', 'Back image upload label'],
+    ],
+    'workflow-step-7': [
+      ['field_bankDetails_bankName', 'Bank'], ['field_bankDetails_accountHolder', 'Account holder'],
+      ['field_bankDetails_accountNumber', 'Account number'], ['field_bankDetails_accountType', 'Account type'],
+    ],
+  };
   const save = () => {
     if (!draft) return;
     setMessage('');
@@ -982,8 +1037,9 @@ function AdminSettings() {
         <div className="settings-inline-fields">
           {([
             'title', 'description', 'sectionIdLabel', 'buttonLabel',
-            ...(screen.startsWith('category-entry-') ? ['nameLabel', 'nicknameLabel', 'surnameLabel', 'pinLabel', 'confirmationLabel'] : []),
-          ] as string[]).map((key) => <label className="field-label" key={key}>{key === 'sectionIdLabel' ? 'Section ID label' : key === 'buttonLabel' ? 'Primary button label' : key === 'title' ? 'Screen title' : key === 'description' ? 'Description' : key.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase())}
+            ...(screen.startsWith('workflow-step-') ? ['backButtonLabel', ...(workflowFieldLabels[screen] ?? []).map(([key]) => key)] : []),
+            ...(screen.startsWith('category-entry-') ? ['nameLabel', 'nicknameLabel', 'surnameLabel', 'pinPrompt', 'pinLabel', 'confirmationLabel', 'backButtonLabel'] : []),
+          ] as string[]).map((key) => <label className="field-label" key={key}>{key === 'sectionIdLabel' ? 'Section ID label' : key === 'buttonLabel' ? 'Primary button label' : key === 'backButtonLabel' ? 'Back button label' : key === 'title' ? 'Screen title' : key === 'description' ? 'Description' : (workflowFieldLabels[screen] ?? []).find(([fieldKey]) => fieldKey === key)?.[1] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase())}
             <input className="text-input" value={draft.screenCopy[screen]?.[key] ?? ''} maxLength={500} placeholder="Use portal default" onChange={(event) => updateScreenCopy(screen, key, event.target.value)} data-testid={`input-copy-${screen}-${key}`} />
           </label>)}
         </div>

@@ -248,7 +248,7 @@ export function CategoryEntryForm({
                   }}
                   data-testid="button-entry-back"
                 >
-                  <ArrowLeft size={14} /> Back to details
+                  <ArrowLeft size={14} /> {screenCopy.backButtonLabel || "Back to details"}
                 </button>
               )}
               <span className="category-one-menu-reference">Application {reference}</span>
@@ -313,7 +313,7 @@ export function CategoryEntryForm({
                   }}
                   data-testid="button-entry-back"
                 >
-                  <ArrowLeft size={14} /> Back one step
+                  <ArrowLeft size={14} /> {screenCopy.backButtonLabel || "Back one step"}
                 </button>
               )}
               <span className="category-two-menu-reference">Application {reference}</span>

@@ -26,6 +26,7 @@ export type EnrollmentWizardProps = {
   saveStep: (answers: Record<string, unknown>, currentStep: number) => Promise<boolean>;
   submit: (answers: Record<string, unknown>) => Promise<boolean>;
   onChangeCategory: (categoryId: string) => void;
+  onBackToCategoryEntry: (answers: Record<string, unknown>) => Promise<boolean>;
 };
 
 const stageTitles = [
@@ -212,9 +213,12 @@ type LocalImage = { file: File; url: string };
 export function EnrollmentWizard({
   application, categories, status, storageAvailable, maxUploadBytes, isSaving, isSubmitting, error,
   reopenedSections, screenCopy = {}, saveStep, submit, onChangeCategory,
+  onBackToCategoryEntry,
 }: EnrollmentWizardProps) {
   const copyForStep = (index: number) => screenCopy[`workflow-step-${index + 1}`] ?? {};
   const titleForStep = (index: number) => copyForStep(index).title || stageTitles[index];
+  const fieldLabel = (index: number, path: string, fallback: string) =>
+    copyForStep(index)[`field_${path.replaceAll('.', '_')}`]?.trim() || fallback;
   const saved = application.answers ?? {};
   const [answers, setAnswers] = useState<WizardAnswers>(() => {
     const initial = { ...saved };
@@ -437,6 +441,13 @@ export function EnrollmentWizard({
       setEditingFromPreview(false);
       return;
     }
+    if (step === 0) {
+      const values = getValues();
+      const currentPersonal = section(values, 'personalInformation');
+      const backAnswers = { ...answers, personalInformation: currentPersonal };
+      void onBackToCategoryEntry(backAnswers);
+      return;
+    }
     setStep(Math.max(0, step - 1));
   };
 
@@ -465,7 +476,11 @@ export function EnrollmentWizard({
 
   const categoryEntry = Object.entries(categoryEntryLabels)
     .filter(([key]) => typeof answers[key] === 'string' && textValue(answers, key).trim())
-    .map(([key, label]) => ({ key, label, value: textValue(answers, key) }));
+    .map(([key, label]) => {
+      const categoryCopy = screenCopy[`category-entry-${application.categoryId}`] ?? {};
+      const labelKey = key === 'name' ? 'nameLabel' : key === 'nickname' ? 'nicknameLabel' : 'surnameLabel';
+      return { key, label: categoryCopy[labelKey]?.trim() || label, value: textValue(answers, key) };
+    });
 
   const sectionComplete = (index: number) => {
     const values = section(answers, sectionKeys[index]);
@@ -610,68 +625,68 @@ export function EnrollmentWizard({
             <div className="ew-progress-line"><span style={{ width: `${((step + 1) / 8) * 100}%` }} /></div>
             {step === 0 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Enter the personal details that identify your application."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <div className="ew-fields-grid">
-                <Field label="First name" name="personalInformation.firstName" register={register} error={errorFor('personalInformation.firstName')} autoComplete="given-name" />
-                <Field label="Middle name" name="personalInformation.middleName" register={register} optional autoComplete="additional-name" />
-                <Field label="Surname" name="personalInformation.surname" register={register} error={errorFor('personalInformation.surname')} autoComplete="family-name" />
-                <Field label="Date of birth" name="personalInformation.dateOfBirth" register={register} error={errorFor('personalInformation.dateOfBirth')} type="date" max={new Date().toISOString().slice(0, 10)} autoComplete="bday" />
-                <Field label="Nationality" name="personalInformation.nationality" register={register} error={errorFor('personalInformation.nationality')} autoComplete="country-name" />
-                <Field label="Phone number" name="personalInformation.phone" register={register} error={errorFor('personalInformation.phone')} type="tel" autoComplete="tel" />
-                <Field label="Email address" name="personalInformation.email" register={register} error={errorFor('personalInformation.email')} type="email" autoComplete="email" />
-                <Field label="Residential address" name="personalInformation.residentialAddress" register={register} error={errorFor('personalInformation.residentialAddress')} autoComplete="street-address" />
-                <Field label="State / region" name="personalInformation.stateRegion" register={register} error={errorFor('personalInformation.stateRegion')} autoComplete="address-level1" />
-                <Field label="City / local government area" name="personalInformation.city" register={register} error={errorFor('personalInformation.city')} autoComplete="address-level2" />
-                <Field label="Postal code" name="personalInformation.postalCode" register={register} optional autoComplete="postal-code" />
+                <Field label={fieldLabel(0, 'personalInformation.firstName', 'First name')} name="personalInformation.firstName" register={register} error={errorFor('personalInformation.firstName')} autoComplete="given-name" />
+                <Field label={fieldLabel(0, 'personalInformation.middleName', 'Middle name')} name="personalInformation.middleName" register={register} optional autoComplete="additional-name" />
+                <Field label={fieldLabel(0, 'personalInformation.surname', 'Surname')} name="personalInformation.surname" register={register} error={errorFor('personalInformation.surname')} autoComplete="family-name" />
+                <Field label={fieldLabel(0, 'personalInformation.dateOfBirth', 'Date of birth')} name="personalInformation.dateOfBirth" register={register} error={errorFor('personalInformation.dateOfBirth')} type="date" max={new Date().toISOString().slice(0, 10)} autoComplete="bday" />
+                <Field label={fieldLabel(0, 'personalInformation.nationality', 'Nationality')} name="personalInformation.nationality" register={register} error={errorFor('personalInformation.nationality')} autoComplete="country-name" />
+                <Field label={fieldLabel(0, 'personalInformation.phone', 'Phone number')} name="personalInformation.phone" register={register} error={errorFor('personalInformation.phone')} type="tel" autoComplete="tel" />
+                <Field label={fieldLabel(0, 'personalInformation.email', 'Email address')} name="personalInformation.email" register={register} error={errorFor('personalInformation.email')} type="email" autoComplete="email" />
+                <Field label={fieldLabel(0, 'personalInformation.residentialAddress', 'Residential address')} name="personalInformation.residentialAddress" register={register} error={errorFor('personalInformation.residentialAddress')} autoComplete="street-address" />
+                <Field label={fieldLabel(0, 'personalInformation.stateRegion', 'State / region')} name="personalInformation.stateRegion" register={register} error={errorFor('personalInformation.stateRegion')} autoComplete="address-level1" />
+                <Field label={fieldLabel(0, 'personalInformation.city', 'City / local government area')} name="personalInformation.city" register={register} error={errorFor('personalInformation.city')} autoComplete="address-level2" />
+                <Field label={fieldLabel(0, 'personalInformation.postalCode', 'Postal code')} name="personalInformation.postalCode" register={register} optional autoComplete="postal-code" />
               </div>
             </>}
             {step === 1 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Name someone we may contact if we need to reach you."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <div className="ew-fields-grid">
-                <Field label="Full name" name="nextOfKin.fullName" register={register} error={errorFor('nextOfKin.fullName')} autoComplete="off" />
-                <Field label="Relationship" name="nextOfKin.relationship" register={register} error={errorFor('nextOfKin.relationship')} />
-                <Field label="Phone number" name="nextOfKin.phone" register={register} error={errorFor('nextOfKin.phone')} type="tel" autoComplete="off" />
-                <Field label="Email address" name="nextOfKin.email" register={register} optional type="email" autoComplete="off" />
-                <Field label="Residential address" name="nextOfKin.residentialAddress" register={register} error={errorFor('nextOfKin.residentialAddress')} />
-                <Field label="City" name="nextOfKin.city" register={register} error={errorFor('nextOfKin.city')} />
-                <Field label="State / region" name="nextOfKin.stateRegion" register={register} error={errorFor('nextOfKin.stateRegion')} />
+                <Field label={fieldLabel(1, 'nextOfKin.fullName', 'Full name')} name="nextOfKin.fullName" register={register} error={errorFor('nextOfKin.fullName')} autoComplete="off" />
+                <Field label={fieldLabel(1, 'nextOfKin.relationship', 'Relationship')} name="nextOfKin.relationship" register={register} error={errorFor('nextOfKin.relationship')} />
+                <Field label={fieldLabel(1, 'nextOfKin.phone', 'Phone number')} name="nextOfKin.phone" register={register} error={errorFor('nextOfKin.phone')} type="tel" autoComplete="off" />
+                <Field label={fieldLabel(1, 'nextOfKin.email', 'Email address')} name="nextOfKin.email" register={register} optional type="email" autoComplete="off" />
+                <Field label={fieldLabel(1, 'nextOfKin.residentialAddress', 'Residential address')} name="nextOfKin.residentialAddress" register={register} error={errorFor('nextOfKin.residentialAddress')} />
+                <Field label={fieldLabel(1, 'nextOfKin.city', 'City')} name="nextOfKin.city" register={register} error={errorFor('nextOfKin.city')} />
+                <Field label={fieldLabel(1, 'nextOfKin.stateRegion', 'State / region')} name="nextOfKin.stateRegion" register={register} error={errorFor('nextOfKin.stateRegion')} />
               </div>
               <div className="ew-callout" data-testid="notice-next-of-kin"><ShieldCheck size={17} /><p><b>Authorization reminder</b><br />Your next of kin is a contact only. This does not authorize them to act for you or access your application.</p></div>
             </>}
             {step === 2 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Tell us about your education and any relevant qualifications."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <div className="ew-fields-grid">
-                <SelectField label="Highest qualification" name="education.highestQualification" register={register} error={errorFor('education.highestQualification')}
+                <SelectField label={fieldLabel(2, 'education.highestQualification', 'Highest qualification')} name="education.highestQualification" register={register} error={errorFor('education.highestQualification')}
                   options={['Primary education', 'Secondary education', 'Certificate', 'Diploma', 'Bachelor’s degree', 'Postgraduate degree', 'Other']} />
-                <Field label="Institution" name="education.institution" register={register} error={errorFor('education.institution')} />
-                <Field label="Course / field" name="education.courseField" register={register} error={errorFor('education.courseField')} />
-                <Field label="Start year" name="education.startYear" register={register} error={errorFor('education.startYear')} type="number" min="1900" max={new Date().getFullYear() + 10} inputMode="numeric" />
-                <Field label="Completion year" name="education.completionYear" register={register} error={errorFor('education.completionYear')} type="number" min="1900" max={new Date().getFullYear() + 10} inputMode="numeric" />
-                <SelectField label="Certification status" name="education.certificationStatus" register={register} error={errorFor('education.certificationStatus')} options={['Completed', 'Awaiting certificate', 'In progress']} />
-                <Field label="Additional qualifications" name="education.additionalQualifications" register={register} optional />
+                <Field label={fieldLabel(2, 'education.institution', 'Institution')} name="education.institution" register={register} error={errorFor('education.institution')} />
+                <Field label={fieldLabel(2, 'education.courseField', 'Course / field')} name="education.courseField" register={register} error={errorFor('education.courseField')} />
+                <Field label={fieldLabel(2, 'education.startYear', 'Start year')} name="education.startYear" register={register} error={errorFor('education.startYear')} type="number" min="1900" max={new Date().getFullYear() + 10} inputMode="numeric" />
+                <Field label={fieldLabel(2, 'education.completionYear', 'Completion year')} name="education.completionYear" register={register} error={errorFor('education.completionYear')} type="number" min="1900" max={new Date().getFullYear() + 10} inputMode="numeric" />
+                <SelectField label={fieldLabel(2, 'education.certificationStatus', 'Certification status')} name="education.certificationStatus" register={register} error={errorFor('education.certificationStatus')} options={['Completed', 'Awaiting certificate', 'In progress']} />
+                <Field label={fieldLabel(2, 'education.additionalQualifications', 'Additional qualifications')} name="education.additionalQualifications" register={register} optional />
               </div>
-              {renderFileUploader('educationCertificate', 'Certificate image', 2)}
+              {renderFileUploader('educationCertificate', fieldLabel(2, 'education.certificateObjectPath', 'Certificate image'), 2)}
             </>}
             {step === 3 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Share your current work situation. We do not ask for income."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <div className="ew-fields-grid">
-                <SelectField label="Employment status" name="workInformation.employmentStatus" register={register} error={errorFor('workInformation.employmentStatus')}
+                <SelectField label={fieldLabel(3, 'workInformation.employmentStatus', 'Employment status')} name="workInformation.employmentStatus" register={register} error={errorFor('workInformation.employmentStatus')}
                   options={['Employed', 'Self-employed', 'Not currently employed']} />
                 {employmentStatus === 'Employed' && <>
-                  <Field label="Occupation" name="workInformation.occupation" register={register} error={errorFor('workInformation.occupation')} />
-                  <Field label="Employer" name="workInformation.employer" register={register} error={errorFor('workInformation.employer')} />
+                  <Field label={fieldLabel(3, 'workInformation.occupation', 'Occupation')} name="workInformation.occupation" register={register} error={errorFor('workInformation.occupation')} />
+                  <Field label={fieldLabel(3, 'workInformation.employer', 'Employer')} name="workInformation.employer" register={register} error={errorFor('workInformation.employer')} />
                 </>}
                 {employmentStatus === 'Self-employed' && <>
-                  <Field label="Business name" name="workInformation.businessName" register={register} error={errorFor('workInformation.businessName')} />
-                  <Field label="Business / work address" name="workInformation.workAddress" register={register} error={errorFor('workInformation.workAddress')} />
-                  <Field label="Work phone" name="workInformation.workPhone" register={register} optional type="tel" />
-                  <Field label="Years of experience" name="workInformation.yearsExperience" register={register} optional type="number" min="0" />
+                  <Field label={fieldLabel(3, 'workInformation.businessName', 'Business name')} name="workInformation.businessName" register={register} error={errorFor('workInformation.businessName')} />
+                  <Field label={fieldLabel(3, 'workInformation.workAddress', 'Business / work address')} name="workInformation.workAddress" register={register} error={errorFor('workInformation.workAddress')} />
+                  <Field label={fieldLabel(3, 'workInformation.workPhone', 'Work phone')} name="workInformation.workPhone" register={register} optional type="tel" />
+                  <Field label={fieldLabel(3, 'workInformation.yearsExperience', 'Years of experience')} name="workInformation.yearsExperience" register={register} optional type="number" min="0" />
                 </>}
               </div>
             </>}
             {step === 4 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Choose an identity document and add its images when storage is available."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <div className="ew-fields-grid ew-fields-single">
-                <SelectField label="Document type" name="proofOfIdentity.documentType" register={register} error={errorFor('proofOfIdentity.documentType')}
+                <SelectField label={fieldLabel(4, 'proofOfIdentity.documentType', 'Document type')} name="proofOfIdentity.documentType" register={register} error={errorFor('proofOfIdentity.documentType')}
                   options={['National ID', 'Passport', 'Driver license', 'Passport card', 'Other']} />
-                <Field label="Document number" name="proofOfIdentity.documentNumber" register={register} optional autoComplete="off" />
+                <Field label={fieldLabel(4, 'proofOfIdentity.documentNumber', 'Document number')} name="proofOfIdentity.documentNumber" register={register} optional autoComplete="off" />
               </div>
-              <div className="ew-upload-grid">{renderFileUploader('identityFront', 'Document front', 4)}
-                {isBackRequired && renderFileUploader('identityBack', 'Document back', 4)}</div>
+              <div className="ew-upload-grid">{renderFileUploader('identityFront', fieldLabel(4, 'proofOfIdentity.frontObjectPath', 'Document front'), 4)}
+                {isBackRequired && renderFileUploader('identityBack', fieldLabel(4, 'proofOfIdentity.backObjectPath', 'Document back'), 4)}</div>
               <div className="ew-storage-banner" data-testid="state-identity-incomplete"><CircleAlert size={17} /><div><b>Identity images are not yet attached</b>
                 <p>Your previews stay on this device. Secure upload is currently unavailable, so they cannot be included with your application.</p></div></div>
             </>}
@@ -707,9 +722,9 @@ export function EnrollmentWizard({
             {step === 6 && <><StageHeading index={step} title={titleForStep(step)} detail={copyForStep(step).description || "Only provide bank details if they are genuinely needed for your enrollment."} sectionIdLabel={copyForStep(step).sectionIdLabel} />
               <p className="ew-inline-notice">This section is optional. If payment details are not required for your enrollment, leave it blank and continue.</p>
               <div className="ew-fields-grid ew-fields-single">
-                <Field label="Bank" name="bankDetails.bankName" register={register} error={errorFor('bankDetails.bankName')} autoComplete="off" />
-                <Field label="Account holder" name="bankDetails.accountHolder" register={register} error={errorFor('bankDetails.accountHolder')} autoComplete="name" />
-                <label className="ew-field" htmlFor="enroll-accountNumber"><span className="ew-label">Account number</span>
+                <Field label={fieldLabel(6, 'bankDetails.bankName', 'Bank')} name="bankDetails.bankName" register={register} error={errorFor('bankDetails.bankName')} autoComplete="off" />
+                <Field label={fieldLabel(6, 'bankDetails.accountHolder', 'Account holder')} name="bankDetails.accountHolder" register={register} error={errorFor('bankDetails.accountHolder')} autoComplete="name" />
+                <label className="ew-field" htmlFor="enroll-accountNumber"><span className="ew-label">{fieldLabel(6, 'bankDetails.accountNumber', 'Account number')}</span>
                   <input id="enroll-accountNumber" name="accountNumber" className="ew-input" type="password" inputMode="numeric" autoComplete="off" value={accountNumber}
                     onChange={(event) => {
                       const value = event.target.value.replace(/\D/g, '').slice(0, 20);
@@ -721,7 +736,7 @@ export function EnrollmentWizard({
                   {errorFor('bankDetails.accountNumber') && <span className="ew-field-error" role="alert" data-testid="error-accountNumber">{errorFor('bankDetails.accountNumber')}</span>}
                   <span className="ew-help">Encrypted before storage and masked in your applicant view. Authorized reviewers can access it for review.</span>
                 </label>
-                <SelectField label="Account type" name="bankDetails.accountType" register={register} options={['Personal', 'Business']} placeholder="Optional" />
+                <SelectField label={fieldLabel(6, 'bankDetails.accountType', 'Account type')} name="bankDetails.accountType" register={register} options={['Personal', 'Business']} placeholder="Optional" />
               </div>
               <div className="ew-storage-banner" data-testid="state-bank-privacy"><LockKeyhole size={17} /><div><b>Your account number is encrypted at rest</b>
                 <p>It is never returned as plain text in your applicant record. Authorized reviewers access it through the protected review service.</p></div></div>
@@ -730,7 +745,7 @@ export function EnrollmentWizard({
             {submitError && <p className="ew-form-alert" role="alert" data-testid="text-local-input-error">{submitError}</p>}
           </div>
           <footer className="ew-form-footer">
-            <button type="button" className="ew-button ew-button-quiet" onClick={goBack} disabled={step === 0 && !editingFromPreview} data-testid="button-wizard-back"><ArrowLeft size={15} /> {copyForStep(step).backButtonLabel || 'Back'}</button>
+            <button type="button" className="ew-button ew-button-quiet" onClick={goBack} disabled={isSaving} data-testid="button-wizard-back"><ArrowLeft size={15} /> {copyForStep(step).backButtonLabel || (step === 0 && !editingFromPreview ? 'Back to category details' : 'Back')}</button>
             {editingFromPreview && <button type="button" className="ew-button ew-button-quiet ew-return-preview" onClick={() => { setStep(7); setEditingFromPreview(false); }} data-testid="button-return-preview">Return to preview</button>}
             <span className="ew-save-note" data-testid="state-save-progress">{isSaving ? 'Saving your progress…' : 'Your work saves when you continue.'}</span>
             <button type="submit" className="ew-button ew-button-primary" disabled={isSaving || readOnly} data-testid="button-save-next">
@@ -744,28 +759,28 @@ export function EnrollmentWizard({
               {categoryReview}
               <div className="ew-review-stack">
                 {reviewStage(0, titleForStep(0), [
-                  ['First name', answer(answers, 'personalInformation', 'firstName'), 'firstName'], ['Middle name', answer(answers, 'personalInformation', 'middleName'), 'middleName'], ['Surname', answer(answers, 'personalInformation', 'surname'), 'surname'],
-                  ['Date of birth', answer(answers, 'personalInformation', 'dateOfBirth'), 'dateOfBirth'], ['Nationality', answer(answers, 'personalInformation', 'nationality'), 'nationality'], ['Phone', answer(answers, 'personalInformation', 'phone'), 'phone'],
-                  ['Email', answer(answers, 'personalInformation', 'email'), 'email'], ['Residential address', answer(answers, 'personalInformation', 'residentialAddress'), 'residentialAddress'], ['State / region', answer(answers, 'personalInformation', 'stateRegion'), 'stateRegion'],
-                  ['City / local government area', answer(answers, 'personalInformation', 'city'), 'city'], ['Postal code', answer(answers, 'personalInformation', 'postalCode'), 'postalCode'],
+                  [fieldLabel(0, 'personalInformation.firstName', 'First name'), answer(answers, 'personalInformation', 'firstName'), 'firstName'], [fieldLabel(0, 'personalInformation.middleName', 'Middle name'), answer(answers, 'personalInformation', 'middleName'), 'middleName'], [fieldLabel(0, 'personalInformation.surname', 'Surname'), answer(answers, 'personalInformation', 'surname'), 'surname'],
+                  [fieldLabel(0, 'personalInformation.dateOfBirth', 'Date of birth'), answer(answers, 'personalInformation', 'dateOfBirth'), 'dateOfBirth'], [fieldLabel(0, 'personalInformation.nationality', 'Nationality'), answer(answers, 'personalInformation', 'nationality'), 'nationality'], [fieldLabel(0, 'personalInformation.phone', 'Phone number'), answer(answers, 'personalInformation', 'phone'), 'phone'],
+                  [fieldLabel(0, 'personalInformation.email', 'Email address'), answer(answers, 'personalInformation', 'email'), 'email'], [fieldLabel(0, 'personalInformation.residentialAddress', 'Residential address'), answer(answers, 'personalInformation', 'residentialAddress'), 'residentialAddress'], [fieldLabel(0, 'personalInformation.stateRegion', 'State / region'), answer(answers, 'personalInformation', 'stateRegion'), 'stateRegion'],
+                  [fieldLabel(0, 'personalInformation.city', 'City / local government area'), answer(answers, 'personalInformation', 'city'), 'city'], [fieldLabel(0, 'personalInformation.postalCode', 'Postal code'), answer(answers, 'personalInformation', 'postalCode'), 'postalCode'],
                 ])}
                 {reviewStage(1, titleForStep(1), [
-                  ['Full name', answer(answers, 'nextOfKin', 'fullName'), 'kinFullName'], ['Relationship', answer(answers, 'nextOfKin', 'relationship'), 'kinRelationship'], ['Phone', answer(answers, 'nextOfKin', 'phone'), 'kinPhone'],
-                  ['Email', answer(answers, 'nextOfKin', 'email'), 'kinEmail'], ['Residential address', answer(answers, 'nextOfKin', 'residentialAddress'), 'kinAddress'], ['City', answer(answers, 'nextOfKin', 'city'), 'kinCity'], ['State / region', answer(answers, 'nextOfKin', 'stateRegion'), 'kinStateRegion'],
+                  [fieldLabel(1, 'nextOfKin.fullName', 'Full name'), answer(answers, 'nextOfKin', 'fullName'), 'kinFullName'], [fieldLabel(1, 'nextOfKin.relationship', 'Relationship'), answer(answers, 'nextOfKin', 'relationship'), 'kinRelationship'], [fieldLabel(1, 'nextOfKin.phone', 'Phone number'), answer(answers, 'nextOfKin', 'phone'), 'kinPhone'],
+                  [fieldLabel(1, 'nextOfKin.email', 'Email address'), answer(answers, 'nextOfKin', 'email'), 'kinEmail'], [fieldLabel(1, 'nextOfKin.residentialAddress', 'Residential address'), answer(answers, 'nextOfKin', 'residentialAddress'), 'kinAddress'], [fieldLabel(1, 'nextOfKin.city', 'City'), answer(answers, 'nextOfKin', 'city'), 'kinCity'], [fieldLabel(1, 'nextOfKin.stateRegion', 'State / region'), answer(answers, 'nextOfKin', 'stateRegion'), 'kinStateRegion'],
                 ])}
                 {reviewStage(2, titleForStep(2), [
-                  ['Highest qualification', answer(answers, 'education', 'highestQualification'), 'highestQualification'], ['Institution', answer(answers, 'education', 'institution'), 'institution'], ['Course / field', answer(answers, 'education', 'courseField'), 'courseField'],
-                  ['Start year', answer(answers, 'education', 'startYear'), 'startYear'], ['Completion year', answer(answers, 'education', 'completionYear'), 'completionYear'], ['Certification status', answer(answers, 'education', 'certificationStatus'), 'certificationStatus'],
-                  ['Additional qualifications', answer(answers, 'education', 'additionalQualifications'), 'additionalQualifications'], ['Certificate image', answer(answers, 'education', 'certificateObjectPath') ? 'Uploaded reference attached' : 'Not uploaded', 'educationCertificate'],
+                  [fieldLabel(2, 'education.highestQualification', 'Highest qualification'), answer(answers, 'education', 'highestQualification'), 'highestQualification'], [fieldLabel(2, 'education.institution', 'Institution'), answer(answers, 'education', 'institution'), 'institution'], [fieldLabel(2, 'education.courseField', 'Course / field'), answer(answers, 'education', 'courseField'), 'courseField'],
+                  [fieldLabel(2, 'education.startYear', 'Start year'), answer(answers, 'education', 'startYear'), 'startYear'], [fieldLabel(2, 'education.completionYear', 'Completion year'), answer(answers, 'education', 'completionYear'), 'completionYear'], [fieldLabel(2, 'education.certificationStatus', 'Certification status'), answer(answers, 'education', 'certificationStatus'), 'certificationStatus'],
+                  [fieldLabel(2, 'education.additionalQualifications', 'Additional qualifications'), answer(answers, 'education', 'additionalQualifications'), 'additionalQualifications'], [fieldLabel(2, 'education.certificateObjectPath', 'Certificate image'), answer(answers, 'education', 'certificateObjectPath') ? 'Uploaded reference attached' : 'Not uploaded', 'educationCertificate'],
                 ])}
                 {reviewStage(3, titleForStep(3), [
-                  ['Employment status', answer(answers, 'workInformation', 'employmentStatus'), 'employmentStatus'], ['Occupation', answer(answers, 'workInformation', 'occupation'), 'occupation'], ['Employer', answer(answers, 'workInformation', 'employer'), 'employer'],
-                  ['Business name', answer(answers, 'workInformation', 'businessName'), 'businessName'], ['Business / work address', answer(answers, 'workInformation', 'workAddress'), 'workAddress'], ['Work phone', answer(answers, 'workInformation', 'workPhone'), 'workPhone'], ['Years of experience', answer(answers, 'workInformation', 'yearsExperience'), 'yearsExperience'],
+                  [fieldLabel(3, 'workInformation.employmentStatus', 'Employment status'), answer(answers, 'workInformation', 'employmentStatus'), 'employmentStatus'], [fieldLabel(3, 'workInformation.occupation', 'Occupation'), answer(answers, 'workInformation', 'occupation'), 'occupation'], [fieldLabel(3, 'workInformation.employer', 'Employer'), answer(answers, 'workInformation', 'employer'), 'employer'],
+                  [fieldLabel(3, 'workInformation.businessName', 'Business name'), answer(answers, 'workInformation', 'businessName'), 'businessName'], [fieldLabel(3, 'workInformation.workAddress', 'Business / work address'), answer(answers, 'workInformation', 'workAddress'), 'workAddress'], [fieldLabel(3, 'workInformation.workPhone', 'Work phone'), answer(answers, 'workInformation', 'workPhone'), 'workPhone'], [fieldLabel(3, 'workInformation.yearsExperience', 'Years of experience'), answer(answers, 'workInformation', 'yearsExperience'), 'yearsExperience'],
                 ])}
                 {reviewStage(4, titleForStep(4), [
-                  ['Document type', answer(answers, 'proofOfIdentity', 'documentType'), 'identityDocumentType'], ['Document number', answer(answers, 'proofOfIdentity', 'documentNumber'), 'identityDocumentNumber'],
-                  ['Document front', answer(answers, 'proofOfIdentity', 'frontObjectPath') ? 'Uploaded reference attached' : 'Not uploaded', 'identityFront'],
-                  ['Document back', isBackRequired ? answer(answers, 'proofOfIdentity', 'backObjectPath') ? 'Uploaded reference attached' : 'Not uploaded' : 'Not applicable', 'identityBack'],
+                  [fieldLabel(4, 'proofOfIdentity.documentType', 'Document type'), answer(answers, 'proofOfIdentity', 'documentType'), 'identityDocumentType'], [fieldLabel(4, 'proofOfIdentity.documentNumber', 'Document number'), answer(answers, 'proofOfIdentity', 'documentNumber'), 'identityDocumentNumber'],
+                  [fieldLabel(4, 'proofOfIdentity.frontObjectPath', 'Document front'), answer(answers, 'proofOfIdentity', 'frontObjectPath') ? 'Uploaded reference attached' : 'Not uploaded', 'identityFront'],
+                  [fieldLabel(4, 'proofOfIdentity.backObjectPath', 'Document back'), isBackRequired ? answer(answers, 'proofOfIdentity', 'backObjectPath') ? 'Uploaded reference attached' : 'Not uploaded' : 'Not applicable', 'identityBack'],
                 ])}
                 {reviewStage(5, titleForStep(5), [
                   ['Consent', answer(answers, 'liveVideoRecording', 'consentAccepted') ? 'Consent given' : 'Not confirmed', 'liveVideoConsent'],
@@ -773,9 +788,9 @@ export function EnrollmentWizard({
                   ['Saved video reference', answer(answers, 'liveVideoRecording', 'objectPath') ? 'Reference attached' : 'Not uploaded', 'liveVideoReference'],
                 ])}
                 {reviewStage(6, titleForStep(6), [
-                  ['Bank', answer(answers, 'bankDetails', 'bankName'), 'bankName'], ['Account holder', answer(answers, 'bankDetails', 'accountHolder'), 'accountHolder'],
-                  ['Account number', answer(answers, 'bankDetails', 'accountNumberMasked') || accountNumberProvided ? 'Account details on file (masked)' : 'Not entered', 'accountNumber'],
-                  ['Account type', answer(answers, 'bankDetails', 'accountType'), 'accountType'],
+                  [fieldLabel(6, 'bankDetails.bankName', 'Bank'), answer(answers, 'bankDetails', 'bankName'), 'bankName'], [fieldLabel(6, 'bankDetails.accountHolder', 'Account holder'), answer(answers, 'bankDetails', 'accountHolder'), 'accountHolder'],
+                  [fieldLabel(6, 'bankDetails.accountNumber', 'Account number'), answer(answers, 'bankDetails', 'accountNumberMasked') || accountNumberProvided ? 'Account details on file (masked)' : 'Not entered', 'accountNumber'],
+                  [fieldLabel(6, 'bankDetails.accountType', 'Account type'), answer(answers, 'bankDetails', 'accountType'), 'accountType'],
                 ])}
               </div>
               <section className="ew-declaration" data-testid="section-declaration">
