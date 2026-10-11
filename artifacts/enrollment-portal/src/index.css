@@ -2275,3 +2275,33 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
 .category-entry-screen.category-two-reference-screen.entry-pin-stage .category-two-pin-actions button:focus-visible {
   outline-color: #123b72;
 }
+
+/* Category Three uses Category One's centered form composition in Azure Blue. */
+.category-entry-screen.category-entry-screen-category-3.category-three-reference-screen {
+  --entry-background: #0072ae;
+  overflow: hidden;
+  padding: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #0072ae 96%, #fff 4%) 0%,
+    #0072ae 58%,
+    color-mix(in srgb, #0072ae 88%, #000 12%) 100%
+  );
+}
+
+.category-entry-screen.category-three-reference-screen .entry-primary-button {
+  color: #0072ae;
+}
+
+.category-three-reference-menu {
+  border-color: #ffffff40;
+  background: #005f91;
+}
+
+.category-three-reference-menu .entry-category-switch-controls select {
+  background: #005f91;
+}
+
+.category-three-reference-menu .entry-switch-button {
+  border-color: #ffffff80;
+}

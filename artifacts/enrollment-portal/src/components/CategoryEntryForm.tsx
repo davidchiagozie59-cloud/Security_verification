@@ -52,6 +52,7 @@ export function CategoryEntryForm({
 }: CategoryEntryFormProps) {
   const isCategoryOne = categoryId === "category-1";
   const isCategoryTwo = categoryId === "category-2";
+  const isCategoryThree = categoryId === "category-3";
   const isCategoryFour = categoryId === "category-4";
   const pinLength = isCategoryTwo ? 6 : 4;
   const lastStep = isCategoryTwo ? 2 : 1;
@@ -64,6 +65,7 @@ export function CategoryEntryForm({
   const [pinTarget, setPinTarget] = useState<PinTarget>("pin");
   const [categoryOneMenuOpen, setCategoryOneMenuOpen] = useState(false);
   const [categoryTwoMenuOpen, setCategoryTwoMenuOpen] = useState(false);
+  const [categoryThreeMenuOpen, setCategoryThreeMenuOpen] = useState(false);
   const attemptedPinRef = useRef<string | null>(null);
   const [validationError, setValidationError] = useState("");
   const isPinStep = step === lastStep;
@@ -78,6 +80,7 @@ export function CategoryEntryForm({
     setValidationError("");
     setCategoryOneMenuOpen(false);
     setCategoryTwoMenuOpen(false);
+    setCategoryThreeMenuOpen(false);
     if (step === 0) setStep(isCategoryTwo ? 1 : lastStep);
     else if (isCategoryTwo && step === 1) setStep(2);
   };
@@ -86,6 +89,7 @@ export function CategoryEntryForm({
     setValidationError("");
     setCategoryOneMenuOpen(false);
     setCategoryTwoMenuOpen(false);
+    setCategoryThreeMenuOpen(false);
     setPin("");
     setConfirmation("");
     setPinTarget("pin");
@@ -205,20 +209,22 @@ export function CategoryEntryForm({
       : undefined;
 
   return (
-    <main className={`category-entry-screen category-entry-screen-${categoryId} ${isCategoryOne ? "category-one-reference-screen" : ""} ${isCategoryOne && isPinStep ? "category-one-reference-pin-stage" : ""} ${isCategoryTwo ? `category-two-reference-screen category-two-step-${step}` : ""} ${isCategoryFour ? "category-four-reference-screen" : ""} ${categoryInputTransparent ? "entry-input-transparent" : "entry-input-opaque"} ${isPinStep ? "entry-pin-stage" : ""}`} style={formBackgroundStyle} data-testid={`form-entry-${categoryId}`}>
-      {isCategoryOne ? (
+    <main className={`category-entry-screen category-entry-screen-${categoryId} ${isCategoryOne || isCategoryThree ? "category-one-reference-screen" : ""} ${isCategoryOne && isPinStep ? "category-one-reference-pin-stage" : ""} ${isCategoryThree ? `category-three-reference-screen ${isPinStep ? "category-one-reference-pin-stage" : ""}` : ""} ${isCategoryTwo ? `category-two-reference-screen category-two-step-${step}` : ""} ${isCategoryFour ? "category-four-reference-screen" : ""} ${categoryInputTransparent ? "entry-input-transparent" : "entry-input-opaque"} ${isPinStep ? "entry-pin-stage" : ""}`} style={formBackgroundStyle} data-testid={`form-entry-${categoryId}`}>
+      {isCategoryOne || isCategoryThree ? (
         <>
           <header className="category-one-reference-header">
             <button
               type="button"
               className="category-one-reference-menu-button"
-              aria-label={categoryOneMenuOpen ? "Close enrollment menu" : "Open enrollment menu"}
-              aria-expanded={categoryOneMenuOpen}
-              aria-controls="category-one-reference-menu"
-              onClick={() => setCategoryOneMenuOpen((open) => !open)}
-              data-testid="button-category-one-menu"
+              aria-label={(isCategoryOne ? categoryOneMenuOpen : categoryThreeMenuOpen) ? "Close enrollment menu" : "Open enrollment menu"}
+              aria-expanded={isCategoryOne ? categoryOneMenuOpen : categoryThreeMenuOpen}
+              aria-controls={isCategoryOne ? "category-one-reference-menu" : "category-three-reference-menu"}
+              onClick={() => isCategoryOne
+                ? setCategoryOneMenuOpen((open) => !open)
+                : setCategoryThreeMenuOpen((open) => !open)}
+              data-testid={isCategoryOne ? "button-category-one-menu" : "button-category-three-menu"}
             >
-              {categoryOneMenuOpen ? <X size={22} /> : <Menu size={23} />}
+              {(isCategoryOne ? categoryOneMenuOpen : categoryThreeMenuOpen) ? <X size={22} /> : <Menu size={23} />}
             </button>
             <div className="category-one-reference-language" aria-label="Current language: English">
               <svg className="category-one-reference-flag" viewBox="0 0 24 16" aria-hidden="true">
@@ -243,12 +249,16 @@ export function CategoryEntryForm({
               </span>
             </div>
           )}
-          {categoryOneMenuOpen && (
-            <nav id="category-one-reference-menu" className="category-one-reference-menu" aria-label="Enrollment navigation">
-              <Link href="/dashboard" onClick={() => setCategoryOneMenuOpen(false)} data-testid="link-entry-dashboard">
+          {(isCategoryOne && categoryOneMenuOpen || isCategoryThree && categoryThreeMenuOpen) && (
+            <nav
+              id={isCategoryOne ? "category-one-reference-menu" : "category-three-reference-menu"}
+              className={`category-one-reference-menu ${isCategoryThree ? "category-three-reference-menu" : ""}`}
+              aria-label="Enrollment navigation"
+            >
+              <Link href="/dashboard" onClick={() => { setCategoryOneMenuOpen(false); setCategoryThreeMenuOpen(false); }} data-testid="link-entry-dashboard">
                 Dashboard
               </Link>
-              <Link href="/support" onClick={() => setCategoryOneMenuOpen(false)} data-testid="link-entry-support">
+              <Link href="/support" onClick={() => { setCategoryOneMenuOpen(false); setCategoryThreeMenuOpen(false); }} data-testid="link-entry-support">
                 Contact support
               </Link>
               {isPinStep && (
@@ -258,6 +268,7 @@ export function CategoryEntryForm({
                   onClick={() => {
                     moveBack();
                     setCategoryOneMenuOpen(false);
+                    setCategoryThreeMenuOpen(false);
                   }}
                   data-testid="button-entry-back"
                 >
@@ -398,8 +409,8 @@ export function CategoryEntryForm({
         </>
       )}
 
-      <div className={`entry-content ${isCategoryOne ? "category-one-reference-content" : ""} ${isCategoryTwo ? "category-two-reference-content" : ""} ${isCategoryFour && !isPinStep ? "category-one-reference-content category-four-reference-content" : ""}`}>
-        <section className={`entry-card ${isCategoryOne ? "category-one-reference-card" : ""} ${isCategoryTwo ? "category-two-reference-card" : ""} ${isCategoryFour && !isPinStep ? "category-one-reference-card category-four-reference-card" : ""}`} aria-labelledby="category-entry-heading">
+      <div className={`entry-content ${isCategoryOne || isCategoryThree ? "category-one-reference-content" : ""} ${isCategoryTwo ? "category-two-reference-content" : ""} ${isCategoryFour && !isPinStep ? "category-one-reference-content category-four-reference-content" : ""}`}>
+        <section className={`entry-card ${isCategoryOne || isCategoryThree ? "category-one-reference-card" : ""} ${isCategoryTwo ? "category-two-reference-card" : ""} ${isCategoryFour && !isPinStep ? "category-one-reference-card category-four-reference-card" : ""}`} aria-labelledby="category-entry-heading">
           <h1 id="category-entry-heading" className="sr-only">{heading}</h1>
 
           <form onSubmit={handleSubmit} noValidate>
@@ -595,16 +606,16 @@ export function CategoryEntryForm({
                 Need help?
               </Link>
             )}
-            {isCategoryOne && !isPinStep && (
-              <Link className="category-one-reference-help" href="/support" data-testid="link-category-one-help">
+            {(isCategoryOne || isCategoryThree) && !isPinStep && (
+              <Link className="category-one-reference-help" href="/support" data-testid={isCategoryOne ? "link-category-one-help" : "link-category-three-help"}>
                 Need help?
               </Link>
             )}
           </form>
         </section>
       </div>
-      {isCategoryOne && (
-        <Link className="category-one-reference-footer" href="/support" data-testid="link-category-one-contact">
+      {(isCategoryOne || isCategoryThree) && (
+        <Link className="category-one-reference-footer" href="/support" data-testid={isCategoryOne ? "link-category-one-contact" : "link-category-three-contact"}>
           <Phone size={20} fill="currentColor" /> Contact Us
         </Link>
       )}
