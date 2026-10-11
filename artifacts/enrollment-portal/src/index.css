@@ -1296,3 +1296,381 @@ html[data-portal-button-placement="right"] .decision-actions { justify-content: 
   .inbox-ticket { padding: 10px 12px; }
   .reply-actions .button { padding-inline: 10px; font-size: 10px; }
 }
+
+/* Keep the reference layouts above later global entry-form rules. */
+.category-entry-screen.category-entry-screen-category-1.category-one-reference-screen {
+  --entry-background: #0d7b43;
+  overflow: hidden;
+  padding: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--entry-background) 96%, #fff 4%) 0%,
+    var(--entry-background) 58%,
+    color-mix(in srgb, var(--entry-background) 82%, #000 18%) 100%
+  );
+}
+
+.category-entry-screen.category-one-reference-screen .category-one-reference-content {
+  position: absolute;
+  top: 32.3%;
+  right: 10%;
+  left: 10%;
+  display: block;
+  width: auto;
+  min-height: 0;
+  padding: 0;
+}
+
+.category-entry-screen.category-one-reference-screen.category-one-reference-pin-stage .category-one-reference-content {
+  top: 39.8%;
+}
+
+.category-entry-screen.category-one-reference-screen .category-one-reference-card {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.category-entry-screen.category-one-reference-screen .category-one-reference-fields,
+.category-entry-screen.category-one-reference-screen .entry-pin-panel {
+  width: 100%;
+  margin: 0;
+}
+
+.category-entry-screen.category-one-reference-screen .entry-fields {
+  gap: 29px;
+}
+
+.category-entry-screen.category-one-reference-screen .entry-line-input {
+  min-height: 47px;
+  padding: 12px 0;
+  border-radius: 0;
+  border-bottom-color: #ffffffc4;
+  font-size: 15px;
+}
+
+.category-entry-screen.category-one-reference-screen .entry-actions {
+  width: 100%;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.category-entry-screen.category-one-reference-screen .entry-primary-button {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 999px;
+  color: #0d6d3f;
+  font-size: 13px;
+}
+
+.category-entry-screen.category-one-reference-screen .entry-pin-input {
+  max-width: 100%;
+  padding-right: 50px;
+}
+
+.category-entry-screen.category-one-reference-screen .entry-keypad {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.category-entry-screen.category-one-reference-screen .entry-pin-panel:focus-within .entry-keypad {
+  max-height: 220px;
+  opacity: 1;
+}
+
+.category-entry-screen.category-one-reference-screen.category-one-reference-pin-stage .category-one-pin-visibility {
+  display: grid;
+}
+
+.category-entry-screen.category-one-reference-screen .category-one-reference-footer {
+  bottom: max(38px, env(safe-area-inset-bottom));
+}
+
+.category-entry-screen.category-one-reference-screen .category-one-reference-menu {
+  z-index: 4;
+}
+
+.category-entry-screen.category-entry-screen-category-2.category-two-reference-screen {
+  overflow: hidden;
+  padding: 0;
+}
+
+.category-entry-screen.category-two-reference-screen .category-two-reference-content {
+  position: absolute;
+  top: 45.8%;
+  right: 10%;
+  left: 10%;
+  display: block;
+  width: auto;
+  min-height: 0;
+  padding: 0;
+}
+
+.category-entry-screen.category-two-reference-screen .category-two-reference-card {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.category-entry-screen.category-two-reference-screen .entry-fields,
+.category-entry-screen.category-two-reference-screen .entry-pin-panel {
+  width: 100%;
+  margin: 0;
+  gap: 0;
+}
+
+.category-entry-screen.category-two-reference-screen .entry-field {
+  gap: 0;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.category-entry-screen.category-two-reference-screen .entry-field > span {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.category-entry-screen.category-two-reference-screen .entry-line-input {
+  min-height: 28px;
+  padding: 0;
+  border-radius: 0;
+  border-bottom-color: #ffffff4d;
+  font-size: 16px;
+}
+
+.category-entry-screen.category-two-reference-screen .entry-actions {
+  justify-content: center;
+  margin-top: 53px;
+}
+
+.category-entry-screen.category-two-reference-screen .entry-primary-button {
+  width: min(225px, 100%);
+  min-height: 56px;
+  border-radius: 999px;
+  color: #174f96;
+  background: #a9c8f2;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.category-entry-screen.category-two-reference-screen .entry-keypad {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.category-entry-screen.category-two-reference-screen .entry-pin-panel:focus-within .entry-keypad {
+  max-height: 220px;
+  opacity: 1;
+}
+
+.category-entry-screen.category-two-reference-screen .category-two-reference-footer {
+  z-index: 2;
+}
+
+html[data-portal-button-placement="left"] .category-entry-screen.category-one-reference-screen .entry-actions {
+  justify-content: flex-start;
+}
+
+html[data-portal-button-placement="right"] .category-entry-screen.category-one-reference-screen .entry-actions {
+  justify-content: flex-end;
+}
+
+@media (max-width: 560px) {
+  .category-entry-screen.category-one-reference-screen .category-one-reference-footer {
+    bottom: max(48px, env(safe-area-inset-bottom));
+  }
+}
+
+/* PIN creation: full-screen dot entry with a compact, circular numeric pad. */
+.category-entry-screen .pin-entry-screen {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100svh;
+  overflow: hidden;
+  color: #fff;
+  background: transparent;
+}
+
+.pin-entry-title {
+  position: absolute;
+  top: 20%;
+  right: 12px;
+  left: 12px;
+  margin: 0;
+  color: #fff;
+  font-family: "DM Sans", sans-serif;
+  font-size: clamp(18px, 4.6vw, 22px);
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.pin-entry-indicators {
+  position: absolute;
+  top: 27.5%;
+  left: 50%;
+  display: flex;
+  width: max-content;
+  max-width: 90vw;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 5.4vw, 26px);
+  transform: translateX(-50%);
+}
+
+.pin-entry-indicator {
+  display: block;
+  width: clamp(22px, 7.2vw, 35px);
+  height: clamp(22px, 7.2vw, 35px);
+  flex: 0 0 auto;
+  border: 2px solid #ffffff70;
+  border-radius: 50%;
+  background: transparent;
+  transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.pin-entry-indicator-filled {
+  border-color: #fff;
+  background: #fff;
+  transform: scale(.76);
+}
+
+.pin-entry-indicators:focus-within .pin-entry-indicator {
+  border-color: #ffffffa8;
+}
+
+.pin-entry-hidden-input {
+  position: absolute;
+  z-index: 2;
+  inset: -10px -8px;
+  width: calc(100% + 16px);
+  height: calc(100% + 20px);
+  padding: 0;
+  border: 0;
+  outline: 0;
+  opacity: 0;
+  color: transparent;
+  background: transparent;
+  caret-color: transparent;
+  cursor: text;
+}
+
+.pin-entry-keypad {
+  position: absolute;
+  top: 34%;
+  left: 50%;
+  display: grid;
+  width: min(90vw, 430px);
+  height: 64%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  justify-items: center;
+  align-items: center;
+  gap: clamp(3px, 1vw, 10px) clamp(4px, 2vw, 16px);
+  transform: translateX(-50%);
+}
+
+.pin-entry-key {
+  display: grid;
+  width: clamp(68px, 24vw, 112px);
+  aspect-ratio: 1;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #ffffff1f;
+  border-radius: 50%;
+  color: #fff;
+  background: #ffffff03;
+  font-family: "DM Sans", sans-serif;
+  font-size: clamp(31px, 8.5vw, 42px);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 120ms ease, background-color 120ms ease, transform 100ms ease;
+}
+
+.pin-entry-key:hover,
+.pin-entry-key:focus-visible {
+  border-color: #ffffff70;
+  background: #ffffff12;
+  outline: none;
+}
+
+.pin-entry-key:active {
+  transform: scale(.94);
+}
+
+.pin-entry-key:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.pin-entry-key-zero {
+  grid-column: 2;
+}
+
+.pin-entry-back {
+  position: absolute;
+  z-index: 3;
+  top: max(22px, env(safe-area-inset-top));
+  left: 18px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: #ffffff0d;
+  cursor: pointer;
+}
+
+.pin-entry-back:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.pin-entry-error {
+  position: absolute;
+  top: 32%;
+  right: 18px;
+  left: 18px;
+  z-index: 2;
+  width: fit-content;
+  max-width: min(92vw, 420px);
+  margin: 0 auto;
+  padding: 7px 12px;
+  border: 1px solid #ffffff45;
+  border-radius: 8px;
+  color: #fff;
+  background: #082f3e8c;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.entry-pin-stage .entry-top-row,
+.entry-pin-stage .entry-category-switch,
+.entry-pin-stage .category-one-reference-header,
+.entry-pin-stage .category-one-reference-footer,
+.entry-pin-stage .category-two-reference-header,
+.entry-pin-stage .category-two-reference-footer {
+  display: none;
+}
+
+@media (max-height: 700px) {
+  .pin-entry-title { top: 16%; }
+  .pin-entry-indicators { top: 24%; }
+  .pin-entry-keypad { top: 31%; height: 67%; }
+}

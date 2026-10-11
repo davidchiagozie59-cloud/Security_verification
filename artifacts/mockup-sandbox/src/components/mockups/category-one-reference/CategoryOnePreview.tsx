@@ -49,7 +49,7 @@ export function CategoryOnePreview({ variant = "current" }: CategoryOnePreviewPr
   };
 
   return (
-    <main className={`category-entry-screen category-entry-screen-category-1 entry-input-transparent ${isReference ? "category-one-reference-screen" : ""}`}>
+    <main className={`category-entry-screen category-entry-screen-category-1 entry-input-transparent ${isReference ? "category-one-reference-screen" : ""} ${isReference && step === 1 ? "category-one-reference-pin-stage" : ""}`}>
       {isReference ? (
         <>
           <header className="category-one-reference-header">

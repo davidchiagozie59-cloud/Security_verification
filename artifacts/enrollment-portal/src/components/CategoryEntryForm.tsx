@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
-import { ArrowLeft, ArrowRight, BatteryMedium, ChevronDown, Eye, EyeOff, MapPin, Menu, MessageCircle, Phone, Signal, Wifi, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BatteryMedium, ChevronDown, MapPin, Menu, MessageCircle, Phone, Signal, Wifi, X } from "lucide-react";
 import type { EnrollmentCategory } from "@workspace/api-client-react";
 import { Link } from "wouter";
 
@@ -64,7 +64,7 @@ export function CategoryEntryForm({
   const [pinTarget, setPinTarget] = useState<PinTarget>("pin");
   const [categoryOneMenuOpen, setCategoryOneMenuOpen] = useState(false);
   const [categoryTwoMenuOpen, setCategoryTwoMenuOpen] = useState(false);
-  const [pinVisible, setPinVisible] = useState(false);
+  const attemptedPinRef = useRef<string | null>(null);
   const [localClock, setLocalClock] = useState(() =>
     new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
   );
@@ -72,11 +72,12 @@ export function CategoryEntryForm({
   const isPinStep = step === lastStep;
 
   useEffect(() => {
+    if (!isCategoryTwo) return;
     const updateClock = () =>
       setLocalClock(new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
     const timer = window.setInterval(updateClock, 60_000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [isCategoryTwo]);
 
   const activePinValue = pinTarget === "pin" ? pin : confirmation;
   const setActivePinValue = (value: string) => {
@@ -92,6 +93,10 @@ export function CategoryEntryForm({
 
   const moveBack = () => {
     setValidationError("");
+    setPin("");
+    setConfirmation("");
+    setPinTarget("pin");
+    attemptedPinRef.current = null;
     setStep((current) => Math.max(0, current - 1));
   };
 
@@ -109,45 +114,80 @@ export function CategoryEntryForm({
     setActivePinValue(activePinValue + key);
   };
 
-  const finish = () => {
+  const finish = (): boolean => {
     setValidationError("");
     if (!name.trim()) {
       setValidationError("Enter your name to continue.");
-      return;
+      return false;
     }
     if (isCategoryOne && !nickname.trim()) {
       setValidationError("Enter your nickname to continue.");
-      return;
+      return false;
     }
     if (!isCategoryOne && !surname.trim()) {
       setValidationError("Enter your surname to continue.");
-      return;
+      return false;
     }
     const pinPattern = new RegExp(`^\\d{${pinLength}}$`);
     if (!pinPattern.test(pin)) {
       setValidationError(`Enter exactly ${pinLength} digits.`);
-      return;
+      return false;
     }
     if (isCategoryFour && !/^\d{4}$/.test(confirmation)) {
       setValidationError("Enter exactly 4 digits in both PIN fields.");
-      return;
+      return false;
     }
     if (isCategoryFour && pin !== confirmation) {
       setValidationError("The PIN entries do not match.");
-      return;
+      setConfirmation("");
+      return false;
     }
+    attemptedPinRef.current = `${pinTarget}:${activePinValue}`;
     onComplete({
       name: name.trim(),
       ...(isCategoryOne ? { nickname: nickname.trim() } : {}),
       ...(!isCategoryOne ? { surname: surname.trim() } : {}),
     }, pin, isCategoryFour ? confirmation : undefined);
+    return true;
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isPinStep) finish();
-    else moveForward();
+    if (!isPinStep) moveForward();
   };
+
+  useEffect(() => {
+    if (!error) return;
+    attemptedPinRef.current = null;
+    if (isPinStep) setActivePinValue("");
+  }, [error, isPinStep]);
+
+  useEffect(() => {
+    if (!isPinStep) {
+      attemptedPinRef.current = null;
+      return;
+    }
+    if (activePinValue.length !== pinLength || isSaving) {
+      if (activePinValue.length !== pinLength) attemptedPinRef.current = null;
+      return;
+    }
+    const attempt = `${pinTarget}:${activePinValue}`;
+    if (attemptedPinRef.current === attempt) return;
+    attemptedPinRef.current = attempt;
+    setValidationError("");
+
+    if (isCategoryFour && pinTarget === "pin") {
+      setPinTarget("confirmation");
+      setConfirmation("");
+      return;
+    }
+    if (isCategoryFour && activePinValue !== pin) {
+      setValidationError("The PINs do not match. Enter your PIN again.");
+      setConfirmation("");
+      return;
+    }
+    finish();
+  }, [activePinValue, finish, isCategoryFour, isPinStep, isSaving, pin, pinLength, pinTarget]);
 
   const defaultHeading = isPinStep
     ? "Create your PIN"
@@ -414,104 +454,121 @@ export function CategoryEntryForm({
             )}
 
             {isPinStep && (
-              <div className="entry-pin-panel">
-                <label className="entry-field" htmlFor="entry-pin">
-                  <span>
-                    {screenCopy.pinLabel || (isCategoryOne ? "Create 4-Digit PIN" : isCategoryTwo ? "Create 6-Digit PIN" : isCategoryFour ? "Set PIN" : "Set 4-Digit PIN")}
-                    <b aria-hidden="true"> *</b>
-                  </span>
+              <section className="pin-entry-screen" aria-labelledby="pin-entry-heading">
+                <button
+                  type="button"
+                  className="pin-entry-back"
+                  aria-label={isCategoryFour && pinTarget === "confirmation" ? "Start PIN confirmation again" : "Back to previous step"}
+                  onClick={() => {
+                    if (isCategoryFour && pinTarget === "confirmation") {
+                      setPinTarget("pin");
+                      setPin("");
+                      setConfirmation("");
+                      setValidationError("");
+                      attemptedPinRef.current = null;
+                    } else {
+                      moveBack();
+                    }
+                  }}
+                  data-testid="button-pin-screen-back"
+                >
+                  <ArrowLeft size={21} />
+                </button>
+
+                <h1 id="pin-entry-heading" className="pin-entry-title" aria-live="polite">
+                  {isCategoryFour && pinTarget === "confirmation"
+                    ? (screenCopy.confirmationLabel || "Confirm your PIN")
+                    : (screenCopy.pinPrompt || "Please enter your PIN")}
+                </h1>
+                <p className="sr-only" id="pin-entry-help">
+                  Enter {pinLength} digits. This screen continues automatically when complete.
+                </p>
+                <div className="pin-entry-indicators" aria-hidden="true">
+                  {Array.from({ length: pinLength }, (_, index) => (
+                    <span
+                      key={index}
+                      className={`pin-entry-indicator ${activePinValue.length > index ? "pin-entry-indicator-filled" : ""}`}
+                    />
+                  ))}
                   <input
                     id="entry-pin"
-                    className={`entry-line-input entry-pin-input ${pinTarget === "pin" ? "entry-pin-active" : ""}`}
-                    type={isCategoryOne && pinVisible ? "text" : "password"}
+                    className="pin-entry-hidden-input"
+                    type="password"
                     inputMode="numeric"
                     autoComplete="new-password"
                     pattern={`[0-9]{${pinLength}}`}
                     maxLength={pinLength}
                     required
-                    value={pin}
-                    onFocus={() => setPinTarget("pin")}
+                    value={activePinValue}
+                    aria-label={`${isCategoryFour && pinTarget === "confirmation" ? "Confirm" : "Enter"} your ${pinLength}-digit PIN`}
+                    aria-describedby="pin-entry-help"
                     onChange={(event) => {
-                      setPin(event.target.value.replace(/\D/g, "").slice(0, pinLength));
-                      setPinTarget("pin");
+                      setValidationError("");
+                      setActivePinValue(event.target.value.replace(/\D/g, "").slice(0, pinLength));
                     }}
-                    placeholder={"•".repeat(pinLength)}
-                    aria-label={screenCopy.pinLabel || (isCategoryOne ? "Create 4-Digit PIN" : isCategoryTwo ? "Create 6-Digit PIN" : isCategoryFour ? "Set PIN" : "Set 4-Digit PIN")}
+                    onKeyDown={(event) => {
+                      if (event.key === "Backspace" || event.key === "Delete") {
+                        event.preventDefault();
+                        handleKeypad("delete");
+                      }
+                      if (event.key === "Enter") event.preventDefault();
+                    }}
                     data-testid="input-entry-pin"
                   />
-                </label>
-                {isCategoryOne && (
-                  <button
-                    type="button"
-                    className="category-one-pin-visibility"
-                    aria-label={pinVisible ? "Hide PIN" : "Show PIN"}
-                    aria-pressed={pinVisible}
-                    onClick={() => setPinVisible((visible) => !visible)}
-                    data-testid="button-category-one-pin-visibility"
-                  >
-                    {pinVisible ? <EyeOff size={23} /> : <Eye size={23} />}
-                  </button>
+                </div>
+                {(validationError || error) && (
+                  <p className="pin-entry-error" role="alert" data-testid="text-entry-error">
+                    {validationError || error}
+                  </p>
                 )}
-                {isCategoryFour && (
-                  <label className="entry-field entry-confirm-field" htmlFor="entry-pin-confirm">
-                    <span>{screenCopy.confirmationLabel || "Confirm PIN"} <b aria-hidden="true">*</b></span>
-                    <input
-                      id="entry-pin-confirm"
-                      className={`entry-line-input entry-pin-input ${pinTarget === "confirmation" ? "entry-pin-active" : ""}`}
-                      type="password"
-                      inputMode="numeric"
-                      autoComplete="new-password"
-                      pattern="[0-9]{4}"
-                      maxLength={4}
-                      required
-                      value={confirmation}
-                      onFocus={() => setPinTarget("confirmation")}
-                      onChange={(event) => {
-                        setConfirmation(event.target.value.replace(/\D/g, "").slice(0, 4));
-                        setPinTarget("confirmation");
-                      }}
-                      placeholder="••••"
-                      data-testid="input-entry-pin-confirm"
-                    />
-                  </label>
-                )}
-                <div className="entry-keypad" role="group" aria-label="On-screen numeric keypad">
-                  {["1", "2", "3", "4", "5", "6", "7", "8", "9", "clear", "0", "delete"].map((key) => (
+                <div className="pin-entry-keypad" role="group" aria-label="On-screen numeric keypad">
+                  {["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map((digit) => (
                     <button
-                      key={key}
+                      key={digit}
                       type="button"
-                      className={`entry-key ${key === "clear" || key === "delete" ? "entry-key-action" : ""}`}
-                      onClick={() => handleKeypad(key)}
-                      aria-label={key === "delete" ? "Delete last digit" : key === "clear" ? "Clear PIN field" : `Enter ${key}`}
-                      data-testid={`button-pin-key-${key}`}
+                      className={`pin-entry-key ${digit === "0" ? "pin-entry-key-zero" : ""}`}
+                      onClick={() => handleKeypad(digit)}
+                      disabled={isSaving}
+                      aria-label={`Enter ${digit}`}
+                      data-testid={`button-pin-key-${digit}`}
                     >
-                      {key === "delete" ? "⌫" : key === "clear" ? "Clear" : key}
+                      {digit}
                     </button>
                   ))}
                 </div>
-                {isCategoryFour && <p className="entry-pin-policy">Project PIN policy: exactly 4 digits.</p>}
-              </div>
+                <button
+                  type="button"
+                  className="sr-only"
+                  onClick={() => handleKeypad("clear")}
+                  aria-label="Clear PIN entry"
+                  data-testid="button-pin-key-clear"
+                >
+                  Clear PIN
+                </button>
+              </section>
             )}
 
-            {(validationError || error) && (
+            {!isPinStep && (validationError || error) && (
               <p className="entry-error" role="alert" data-testid="text-entry-error">{validationError || error}</p>
             )}
 
-            <div className="entry-actions">
-              {step > 0 && !isCategoryOne && !isCategoryTwo ? (
-                <button type="button" className="entry-step-back" onClick={moveBack} data-testid="button-entry-back">
-                  <ArrowLeft size={15} /> Back
+            {!isPinStep && (
+              <div className="entry-actions">
+                {step > 0 && !isCategoryOne && !isCategoryTwo ? (
+                  <button type="button" className="entry-step-back" onClick={moveBack} data-testid="button-entry-back">
+                    <ArrowLeft size={15} /> Back
+                  </button>
+                ) : <span />}
+                <button
+                  type="submit"
+                  className="entry-primary-button"
+                  disabled={isSaving}
+                  data-testid={`button-entry-${primaryLabel.toLowerCase()}`}
+                >
+                  {primaryLabel} {isCategoryOne || isCategoryTwo ? null : <ArrowRight size={16} />}
                 </button>
-              ) : <span />}
-              <button
-                type="submit"
-                className="entry-primary-button"
-                disabled={isSaving}
-                data-testid={`button-entry-${isPinStep ? "complete" : primaryLabel.toLowerCase()}`}
-              >
-                {primaryLabel} {isPinStep || isCategoryOne || isCategoryTwo ? null : <ArrowRight size={16} />}
-              </button>
-            </div>
+              </div>
+            )}
           </form>
         </section>
       </div>

@@ -304,11 +304,15 @@ body {
 
 .category-one-reference-content {
   position: absolute;
-  top: 36.8%;
+  top: 32.3%;
   right: 10%;
   left: 10%;
   width: auto !important;
   padding: 0 !important;
+}
+
+.category-one-reference-pin-stage .category-one-reference-content {
+  top: 39.8%;
 }
 
 .category-one-reference-card {
