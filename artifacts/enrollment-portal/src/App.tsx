@@ -163,7 +163,11 @@ function copyText(settings: PortalSettings | undefined, screen: string, key: str
   return typeof value === 'string' && value.trim() ? value : fallback;
 }
 
-function AppFrame({ children, active = 'dashboard' }: { children: ReactNode; active?: string }) {
+function AppFrame({ children, active = 'dashboard', fitDashboard = false }: {
+  children: ReactNode;
+  active?: string;
+  fitDashboard?: boolean;
+}) {
   const { signOut } = useClerk();
   const { user } = useUser();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -206,7 +210,7 @@ function AppFrame({ children, active = 'dashboard' }: { children: ReactNode; act
           <Brand />
           <Link href="/support" className="compact-help" data-testid="link-compact-support"><CircleHelp size={18} /></Link>
         </div>
-        <main className="page-content portal-scroll">{children}</main>
+        <main className={`page-content portal-scroll ${fitDashboard ? 'dashboard-page-content' : ''}`}>{children}</main>
       </div>
     </div>
   );
@@ -356,7 +360,7 @@ function Dashboard() {
   };
   const busy = summary.isLoading || applications.isLoading || categories.isLoading;
   const failure = summary.isError || applications.isError || categories.isError;
-  return <AppFrame active="dashboard">
+  return <AppFrame active="dashboard" fitDashboard>
     <div className="dashboard-layout">
       <div className="dashboard-main">
          <PageHeading eyebrow="YOUR ENROLLMENT" title={copyText(portalSettings.data, 'dashboard', 'title', 'A good place to begin.')} detail={copyText(portalSettings.data, 'dashboard', 'description', `Signed in as ${user?.fullName || user?.primaryEmailAddress?.emailAddress || 'your account'}. Start a separate application for each enrollment category.`)} />
