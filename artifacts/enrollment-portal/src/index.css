@@ -1261,6 +1261,21 @@ html[data-portal-button-placement="right"] .decision-actions { justify-content: 
 .settings-screen summary { display: flex; align-items: center; justify-content: space-between; color: #31546a; font-size: 10px; font-weight: 700; cursor: pointer; }
 .settings-screen summary span { color: #8a9aa4; font: 8px var(--app-font-mono); }
 .settings-screen .settings-inline-fields { padding-top: 12px; }
+.settings-category-preview { display: grid; gap: 14px; margin-top: 13px; padding: 18px; border-radius: 10px; background: #0e8b45; color: #fff; }
+.settings-category-preview.category-preview-category-entry-2 { background: #0c4da1; }
+.settings-category-preview.category-preview-category-entry-3 { background: #0072ae; }
+.settings-category-preview.category-preview-category-entry-4 { border: 1px solid #dce5e8; background: #fff; color: #1e3746; }
+.settings-category-preview-caption { color: currentColor; font-size: 8px; font-weight: 700; letter-spacing: .08em; opacity: .78; text-transform: uppercase; }
+.settings-category-preview-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.settings-category-preview-field { display: grid; gap: 7px; min-width: 0; font-size: 11px; }
+.settings-category-preview-field > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-category-preview-field > div { height: 1px; background: currentColor; opacity: .55; }
+.settings-category-preview-pin { display: grid; gap: 5px; font-size: 9px; opacity: .85; }
+.settings-category-preview-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.settings-category-preview-action { display: grid; min-width: 128px; gap: 5px; }
+.settings-category-preview-action small { font-size: 8px; opacity: .78; }
+.settings-category-preview-action button { min-height: 34px; padding: 0 18px; border: 1px solid #ffffff55; border-radius: 20px; color: #19495f; background: #fff; font: inherit; font-size: 10px; font-weight: 650; }
+.category-preview-category-entry-4 .settings-category-preview-action button { border-color: #d7e1e5; color: #fff; background: #0e8b45; }
 .settings-save-bottom { display: flex; justify-content: flex-end; }
 .admin-record-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
 .admin-answer-section { min-width: 0; }

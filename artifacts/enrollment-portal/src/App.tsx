@@ -1373,21 +1373,48 @@ function AdminSettings() {
       <div className="detail-card-title"><FileText size={17} /><h2>Category entry form labels and buttons</h2></div>
       <p className="field-help">Customize the visible field labels, PIN prompts, and action buttons for each category. Leave a field blank to use its current default.</p>
       <div className="settings-screen-list">
-        {categoryEntrySettings.map(({ screen, title, fields }) => <details className="settings-screen" key={screen} data-testid={`settings-category-entry-${screen}`}>
-          <summary>{title}<span>{screen}</span></summary>
-          <div className="settings-inline-fields">
-            {fields.map(([key, label, defaultText]) => <label className="field-label" key={key}>{label}
-              <input
-                className="text-input"
-                value={draft.screenCopy[screen]?.[key] ?? ''}
-                maxLength={key.startsWith('buttonLabel') ? 60 : 120}
-                placeholder={`Default: ${defaultText}`}
-                onChange={(event) => updateScreenCopy(screen, key, event.target.value)}
-                data-testid={`input-copy-${screen}-${key}`}
-              />
-            </label>)}
-          </div>
-        </details>)}
+        {categoryEntrySettings.map(({ screen, title, fields }) => {
+          const copy = draft.screenCopy[screen] ?? {};
+          const resolvedText = (key: string, fallback: string) => copy[key]?.trim() || fallback;
+          const previewFields = fields.filter(([key]) => ['nameLabel', 'nicknameLabel', 'surnameLabel'].includes(key));
+          const previewButtons = fields.filter(([key]) => key.startsWith('buttonLabel'));
+          const pinPrompt = fields.find(([key]) => key === 'pinLabel');
+          const pinConfirmation = fields.find(([key]) => key === 'confirmationLabel');
+          return <details className="settings-screen" key={screen} data-testid={`settings-category-entry-${screen}`}>
+            <summary>{title}<span>{screen}</span></summary>
+            <div className="settings-inline-fields">
+              {fields.map(([key, label, defaultText]) => <label className="field-label" key={key}>{label}
+                <input
+                  className="text-input"
+                  value={copy[key] ?? ''}
+                  maxLength={key.startsWith('buttonLabel') ? 60 : 120}
+                  placeholder={`Default: ${defaultText}`}
+                  onChange={(event) => updateScreenCopy(screen, key, event.target.value)}
+                  data-testid={`input-copy-${screen}-${key}`}
+                />
+              </label>)}
+            </div>
+            <section className={`settings-category-preview category-preview-${screen}`} aria-label={`${title} live preview`} data-testid={`preview-${screen}`}>
+              <span className="settings-category-preview-caption">Live preview · updates as you edit</span>
+              <div className="settings-category-preview-fields">
+                {previewFields.map(([key, , defaultText]) => <div className="settings-category-preview-field" key={key}>
+                  <span>{resolvedText(key, defaultText)}</span>
+                  <div aria-hidden="true" />
+                </div>)}
+              </div>
+              {(pinPrompt || pinConfirmation) && <div className="settings-category-preview-pin">
+                {pinPrompt && <span>{resolvedText(pinPrompt[0], pinPrompt[2])}</span>}
+                {pinConfirmation && <span>{resolvedText(pinConfirmation[0], pinConfirmation[2])}</span>}
+              </div>}
+              <div className="settings-category-preview-actions">
+                {previewButtons.map(([key, label, defaultText]) => <div className="settings-category-preview-action" key={key}>
+                  <small>{label}</small>
+                  <button type="button" tabIndex={-1} aria-hidden="true">{resolvedText(key, defaultText)}</button>
+                </div>)}
+              </div>
+            </section>
+          </details>;
+        })}
       </div>
     </section>
     <section className="detail-card settings-panel">
