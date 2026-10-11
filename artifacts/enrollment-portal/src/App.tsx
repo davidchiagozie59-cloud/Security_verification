@@ -33,6 +33,7 @@ import { EnrollmentWizard } from './components/EnrollmentWizard';
 import categoryOneLogo from './assets/category-one-national-bank-logo.jpg';
 import categoryTwoLogo from './assets/category-two-bred-bank-logo.jpg';
 import categoryThreeLogo from './assets/category-three-anz-logo.jpg';
+import categoryFourLogo from './assets/category-four-bsp-logo.jpg';
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
 
 const queryClient = new QueryClient({
@@ -380,7 +381,9 @@ function Dashboard() {
                         ? <img src={categoryTwoLogo} alt="BRED Bank Vanuatu" className="category-logo category-two-default-logo" />
                         : category.id === 'category-3'
                           ? <img src={categoryThreeLogo} alt="ANZ" className="category-logo category-three-default-logo" />
-                        : <span className="category-symbol" style={{ color: iconColors[categoryIndex] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>}
+                          : category.id === 'category-4'
+                            ? <img src={categoryFourLogo} alt="BSP" className="category-logo category-four-default-logo" />
+                            : <span className="category-symbol" style={{ color: iconColors[categoryIndex] }}><FileCheck2 size={22} strokeWidth={1.75} /></span>}
                     <span className="category-title">{cardSettings?.title ?? category.name}</span>
                     <span className="category-description">{cardSettings?.description ?? category.description}</span>
                     <span className="category-select">{create.isPending ? 'Starting…' : selected ? ['draft', 'needs_information'].includes(activeApplication!.status) ? 'Continue application' : 'View current status' : completedApplication ? 'Start another application' : copyText(portalSettings.data, 'dashboard', 'buttonLabel', cardSettings?.buttonLabel ?? 'Select category')} <ArrowUpRight size={15} /></span>
