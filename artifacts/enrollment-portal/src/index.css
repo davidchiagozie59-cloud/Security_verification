@@ -2456,6 +2456,94 @@ html[data-portal-button-placement="right"] .category-entry-screen.category-one-r
   object-fit: contain;
 }
 
+.category-entry-screen.entry-logo-align-left .category-one-bank-brand,
+.category-entry-screen.entry-logo-align-left .category-one-pin-brand,
+.category-entry-screen.entry-logo-align-left .category-three-reference-brand,
+.category-entry-screen.entry-logo-align-left .category-three-pin-brand {
+  right: auto;
+  left: clamp(18px, 7vw, 64px);
+  justify-items: start;
+  transform: none;
+}
+
+.category-entry-screen.entry-logo-align-right .category-one-bank-brand,
+.category-entry-screen.entry-logo-align-right .category-one-pin-brand,
+.category-entry-screen.entry-logo-align-right .category-three-reference-brand,
+.category-entry-screen.entry-logo-align-right .category-three-pin-brand {
+  right: clamp(18px, 7vw, 64px);
+  left: auto;
+  justify-items: end;
+  transform: none;
+}
+
+.category-entry-screen.entry-logo-align-left:not(.entry-pin-stage) .category-two-reference-brand {
+  right: auto;
+  left: clamp(18px, 7vw, 54px);
+  justify-items: start;
+  text-align: left;
+  transform: none;
+}
+
+.category-entry-screen.entry-logo-align-right:not(.entry-pin-stage) .category-two-reference-brand {
+  right: clamp(18px, 7vw, 54px);
+  left: auto;
+  justify-items: end;
+  text-align: right;
+  transform: none;
+}
+
+.category-entry-screen.entry-logo-align-left.entry-pin-stage .category-two-pin-brand,
+.category-entry-screen.entry-logo-align-left.entry-pin-stage .category-four-pin-brand {
+  justify-items: start;
+  justify-content: start;
+}
+
+.category-entry-screen.entry-logo-align-right.entry-pin-stage .category-two-pin-brand,
+.category-entry-screen.entry-logo-align-right.entry-pin-stage .category-four-pin-brand {
+  justify-items: end;
+  justify-content: end;
+}
+
+.category-four-entry-brand {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 12%;
+  display: flex;
+  width: 36%;
+  height: clamp(44px, 7.2dvh, 68px);
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #194735;
+}
+
+.category-four-entry-brand img {
+  display: block;
+  max-width: 95%;
+  max-height: 88%;
+  object-fit: contain;
+}
+
+.category-entry-screen.entry-logo-align-left .category-four-entry-brand { justify-content: flex-start; }
+.category-entry-screen.entry-logo-align-right .category-four-entry-brand { justify-content: flex-end; }
+
+.category-four-pin-brand {
+  position: absolute;
+  top: 9%;
+  right: 20px;
+  left: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.category-four-pin-brand img {
+  display: block;
+  width: clamp(100px, 31vw, 150px);
+  max-height: 54px;
+  object-fit: contain;
+}
+
 .category-one-default-logo {
   width: clamp(94px, 24vw, 126px);
   height: 42px;

