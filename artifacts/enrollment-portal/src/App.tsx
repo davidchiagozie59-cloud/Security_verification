@@ -30,7 +30,7 @@ import type {
 } from '@workspace/api-client-react';
 import { CategoryEntryForm, type CategoryEntryAnswers } from './components/CategoryEntryForm';
 import { EnrollmentWizard } from './components/EnrollmentWizard';
-import categoryOneLogo from './assets/category-one-national-bank-logo.jpg';
+import categoryOneLogo from './assets/category-one-national-bank-logo-vivid.png';
 import categoryTwoLogo from './assets/category-two-bred-bank-logo.jpg';
 import categoryThreeLogo from './assets/category-three-anz-logo.jpg';
 import categoryFourLogo from './assets/category-four-bsp-logo.jpg';
@@ -84,11 +84,20 @@ const clerkAppearance = {
   },
 };
 
+function PortalName() {
+  return (
+    <span className="brand-name">
+      <span className="brand-name-primary">Security Verification</span>
+      <span className="brand-name-secondary">Enrollment Portal</span>
+    </span>
+  );
+}
+
 function Brand({ inverse = false }: { inverse?: boolean }) {
   return (
     <div className={`brand-lockup ${inverse ? 'brand-inverse' : ''}`} data-testid="brand-lockup">
       <span className="brand-mark"><ShieldCheck size={20} strokeWidth={2.2} /></span>
-      <span className="brand-name">Civic<span>Enroll</span></span>
+      <PortalName />
     </div>
   );
 }
@@ -217,7 +226,7 @@ function PublicLanding() {
     <main className="landing portal-frame">
       <section className="landing-copy">
         <div className="brand-lockup landing-brand-wordmark" data-testid="landing-brand-wordmark">
-          <span className="brand-name">Civic<span>Enroll</span></span>
+          <PortalName />
         </div>
         <div className="landing-content rise">
           <div className="eyebrow"><span className="eyebrow-rule" />SECURE ENROLLMENT</div>
@@ -265,7 +274,7 @@ function AuthPage({ mode }: { mode: 'in' | 'up' }) {
   }, [isLoaded, isSignedIn, setLocation]);
   if (isLoaded && isSignedIn) return <main className="portal-frame auth-loading"><LoadingPanel label="Opening your secure workspace" /></main>;
   return <main className="auth-page portal-frame">
-    <div className="auth-brand"><Brand /><span>SECURE ENROLLMENT PORTAL</span></div>
+    <div className="auth-brand"><Brand /><span>SECURE ACCESS</span></div>
     <div className="auth-canvas">
       <div className="auth-intro"><div className="eyebrow">A thoughtful process starts here</div><h1>{mode === 'in' ? 'Welcome back.' : 'Let’s get started.'}</h1>
         <p>{mode === 'in' ? 'Your application and its latest updates are waiting in your secure workspace.' : 'Create a secure account to begin and return to your application whenever you need.'}</p>
@@ -461,7 +470,6 @@ function DraftApplication() {
   const submit = useSubmitApplication();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  const [replacementCategory, setReplacementCategory] = useState<EnrollmentCategory['id'] | ''>('');
   const [feedback, setFeedback] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const application = app.data;
@@ -485,24 +493,6 @@ function DraftApplication() {
       </section>
     </div>}
   </AppFrame>;
-  const changeCategory = () => {
-    if (!replacementCategory || replacementCategory === application.categoryId) return;
-    const next = categories.data?.find((category) => category.id === replacementCategory);
-    if (!next) return;
-    const confirmed = window.confirm(`Change to ${next.name}? This resets the saved application details and PIN. This change will be recorded.`);
-    if (!confirmed) return;
-    setFeedback('');
-    update.mutate({ applicationId: id, data: { categoryId: replacementCategory } }, {
-      onSuccess: (saved) => {
-        queryClient.setQueryData(getGetApplicationQueryKey(id), saved);
-        queryClient.invalidateQueries({ queryKey: getListMyApplicationsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetApplicantSummaryQueryKey() });
-        setReplacementCategory('');
-        setFeedback('');
-      },
-      onError: () => setFeedback('The category could not be changed. Please try again.'),
-    });
-  };
   const saveStep = async (answers: Record<string, unknown>, currentStep: number) => {
     setFeedback('');
     try {
@@ -554,15 +544,10 @@ function DraftApplication() {
     return <CategoryEntryForm
       key={application.categoryId}
       categoryId={application.categoryId}
-      categoryName={portalSettings.data?.cards.find((card) => card.id === application.categoryId)?.title ?? application.categoryName}
       reference={application.reference}
       savedAnswers={application.answers ?? {}}
-      categories={categories.data ?? []}
-      replacementCategoryId={replacementCategory}
       isSaving={update.isPending}
       error={feedback}
-      onReplacementCategoryChange={setReplacementCategory}
-      onChangeCategory={changeCategory}
       pinScreenBackground={portalSettings.data?.theme.pinScreenBackground}
       categoryInputTransparent={portalSettings.data?.theme.categoryInputTransparent}
       screenCopy={portalSettings.data?.screenCopy[`category-entry-${application.categoryId}`]}

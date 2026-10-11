@@ -591,7 +591,7 @@ export function EnrollmentWizard({
 
   return <main className="ew-shell" data-testid="enrollment-wizard">
     <header className="ew-topbar">
-      <div className="ew-topbrand"><span><ShieldCheck size={18} /></span><b>Civic<span>Enroll</span></b></div>
+      <div className="ew-topbrand"><span><ShieldCheck size={18} /></span><b>Security Verification<small>Enrollment Portal</small></b></div>
       <div className="ew-top-meta"><span className={`ew-draft-status ${status === 'draft' ? '' : 'submitted'}`} data-testid="status-application">{status.replaceAll('_', ' ')}</span>
         <span className="ew-reference" data-testid="text-application-reference">{application.reference}</span></div>
     </header>

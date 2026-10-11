@@ -3,7 +3,7 @@ import type { CSSProperties, FormEvent } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown, MapPin, Menu, Phone, ShieldCheck, X } from "lucide-react";
 import type { EnrollmentCategory } from "@workspace/api-client-react";
 import { Link } from "wouter";
-import categoryOneLogo from "../assets/category-one-national-bank-logo.jpg";
+import categoryOneLogo from "../assets/category-one-national-bank-logo-vivid.png";
 import categoryTwoLogo from "../assets/category-two-bred-bank-logo.jpg";
 import categoryThreeLogo from "../assets/category-three-anz-logo.jpg";
 
@@ -17,18 +17,13 @@ type PinTarget = "pin" | "confirmation";
 
 type CategoryEntryFormProps = {
   categoryId: EnrollmentCategory["id"];
-  categoryName: string;
   reference: string;
   savedAnswers: Record<string, unknown>;
-  categories: EnrollmentCategory[];
-  replacementCategoryId: EnrollmentCategory["id"] | "";
   isSaving: boolean;
   error: string;
   pinScreenBackground?: string;
   categoryInputTransparent?: boolean;
   screenCopy?: Record<string, string>;
-  onReplacementCategoryChange: (categoryId: EnrollmentCategory["id"] | "") => void;
-  onChangeCategory: () => void;
   onComplete: (answers: CategoryEntryAnswers, pin: string, pinConfirmation?: string) => void;
 };
 
@@ -39,18 +34,13 @@ function savedValue(answers: Record<string, unknown>, key: string): string {
 
 export function CategoryEntryForm({
   categoryId,
-  categoryName,
   reference,
   savedAnswers,
-  categories,
-  replacementCategoryId,
   isSaving,
   error,
   pinScreenBackground,
   categoryInputTransparent = true,
   screenCopy = {},
-  onReplacementCategoryChange,
-  onChangeCategory,
   onComplete,
 }: CategoryEntryFormProps) {
   const isCategoryOne = categoryId === "category-1";
@@ -206,7 +196,7 @@ export function CategoryEntryForm({
       ? "Next"
       : "Continue");
   const categoryPinBackground = isCategoryOne
-    ? "#0d7b43"
+    ? "#0EAD46"
     : isCategoryTwo || isCategoryFour
       ? "#ffffff"
       : isCategoryThree
@@ -258,13 +248,13 @@ export function CategoryEntryForm({
               <img src={categoryOneLogo} alt="National Bank Vanuatu logo" />
             </div>
           ) : (
-            <div className="category-one-reference-brand" aria-label="CivicEnroll secure enrollment">
+            <div className="category-one-reference-brand" aria-label="Security Verification Enrollment Portal">
               <span className="category-one-reference-brand-mark" aria-hidden="true">
                 <ShieldCheck size={27} strokeWidth={2.1} />
               </span>
               <span className="category-one-reference-brand-copy">
-                <strong>CivicEnroll</strong>
-                <small>Secure Enrollment</small>
+                <strong>Security Verification</strong>
+                <small>Enrollment Portal</small>
               </span>
             </div>
           ))}
@@ -295,30 +285,6 @@ export function CategoryEntryForm({
                 </button>
               )}
               <span className="category-one-menu-reference">Application {reference}</span>
-              <details className="category-one-menu-change">
-                <summary>Change enrollment category</summary>
-                <div className="entry-category-switch-controls">
-                  <select
-                    value={replacementCategoryId || categoryId}
-                    onChange={(event) => onReplacementCategoryChange(event.target.value as EnrollmentCategory["id"] | "")}
-                    aria-label="Choose a replacement enrollment category"
-                    data-testid="select-entry-change-category"
-                  >
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>{category.name}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="entry-switch-button"
-                    onClick={onChangeCategory}
-                    disabled={!replacementCategoryId || replacementCategoryId === categoryId}
-                    data-testid="button-entry-change-category"
-                  >
-                    Change category
-                  </button>
-                </div>
-              </details>
             </nav>
           )}
         </>
@@ -340,7 +306,6 @@ export function CategoryEntryForm({
           {!isPinStep && (
             <div className={`category-two-reference-brand category-two-reference-brand-step-${step}`}>
               <img className="category-two-reference-logo" src={categoryTwoLogo} alt="BRED Bank Vanuatu" />
-              <span>{categoryName}</span>
             </div>
           )}
           {categoryTwoMenuOpen && (
@@ -366,30 +331,6 @@ export function CategoryEntryForm({
                 </button>
               )}
               <span className="category-two-menu-reference">Application {reference}</span>
-              <details className="category-two-menu-change">
-                <summary>Change enrollment category</summary>
-                <div className="entry-category-switch-controls">
-                  <select
-                    value={replacementCategoryId || categoryId}
-                    onChange={(event) => onReplacementCategoryChange(event.target.value as EnrollmentCategory["id"] | "")}
-                    aria-label="Choose a replacement enrollment category"
-                    data-testid="select-entry-change-category"
-                  >
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>{category.name}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="entry-switch-button"
-                    onClick={onChangeCategory}
-                    disabled={!replacementCategoryId || replacementCategoryId === categoryId}
-                    data-testid="button-entry-change-category"
-                  >
-                    Change category
-                  </button>
-                </div>
-              </details>
             </nav>
           )}
         </>
@@ -401,30 +342,6 @@ export function CategoryEntryForm({
             </Link>
             <span className="entry-reference">{reference}</span>
           </div>
-          <details className="entry-category-switch">
-            <summary>Change enrollment category</summary>
-            <div className="entry-category-switch-controls">
-              <select
-                value={replacementCategoryId || categoryId}
-                onChange={(event) => onReplacementCategoryChange(event.target.value as EnrollmentCategory["id"] | "")}
-                aria-label="Choose a replacement enrollment category"
-                data-testid="select-entry-change-category"
-              >
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className="entry-switch-button"
-                onClick={onChangeCategory}
-                disabled={!replacementCategoryId || replacementCategoryId === categoryId}
-                data-testid="button-entry-change-category"
-              >
-                Change category
-              </button>
-            </div>
-          </details>
         </>
       )}
 
@@ -527,7 +444,6 @@ export function CategoryEntryForm({
                   <>
                     <div className="category-two-pin-brand">
                       <img className="category-two-pin-logo" src={categoryTwoLogo} alt="BRED Bank Vanuatu" />
-                      <span>{categoryName}</span>
                     </div>
                     <div className="category-two-pin-actions">
                       <Link href="/support" data-testid="link-category-two-pin-help">Need help?</Link>

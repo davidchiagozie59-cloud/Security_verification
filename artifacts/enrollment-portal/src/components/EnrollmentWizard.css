@@ -28,8 +28,8 @@
 }
 .ew-topbrand { display: inline-flex; align-items: center; gap: 10px; color: #19364d; }
 .ew-topbrand > span { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 10px; color: #fff; background: #174d80; }
-.ew-topbrand b { font-size: 15px; letter-spacing: -.045em; }
-.ew-topbrand b span { color: #558375; font-weight: 500; }
+.ew-topbrand b { display: grid; gap: 2px; font-size: 13px; letter-spacing: -.035em; }
+.ew-topbrand b small { color: #6d8792; font-size: 8px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; }
 .ew-top-meta { display: flex; align-items: center; gap: 15px; }
 .ew-draft-status { padding: 5px 9px; border: 1px solid #e8dcbf; border-radius: 99px; color: #8a692d; background: #fff9ed; font: 9px var(--app-font-mono, monospace); text-transform: capitalize; }
 .ew-draft-status.submitted { border-color: #cfe3dc; color: #32745e; background: #eff8f3; }
